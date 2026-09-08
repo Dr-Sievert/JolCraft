@@ -71,6 +71,10 @@ public final class JolCraftEntityAttributeEventsHelper {
     }
 
     public static void clearTrackedAttributes(LivingEntity entity) {
+        // EntityLeaveLevelEvent fires on both sides; FROSTVEIN_CACHE is a plain HashMap only
+        // written by tickAttributes, which is server-only.
+        if (entity.level().isClientSide()) return;
+
         FROSTVEIN_CACHE.remove(entity.getUUID());
     }
 

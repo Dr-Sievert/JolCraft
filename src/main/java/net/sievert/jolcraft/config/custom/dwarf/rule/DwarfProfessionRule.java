@@ -1,6 +1,7 @@
 package net.sievert.jolcraft.config.custom.dwarf.rule;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.sievert.jolcraft.data.language.JolCraftDictionary;
@@ -22,9 +23,11 @@ public sealed interface DwarfProfessionRule permits
             JolCraftDictionary.LEVEL
     );
 
-    Codec<DwarfProfessionRule> CODEC = Codec.STRING.dispatch(
+    // partialDispatch, not dispatch: this codec is now also decoded from ClientboundConfigSyncPacket,
+    // and a thrown exception there disconnects the player instead of failing the decode.
+    Codec<DwarfProfessionRule> CODEC = Codec.STRING.partialDispatch(
             KEY_TYPE,
-            DwarfProfessionRule::typeId,
+            rule -> DataResult.success(rule.typeId()),
             DwarfProfessionRule::mapCodecForType
     );
 
@@ -34,19 +37,19 @@ public sealed interface DwarfProfessionRule permits
         return new MinMerchantLevel(level);
     }
 
-    static MapCodec<? extends DwarfProfessionRule> mapCodecForType(
+    static DataResult<MapCodec<? extends DwarfProfessionRule>> mapCodecForType(
             String typeId
     ) {
         if (TYPE_ALWAYS.equals(typeId)) {
-            return Always.MAP_CODEC;
+            return DataResult.success(Always.MAP_CODEC);
         }
 
         if (TYPE_MIN_MERCHANT_LEVEL.equals(typeId)) {
-            return MinMerchantLevel.MAP_CODEC;
+            return DataResult.success(MinMerchantLevel.MAP_CODEC);
         }
 
-        throw new IllegalStateException(
-                "Unknown rule type: " + typeId
+        return DataResult.error(
+                () -> "Unknown rule type: " + typeId
         );
     }
 
@@ -81,4 +84,4 @@ public sealed interface DwarfProfessionRule permits
             return TYPE_MIN_MERCHANT_LEVEL;
         }
     }
-}
+}

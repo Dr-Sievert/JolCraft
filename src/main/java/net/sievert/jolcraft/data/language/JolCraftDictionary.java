@@ -625,6 +625,7 @@ public final class JolCraftDictionary extends JolCraftIds {
     public static final String SUPPLIES = "supplies";
     public static final String SURFACE = "surface";
     public static final String SWORD = "sword";
+    public static final String SYNC = "sync";
     public static final String TAB = "tab";
     public static final String TABLE = "table";
     public static final String TABLET = "tablet";

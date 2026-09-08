@@ -5,6 +5,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.sievert.jolcraft.JolCraft;
+import net.sievert.jolcraft.network.packet.s2c.ClientboundConfigSyncPacket;
 import net.sievert.jolcraft.world.loot.custom.reward.client.RewardLootTableClientCache;
 
 @SuppressWarnings("removal")
@@ -18,5 +19,6 @@ public final class JolCraftClientDataEvents {
             ClientPlayerNetworkEvent.LoggingOut event
     ) {
         RewardLootTableClientCache.clear();
+        ClientboundConfigSyncPacket.clear();
     }
 }

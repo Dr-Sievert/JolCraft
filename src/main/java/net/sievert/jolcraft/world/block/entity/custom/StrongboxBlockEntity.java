@@ -33,6 +33,7 @@ import net.sievert.jolcraft.world.sound.util.PlaySound;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 @ParametersAreNonnullByDefault
@@ -57,8 +58,10 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
     private NonNullList<ItemStack> items =
             NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
 
+    // Stored as a UUID, not a Player: a block entity holding a Player reference pins that player,
+    // and keeps a stale ServerPlayer if the chunk unloads while the menu is open.
     @Nullable
-    private Player currentInteractingPlayer;
+    private UUID currentInteractingPlayerId;
 
     private final ChestLidController lidController =
             new ChestLidController();
@@ -114,7 +117,7 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
                             state
                     );
 
-                    currentInteractingPlayer = player;
+                    currentInteractingPlayerId = player.getUUID();
                 }
 
                 @Override
@@ -131,11 +134,8 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
                             state
                     );
 
-                    if (currentInteractingPlayer != null
-                            && currentInteractingPlayer.getUUID().equals(
-                            player.getUUID()
-                    )) {
-                        currentInteractingPlayer = null;
+                    if (player.getUUID().equals(currentInteractingPlayerId)) {
+                        currentInteractingPlayerId = null;
                     }
                 }
 
@@ -173,16 +173,17 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
     }
 
     public void clearCurrentInteractingPlayer(Player player) {
-        if (this.currentInteractingPlayer != null
-                && this.currentInteractingPlayer.getUUID().equals(
-                player.getUUID()
-        )) {
-            this.currentInteractingPlayer = null;
+        if (player.getUUID().equals(this.currentInteractingPlayerId)) {
+            this.currentInteractingPlayerId = null;
         }
     }
 
     public @Nullable Player getCurrentInteractingPlayer() {
-        return currentInteractingPlayer;
+        if (this.level == null || this.currentInteractingPlayerId == null) {
+            return null;
+        }
+
+        return this.level.getPlayerByUUID(this.currentInteractingPlayerId);
     }
 
     public void setHasLockpickInserted(boolean value) {
@@ -230,7 +231,7 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
 
     private boolean isLockSessionActive() {
         return this.isLocked()
-                && this.currentInteractingPlayer != null
+                && this.getCurrentInteractingPlayer() != null
                 && this.hasLockpickInserted;
     }
 
@@ -310,7 +311,7 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
         }
 
         Player player =
-                this.currentInteractingPlayer;
+                this.getCurrentInteractingPlayer();
 
         double lockpicking = player == null
                 ? 0.0D
@@ -349,10 +350,7 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
             return false;
         }
 
-        if (this.currentInteractingPlayer == null
-                || !this.currentInteractingPlayer.getUUID().equals(
-                player.getUUID()
-        )) {
+        if (!player.getUUID().equals(this.currentInteractingPlayerId)) {
             debugReject(
                     player,
                     "wrong_player",
@@ -482,18 +480,16 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
             String reason,
             int buttonId
     ) {
+        Player current = getCurrentInteractingPlayer();
+
         String currentName =
-                currentInteractingPlayer != null
-                        ? currentInteractingPlayer
-                        .getName()
-                        .getString()
+                current != null
+                        ? current.getName().getString()
                         : "null";
 
         String currentUuid =
-                currentInteractingPlayer != null
-                        ? currentInteractingPlayer
-                        .getUUID()
-                        .toString()
+                currentInteractingPlayerId != null
+                        ? currentInteractingPlayerId.toString()
                         : "null";
 
         JolCraftLogs.debug(
@@ -723,8 +719,8 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
             int id,
             Inventory inv
     ) {
-        this.currentInteractingPlayer =
-                inv.player;
+        this.currentInteractingPlayerId =
+                inv.player.getUUID();
 
         if (this.isLocked()) {
             return new LockMenu(
@@ -771,7 +767,7 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
         }
 
         Player player =
-                this.currentInteractingPlayer;
+                this.getCurrentInteractingPlayer();
 
         if (player == null) {
             return;
@@ -851,4 +847,4 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
 
         lidAnimateTick(this);
     }
-}
+}

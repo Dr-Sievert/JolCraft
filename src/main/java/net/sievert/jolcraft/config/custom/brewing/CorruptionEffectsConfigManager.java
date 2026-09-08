@@ -50,6 +50,21 @@ public final class CorruptionEffectsConfigManager
         return config.effects();
     }
 
+    // Datapack reload listener, so on a dedicated server the client never runs apply(), yet
+    // JeiCorruptionHelper reads entries() client-side. See ClientboundConfigSyncPacket.
+
+    public @NotNull CorruptionEffectsConfig snapshot() {
+        return config;
+    }
+
+    public void applySynced(@NotNull CorruptionEffectsConfig synced) {
+        config = synced;
+    }
+
+    public void reset() {
+        config = new CorruptionEffectsConfig(List.of());
+    }
+
     public boolean hasEligibleEffect(
             @Nullable Holder<MobEffect> excludedEffect
     ) {

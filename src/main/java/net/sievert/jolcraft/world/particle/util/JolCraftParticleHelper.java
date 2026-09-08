@@ -3,6 +3,8 @@ package net.sievert.jolcraft.world.particle.util;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -11,8 +13,11 @@ import net.minecraft.world.level.Level;
 import net.sievert.jolcraft.network.JolCraftNetworking;
 import net.sievert.jolcraft.network.packet.c2s.ServerboundSpawnParticlePacket;
 import net.sievert.jolcraft.network.proxy.JolCraftProxy;
+import net.sievert.jolcraft.util.log.JolCraftLogTags;
+import net.sievert.jolcraft.util.log.JolCraftLogs;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.Set;
 
 /**
  * Particle helper safe to call from common code.
@@ -51,12 +56,23 @@ public final class JolCraftParticleHelper {
         if (!level.isClientSide) {
             if (!(level instanceof ServerLevel serverLevel)) return;
 
-            serverLevel.sendParticles(
+            broadcast(
+                    serverLevel,
                     particle,
+                    overrideLimiter || alwaysShow,
                     x, y, z,
                     count,
                     xDist, yDist, zDist,
                     speed
+            );
+            return;
+        }
+
+        if (!isRelayable(particle)) {
+            JolCraftLogs.warn(
+                    JolCraftLogTags.NETWORK,
+                    "Particle {} is not in RELAYABLE and cannot be spawned from the client",
+                    particle.getType()
             );
             return;
         }
@@ -72,6 +88,43 @@ public final class JolCraftParticleHelper {
                         speed
                 )
         );
+    }
+
+    // Particle types a client may ask the server to broadcast on its behalf. Anything spawned
+    // through the client branch of spawn() must be listed here.
+    private static final Set<ParticleType<?>> RELAYABLE = Set.of(
+            ParticleTypes.HAPPY_VILLAGER,
+            ParticleTypes.BUBBLE_POP,
+            ParticleTypes.CRIT,
+            ParticleTypes.HEART,
+            ParticleTypes.DUST
+    );
+
+    public static boolean isRelayable(ParticleOptions particle) {
+        return RELAYABLE.contains(particle.getType());
+    }
+
+    // ServerLevel#sendParticles(type, x, ...) hardcodes overrideLimiter to false, so send per
+    // player to keep the flag. Vanilla's /particle command does the same.
+    public static void broadcast(ServerLevel level,
+                                 ParticleOptions particle,
+                                 boolean force,
+                                 double x, double y, double z,
+                                 int count,
+                                 double xDist, double yDist, double zDist,
+                                 double speed) {
+
+        for (ServerPlayer player : level.players()) {
+            level.sendParticles(
+                    player,
+                    particle,
+                    force,
+                    x, y, z,
+                    count,
+                    xDist, yDist, zDist,
+                    speed
+            );
+        }
     }
 
     public static void spawn(Level level,

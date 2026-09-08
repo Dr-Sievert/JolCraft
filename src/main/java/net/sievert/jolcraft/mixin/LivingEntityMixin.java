@@ -1,5 +1,7 @@
 package net.sievert.jolcraft.mixin;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.core.Holder;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.TagKey;
@@ -14,13 +16,15 @@ import net.sievert.jolcraft.world.entity.attachment.custom.overheal.OverhealAtta
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
 
-    @Redirect(
+    // @WrapOperation, not @Redirect: LivingEntity#hurt is heavily patched and @Redirect claims a
+    // call site exclusively, so a second mod redirecting it fails the injection.
+
+    @WrapOperation(
             method = "hurt",
             at = @At(
                     value = "INVOKE",
@@ -29,16 +33,17 @@ public abstract class LivingEntityMixin {
     )
     private boolean jolcraft$removeFireResistanceImmunity(
             LivingEntity instance,
-            Holder<MobEffect> effect
+            Holder<MobEffect> effect,
+            Operation<Boolean> original
     ) {
         if (effect == MobEffects.FIRE_RESISTANCE) {
             return false;
         }
 
-        return instance.hasEffect(effect);
+        return original.call(instance, effect);
     }
 
-    @Redirect(
+    @WrapOperation(
             method = "hurt",
             at = @At(
                     value = "INVOKE",
@@ -47,13 +52,14 @@ public abstract class LivingEntityMixin {
     )
     private boolean jolcraft$removeFreezeExtraDamage(
             EntityType<?> instance,
-            TagKey<EntityType<?>> tag
+            TagKey<EntityType<?>> tag,
+            Operation<Boolean> original
     ) {
         if (tag == EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES) {
             return false;
         }
 
-        return instance.is(tag);
+        return original.call(instance, tag);
     }
 
     @SuppressWarnings("deprecation")

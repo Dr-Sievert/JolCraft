@@ -1,6 +1,7 @@
 package net.sievert.jolcraft.world.item.custom.container;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.SlotAccess;
@@ -36,8 +37,12 @@ public class CoinPouchItem extends Item {
         super(properties.stacksTo(1));
     }
 
+    // Runs on both sides so the client can predict the stack move (vanilla BundleItem does the
+    // same), but the sounds and the menu sync are server-only or they fire twice for the actor.
     @Override
     public boolean overrideOtherStackedOnMe(ItemStack pouch, ItemStack cursor, Slot slot, ClickAction action, Player player, SlotAccess access) {
+
+        boolean server = !player.level().isClientSide;
 
         if (action == ClickAction.SECONDARY && cursor.isEmpty()) {
             int current = pouch.getOrDefault(JolCraftDataComponents.COIN_POUCH_AMOUNT.get(), 0);
@@ -47,13 +52,16 @@ public class CoinPouchItem extends Item {
                 pouch.set(JolCraftDataComponents.COIN_POUCH_AMOUNT.get(), current - toGive);
                 access.set(out);
 
-                if (current == 1) {
-                    playPouchInsertSound(player);
-                } else {
-                    playStackSound(player);
+                if (server) {
+                    if (current == 1) {
+                        playPouchInsertSound(player);
+                    } else {
+                        playStackSound(player);
+                    }
+
+                    broadcastChangesOnContainerMenu(player);
                 }
 
-                broadcastChangesOnContainerMenu(player);
                 player.awardStat(Stats.ITEM_USED.get(this));
                 return true;
             }
@@ -75,16 +83,18 @@ public class CoinPouchItem extends Item {
                 slotStack.shrink(addable);
                 access.set(slotStack.isEmpty() ? ItemStack.EMPTY : slotStack);
 
-                if (addable == 1 && wasEmpty) {
-                    playPouchInsertSound(player);
-                } else if (addable == 1) {
-                    playSingleSound(player);
-                } else {
-                    playStackSound(player);
-                }
+                if (server) {
+                    if (addable == 1 && wasEmpty) {
+                        playPouchInsertSound(player);
+                    } else if (addable == 1) {
+                        playSingleSound(player);
+                    } else {
+                        playStackSound(player);
+                    }
 
-                broadcastChangesOnContainerMenu(player);
-            } else {
+                    broadcastChangesOnContainerMenu(player);
+                }
+            } else if (server) {
                 playInsertFailSound(player);
             }
             return true;
@@ -92,68 +102,87 @@ public class CoinPouchItem extends Item {
         return false;
     }
 
+    // Mutation and sound are server-only; the client just evaluates the same preconditions so the
+    // arm swing matches. Without this it shrank its own coin stacks and called drop().
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack pouch = player.getItemInHand(hand);
+        int current = pouch.getOrDefault(JolCraftDataComponents.COIN_POUCH_AMOUNT.get(), 0);
 
         if (player.isShiftKeyDown()) {
-            int current = pouch.getOrDefault(JolCraftDataComponents.COIN_POUCH_AMOUNT.get(), 0);
-            if (current > 0) {
-                int toGive = Math.min(64, current);
-
-                pouch.set(JolCraftDataComponents.COIN_POUCH_AMOUNT.get(), current - toGive);
-
-                ItemStack out = new ItemStack(JolCraftItems.GOLD_COIN.get(), toGive);
-
-                player.getInventory().add(out);
-                if (!out.isEmpty()) {
-                    player.drop(out, false);
-                }
-
-                if (current == 1) {
-                    playPouchInsertSound(player);
-                } else {
-                    playStackSound(player);
-                }
-
-                broadcastChangesOnContainerMenu(player);
-                player.awardStat(Stats.ITEM_USED.get(this));
-
-                return InteractionResultHolder.success(pouch);
+            if (current <= 0) {
+                if (!level.isClientSide) playInsertFailSound(player);
+                return InteractionResultHolder.pass(pouch);
             }
 
+            if (level.isClientSide) return InteractionResultHolder.success(pouch);
+
+            int toGive = Math.min(64, current);
+
+            pouch.set(JolCraftDataComponents.COIN_POUCH_AMOUNT.get(), current - toGive);
+
+            ItemStack out = new ItemStack(JolCraftItems.GOLD_COIN.get(), toGive);
+
+            player.getInventory().add(out);
+            if (!out.isEmpty()) {
+                player.drop(out, false);
+            }
+
+            if (current == 1) {
+                playPouchInsertSound(player);
+            } else {
+                playStackSound(player);
+            }
+
+            broadcastChangesOnContainerMenu(player);
+            player.awardStat(Stats.ITEM_USED.get(this));
+
+            return InteractionResultHolder.success(pouch);
+        }
+
+        int canAdd = MAX_COINS - current;
+
+        if (canAdd <= 0 || !hasGoldCoinsInInventory(player)) {
+            if (!level.isClientSide) playInsertFailSound(player);
+            return InteractionResultHolder.pass(pouch);
+        }
+
+        if (level.isClientSide) return InteractionResultHolder.success(pouch);
+
+        int added = tryConsumeGoldCoinsFromInventory(player, canAdd);
+        if (added <= 0) {
             playInsertFailSound(player);
             return InteractionResultHolder.pass(pouch);
         }
 
-        int current = pouch.getOrDefault(JolCraftDataComponents.COIN_POUCH_AMOUNT.get(), 0);
-        int canAdd = MAX_COINS - current;
-        if (canAdd > 0) {
-            int added = tryConsumeGoldCoinsFromInventory(player, canAdd);
-            if (added > 0) {
-                boolean wasEmpty = (current == 0);
-                pouch.set(JolCraftDataComponents.COIN_POUCH_AMOUNT.get(), current + added);
+        boolean wasEmpty = (current == 0);
+        pouch.set(JolCraftDataComponents.COIN_POUCH_AMOUNT.get(), current + added);
 
-                if (added == 1 && wasEmpty) {
-                    playPouchInsertSound(player);
-                } else if (added == 1) {
-                    playSingleSound(player);
-                } else {
-                    playStackSound(player);
-                }
-
-                broadcastChangesOnContainerMenu(player);
-                player.awardStat(Stats.ITEM_USED.get(this));
-                return InteractionResultHolder.success(pouch);
-            }
+        if (added == 1 && wasEmpty) {
+            playPouchInsertSound(player);
+        } else if (added == 1) {
+            playSingleSound(player);
+        } else {
+            playStackSound(player);
         }
 
-        playInsertFailSound(player);
-        return InteractionResultHolder.pass(pouch);
+        broadcastChangesOnContainerMenu(player);
+        player.awardStat(Stats.ITEM_USED.get(this));
+        return InteractionResultHolder.success(pouch);
     }
 
     public static boolean isGoldCoin(ItemStack stack) {
         return !stack.isEmpty() && stack.getItem() == JolCraftItems.GOLD_COIN.get();
+    }
+
+    // Read-only companion to tryConsumeGoldCoinsFromInventory so the client can predict use().
+    private static boolean hasGoldCoinsInInventory(Player player) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            if (isGoldCoin(player.getInventory().getItem(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private int tryConsumeGoldCoinsFromInventory(Player player, int max) {
@@ -222,13 +251,25 @@ public class CoinPouchItem extends Item {
     }
 
 
+    // slotsChanged(playerInventory) only re-evaluates crafting results for the menu's own
+    // container, so it never synced anything here. broadcastChanges() is what actually syncs.
     private void broadcastChangesOnContainerMenu(Player player) {
+        if (!(player instanceof ServerPlayer)) {
+            return;
+        }
+
         AbstractContainerMenu menu = player.containerMenu;
-        menu.slotsChanged(player.getInventory());
+        menu.broadcastChanges();
     }
 
     @Override
     public void onCraftedBy(ItemStack stack, Level world, Player player) {
+        // Also reached via DwarfMerchantResultSlot, so only initialise a pouch that has no amount
+        // yet; a recipe or trade handing out a filled one must not be silently emptied.
+        if (stack.has(JolCraftDataComponents.COIN_POUCH_AMOUNT.get())) {
+            return;
+        }
+
         stack.set(JolCraftDataComponents.COIN_POUCH_AMOUNT.get(), 0);
     }
 

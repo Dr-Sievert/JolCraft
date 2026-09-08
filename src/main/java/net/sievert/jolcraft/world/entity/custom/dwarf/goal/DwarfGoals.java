@@ -43,7 +43,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.WeakHashMap;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -89,7 +88,8 @@ public final class DwarfGoals {
     // State
     // -------------------------------------------------------------------------
 
-    private static final Map<AbstractDwarfEntity, Tracker> TRACKERS = new WeakHashMap<>();
+    // Trackers live on the entity (AbstractDwarfEntity#jolcraftGoalTracker). A static map cannot
+    // work here: a Tracker holds its dwarf, so a WeakHashMap keyed by the dwarf never evicts.
 
     private static final Map<DwarfProfession, Configurator> CONFIGURATORS =
             new EnumMap<>(DwarfProfession.class);
@@ -260,10 +260,10 @@ public final class DwarfGoals {
     public static void rebuildGoals(AbstractDwarfEntity dwarf, DwarfProfession profession) {
         Objects.requireNonNull(dwarf, "dwarf");
 
-        Tracker tracker = TRACKERS.get(dwarf);
+        Tracker tracker = dwarf.jolcraftGoalTracker();
         if (tracker == null) {
             tracker = new Tracker(dwarf);
-            TRACKERS.put(dwarf, tracker);
+            dwarf.jolcraftSetGoalTracker(tracker);
         } else {
             tracker.clearFromSelectors();
         }
@@ -276,4 +276,4 @@ public final class DwarfGoals {
             configurator.configure(dwarf, tracker);
         }
     }
-}
+}

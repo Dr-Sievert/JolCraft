@@ -19,4 +19,9 @@ public final class JolCraftClientPayloadHandlers {
     public static void handleClientboundRewardLootTables(ClientboundRewardLootTablesPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> JolCraftProxy.access().apply(packet));
     }
-}
+
+    // Not routed through JolCraftProxy: the config managers are common classes.
+    public static void handleClientboundConfigSync(ClientboundConfigSyncPacket packet, IPayloadContext context) {
+        context.enqueueWork(packet::apply);
+    }
+}

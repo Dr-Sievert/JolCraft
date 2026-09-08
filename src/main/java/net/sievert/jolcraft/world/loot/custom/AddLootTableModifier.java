@@ -55,7 +55,6 @@ public class AddLootTableModifier extends LootModifier {
         this.replace = replace;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     protected ObjectArrayList<ItemStack> doApply(
             ObjectArrayList<ItemStack> generatedLoot,
@@ -74,7 +73,7 @@ public class AddLootTableModifier extends LootModifier {
                 .reloadableRegistries()
                 .getLootTable(this.lootTable);
 
-        table.getRandomItemsRaw(lootContext, generatedLoot::add);
+        table.getRandomItems(lootContext, generatedLoot::add);
 
         return generatedLoot;
     }

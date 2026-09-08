@@ -17,6 +17,7 @@ import net.sievert.jolcraft.network.packet.c2s.ServerboundSpawnParticlePacket;
 import net.sievert.jolcraft.util.log.JolCraftLogTags;
 import net.sievert.jolcraft.util.log.JolCraftLogs;
 import net.sievert.jolcraft.world.gui.menu.DwarfMerchantMenu;
+import net.sievert.jolcraft.world.particle.util.JolCraftParticleHelper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -63,6 +64,14 @@ public final class JolCraftServerPayloadHandlers {
         UUID id = player.getUUID();
         PARTICLE_LIMITER.remove(id);
         SOUND_LIMITER.remove(id);
+    }
+
+    // NaN needs an explicit check: BlockPos.containing(NaN) floors to (0,0,0) — usually a loaded
+    // spawn chunk — and every "NaN > limit" comparison is false, so it clears both guards below.
+    private static boolean isFinitePosition(double x, double y, double z) {
+        return Double.isFinite(x)
+                && Double.isFinite(y)
+                && Double.isFinite(z);
     }
 
     public static void handleServerboundDwarfSelectTrade(
@@ -130,6 +139,8 @@ public final class JolCraftServerPayloadHandlers {
                 return;
             }
 
+            if (!isFinitePosition(packet.x(), packet.y(), packet.z())) return;
+
             var level = sp.serverLevel();
 
             long tick = level.getGameTime();
@@ -174,6 +185,22 @@ public final class JolCraftServerPayloadHandlers {
             var player = context.player();
             if (!(player instanceof ServerPlayer sp)) return;
 
+            if (!isFinitePosition(packet.x(), packet.y(), packet.z())) return;
+
+            // The server rebroadcasts whatever particle the client names, so restrict it to the
+            // types the mod actually spawns rather than accepting arbitrary (and arbitrarily
+            // large) ParticleOptions payloads.
+            if (!JolCraftParticleHelper.isRelayable(packet.particle())) {
+                JolCraftLogs.debug(
+                        JolCraftLogTags.NETWORK,
+                        "Blocked non-relayable particle {} from {}",
+                        packet.particle().getType(),
+                        player.getGameProfile().getName()
+                );
+
+                return;
+            }
+
             var level = sp.serverLevel();
 
             long tick = level.getGameTime();
@@ -189,9 +216,15 @@ public final class JolCraftServerPayloadHandlers {
             BlockPos pos = BlockPos.containing(packet.x(), packet.y(), packet.z());
             if (!level.isLoaded(pos)) return;
 
-            boolean overrideLimiter = packet.overrideLimiter() && sp.hasPermissions(2);
+            boolean elevated = sp.hasPermissions(2);
+            boolean overrideLimiter = packet.overrideLimiter() && elevated;
             double maxDist = overrideLimiter ? 64.0D : 16.0D;
             if (sp.distanceToSqr(packet.x(), packet.y(), packet.z()) > (maxDist * maxDist)) return;
+
+            // Derived from the particle type so it cannot be forced by a client; an operator may
+            // additionally request it, matching the distance allowance above.
+            boolean force = packet.particle().getType().getOverrideLimiter()
+                    || (elevated && (packet.overrideLimiter() || packet.alwaysShow()));
 
             int count = Mth.clamp(packet.count(), 0, 64);
 
@@ -208,8 +241,10 @@ public final class JolCraftServerPayloadHandlers {
             zDist = Mth.clamp(zDist, -4.0D, 4.0D);
             speed = Mth.clamp(speed, -2.0D, 2.0D);
 
-            level.sendParticles(
+            JolCraftParticleHelper.broadcast(
+                    level,
                     packet.particle(),
+                    force,
                     packet.x(),
                     packet.y(),
                     packet.z(),

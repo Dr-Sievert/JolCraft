@@ -143,6 +143,19 @@ public class AbstractDwarfEntity extends AbstractTradingEntity implements Npc, D
 
     //Goals
 
+    // No initializer: registerGoals() runs from the Mob constructor, before subclass field
+    // initializers, so "= null" here would wipe the tracker created during construction.
+    @Nullable
+    private DwarfGoals.Tracker goalTracker;
+
+    public @Nullable DwarfGoals.Tracker jolcraftGoalTracker() {
+        return this.goalTracker;
+    }
+
+    public void jolcraftSetGoalTracker(DwarfGoals.Tracker tracker) {
+        this.goalTracker = tracker;
+    }
+
     @Override
     protected void registerGoals() {
         DwarfGoals.registerGoals(this);
@@ -592,4 +605,4 @@ public class AbstractDwarfEntity extends AbstractTradingEntity implements Npc, D
 
         return out;
     }
-}
+}

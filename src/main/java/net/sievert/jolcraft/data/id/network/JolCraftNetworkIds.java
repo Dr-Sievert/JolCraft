@@ -8,7 +8,8 @@ public class JolCraftNetworkIds extends JolCraftIds {
 
     private JolCraftNetworkIds(){}
 
-    public static final String PROTOCOL = "1.1";
+    // 1.2: added CONFIG_SYNC
+    public static final String PROTOCOL = "1.2";
 
     //C2S
     public static final String DWARF_SELECT_TRADE = join(JolCraftDictionary.DWARF, JolCraftDictionary.SELECT, JolCraftDictionary.TRADE);
@@ -19,5 +20,6 @@ public class JolCraftNetworkIds extends JolCraftIds {
     public static final String DELIRIUM_CURSE = JolCraftEffectIds.DELIRIUM_CURSE;
     public static final String DWARF_MERCHANT_OFFERS = join(JolCraftDictionary.DWARF, JolCraftDictionary.MERCHANT, plural(JolCraftDictionary.OFFER));
     public static final String REWARD_LOOT_TABLES = join(JolCraftDictionary.REWARD, JolCraftDictionary.LOOT, plural(JolCraftDictionary.TABLE));
+    public static final String CONFIG_SYNC = join(JolCraftDictionary.CONFIG, JolCraftDictionary.SYNC);
 
 }
