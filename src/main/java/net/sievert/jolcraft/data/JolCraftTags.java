@@ -50,8 +50,11 @@ public final class JolCraftTags {
         public static final TagKey<Item> UNFINISHED_BREW = createTag(JolCraftTagIds.UNFINISHED_BREW);
         public static final TagKey<Item> YEAST_BREW = createTag(JolCraftTagIds.YEAST_BREW);
         public static final TagKey<Item> TANNIN_BREW = createTag(JolCraftTagIds.TANNIN_BREW);
-        public static final TagKey<Item> REPAIRS_DEEPSLATE = createTag(JolCraftTagIds.REPAIRS_DEEPSLATE);
-        public static final TagKey<Item> REPAIRS_MITHRIL = createTag(JolCraftTagIds.REPAIRS_MITHRIL);
+        /** Repair tag of an equipment material; {@code JolCraftMaterials.Material#repairTag()} caches it. */
+        public static TagKey<Item> repairs(String materialId) {
+            return createTag(JolCraftTagIds.repairs(materialId));
+        }
+
         public static final TagKey<Item> MITHRIL_ITEMS = createTag(JolCraftTagIds.MITHRIL_ITEMS);
 
         // Salvage

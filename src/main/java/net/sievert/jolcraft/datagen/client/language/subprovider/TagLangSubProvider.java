@@ -8,6 +8,7 @@ import net.sievert.jolcraft.data.language.JolCraftDictionary;
 import net.sievert.jolcraft.datagen.base.JolCraftDataProvider;
 import net.sievert.jolcraft.datagen.client.language.LanguageSubProvider;
 import net.sievert.jolcraft.util.JolCraftStrings;
+import net.sievert.jolcraft.world.item.material.JolCraftMaterials;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
@@ -75,6 +76,12 @@ public final class TagLangSubProvider implements LanguageSubProvider {
                 JolCraftTags.class,
                 tags
         );
+
+        for (JolCraftMaterials.Material material : JolCraftMaterials.Material.values()) {
+            if (!tags.contains(material.repairTag())) {
+                tags.add(material.repairTag());
+            }
+        }
 
         return tags;
     }

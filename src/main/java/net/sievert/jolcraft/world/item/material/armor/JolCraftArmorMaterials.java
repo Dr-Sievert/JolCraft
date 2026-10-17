@@ -9,7 +9,6 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.sievert.jolcraft.JolCraft;
-import net.sievert.jolcraft.data.JolCraftTags;
 import net.sievert.jolcraft.data.language.JolCraftDictionary;
 import net.sievert.jolcraft.world.item.material.JolCraftMaterials;
 import net.sievert.jolcraft.world.sound.JolCraftSounds;
@@ -38,7 +37,7 @@ public final class JolCraftArmorMaterials {
                 JolCraftSounds.ARMOR_EQUIP_DEEPSLATE,
                 1.0F,
                 0.1F,
-                () -> Ingredient.of(JolCraftTags.Items.REPAIRS_DEEPSLATE),
+                JolCraftMaterials.Material.DEEPSLATE::repairIngredient,
                 layers(JolCraftDictionary.DEEPSLATE)
         ));
 
@@ -55,7 +54,7 @@ public final class JolCraftArmorMaterials {
                 SoundEvents.ARMOR_EQUIP_NETHERITE,
                 4.0F,
                 0.0F,
-                () -> Ingredient.of(JolCraftTags.Items.REPAIRS_MITHRIL),
+                JolCraftMaterials.Material.MITHRIL::repairIngredient,
                 layers(JolCraftDictionary.MITHRIL)
         ));
 

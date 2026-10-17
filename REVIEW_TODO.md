@@ -8,7 +8,8 @@ Status: 96 verified findings merged into 87 items (16 medium, 71 low). No critic
 
 Ordered by impact as judged in the synthesis.
 
-- [ ] **R1. Deepslate and mithril repair tags are never generated, so gear cannot be repaired with its material**  
+- [x] **R1. Deepslate and mithril repair tags are never generated, so gear cannot be repaired with its material**  
+  Done 2026-10-17: `JolCraftMaterials.Material` now owns `repairItem()`, `repairTag()` and `repairIngredient()`; tool tiers and armor materials read from the material, and the item tag provider plus tag language subprovider iterate `Material.values()`, so a new material cannot ship without a populated repair tag.  
   `JolCraftArmorMaterials.java:41`, `JolCraftTags.java:53`, `JolCraftItemTagProvider.java:70` · resource-consistency · `src/main/java/net/sievert/jolcraft/datagen/tag/provider/JolCraftItemTagProvider.java`  
   No tag provider ever fills jolcraft:repairs_deepslate or jolcraft:repairs_mithril, so the repair Ingredient for every deepslate and mithril tool and armor material is empty. Anvil repair with the material never works, though nothing crashes and repairing by combining two items still works.  
   Fix: In JolCraftItemTagProvider.run add target.tag(JolCraftTags.Items.REPAIRS_DEEPSLATE).add(<deepslate repair item, e.g. the deepslate plate or ingot item>) and target.tag(REPAIRS_MITHRIL).add(JolCraftItems.MITHRIL_INGOT.get()). Use whatever item the recipes treat as the material.
@@ -16,6 +17,7 @@ Ordered by impact as judged in the synthesis.
   Also reported as: Deepslate and mithril gear can never be repaired with materials (repair tags are empty) (`JolCraftArmorMaterials.java:41`).
 
 - [ ] **R2. Muffhorn is not obtainable in survival, but trades, bounties and recipes depend on its products**  
+  Correction 2026-10-17: the Journeyman Merchant pooled trades (DwarfMerchantTrades.java:476-480, `pooledBuy` = coins for item) SELL fur and milk, so the products are buyable. Only the animal itself is unobtainable (no spawn placement, no biome modifier, not in any structure piece, egg only in creative).  
   `JolCraftModEvents.java:53` · registration · `src/main/java/net/sievert/jolcraft/event/mod/JolCraftModEvents.java`  
   The Muffhorn never spawns in survival: it has no spawn placement, no add_spawns biome modifier, is in none of the 201 structure NBTs, and its spawn egg is in no loot table or trade. So Muffhorn fur and milk can only come from creative or commands. That leaves two journeyman bounty pool entries impossible to complete, plus the fur-block recipe and the two milk-to-Inverix mortar recipes. Inverix itself can still be found in crate loot.  
   Fix: Add a neoforge:add_spawns biome modifier for jolcraft:muffhorn (for example in plains or mountain biomes) in JolCraftBiomeModifiers. Register SpawnPlacements.ON_GROUND with Animal.checkAnimalSpawnRules in a RegisterSpawnPlacementsEvent handler. Alternatively, spawn it in a structure, or give another way to obtain the fur and milk.
