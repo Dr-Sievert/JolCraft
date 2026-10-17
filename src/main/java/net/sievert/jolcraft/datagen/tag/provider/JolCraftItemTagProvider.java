@@ -19,6 +19,7 @@ import net.sievert.jolcraft.util.JolCraftStrings;
 import net.sievert.jolcraft.world.block.JolCraftBlocks;
 import net.sievert.jolcraft.world.item.JolCraftItems;
 import net.sievert.jolcraft.world.item.equipment.JolCraftArmorItemSet;
+import net.sievert.jolcraft.world.item.material.JolCraftMaterials;
 import net.sievert.jolcraft.world.item.material.trim.JolCraftAttributeTrimMaterials;
 import net.sievert.jolcraft.world.item.material.trim.JolCraftVanillaTrimMaterials;
 import net.sievert.jolcraft.world.item.equipment.JolCraftEquipmentHelper;
@@ -178,6 +179,11 @@ public final class JolCraftItemTagProvider
         target.tag(ItemTags.TRIM_MATERIALS).add(JolCraftVanillaTrimMaterials.ingredients().stream().map(Supplier::get).toArray(Item[]::new));
 
         target.tag(JolCraftTags.Items.ATTRIBUTE_TRIM_MATERIALS).add(JolCraftAttributeTrimMaterials.ingredients().stream().map(Supplier::get).toArray(Item[]::new));
+
+        // Repair materials: one tag per equipment material, filled from the material's own repair item
+        for (JolCraftMaterials.Material material : JolCraftMaterials.Material.values()) {
+            target.tag(material.repairTag()).add(material.repairItem().get());
+        }
 
         // Functional
 

@@ -48,8 +48,11 @@ public final class JolCraftTagIds extends JolCraftIds {
     public static final String YEAST_BREW = join(JolCraftItemIds.YEAST, JolCraftDictionary.BREW);
     public static final String TANNIN_BREW = join(JolCraftDictionary.TANNIN, JolCraftDictionary.BREW);
 
-    public static final String REPAIRS_DEEPSLATE = join(plural(JolCraftDictionary.REPAIR), JolCraftDictionary.DEEPSLATE);
-    public static final String REPAIRS_MITHRIL = join(plural(JolCraftDictionary.REPAIR), JolCraftDictionary.MITHRIL);
+    /** Repair tag id of an equipment material, e.g. {@code repairs_deepslate}. */
+    public static String repairs(String materialId) {
+        return join(plural(JolCraftDictionary.REPAIR), materialId);
+    }
+
     public static final String MITHRIL_ITEMS = join(JolCraftDictionary.MITHRIL, plural(JolCraftDictionary.ITEM));
 
     public static final String GLOBAL_SALVAGE = join(JolCraftDictionary.GLOBAL, JolCraftDictionary.SALVAGE);

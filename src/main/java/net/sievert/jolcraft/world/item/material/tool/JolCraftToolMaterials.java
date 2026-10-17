@@ -1,20 +1,16 @@
 package net.sievert.jolcraft.world.item.material.tool;
 
-import com.google.common.base.Suppliers;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.Block;
-import net.sievert.jolcraft.data.JolCraftTags;
 import net.sievert.jolcraft.world.item.material.JolCraftMaterials;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 public final class JolCraftToolMaterials {
 
@@ -23,7 +19,6 @@ public final class JolCraftToolMaterials {
 
     private record Entry(
             JolCraftMaterials.Material material,
-            TagKey<Item> repairTag,
             TagKey<Block> incorrectForTag,
             int durability,
             float speed,
@@ -32,9 +27,6 @@ public final class JolCraftToolMaterials {
     ) {
         public Tier build() {
             return new Tier() {
-                private final Supplier<Ingredient> repairIngredient =
-                        Suppliers.memoize(() -> Ingredient.of(repairTag));
-
                 @Override
                 public int getUses() {
                     return durability;
@@ -62,19 +54,8 @@ public final class JolCraftToolMaterials {
 
                 @Override
                 public @NotNull Ingredient getRepairIngredient() {
-                    return repairIngredient.get();
+                    return material.repairIngredient();
                 }
-            };
-        }
-
-        public Tier asTier() {
-            return new Tier() {
-                @Override public int getUses() { return durability; }
-                @Override public float getSpeed() { return speed; }
-                @Override public float getAttackDamageBonus() { return attackDamageBonus; }
-                @Override public @NotNull TagKey<Block> getIncorrectBlocksForDrops() { return incorrectForTag; }
-                @Override public int getEnchantmentValue() { return enchantmentValue; }
-                @Override public @NotNull Ingredient getRepairIngredient() { return Ingredient.of(repairTag); }
             };
         }
     }
@@ -82,7 +63,6 @@ public final class JolCraftToolMaterials {
     private static final List<Entry> ENTRIES = List.of(
             new Entry(
                     JolCraftMaterials.Material.DEEPSLATE,
-                    JolCraftTags.Items.REPAIRS_DEEPSLATE,
                     BlockTags.INCORRECT_FOR_IRON_TOOL,
                     1200,
                     6.0F,
@@ -91,7 +71,6 @@ public final class JolCraftToolMaterials {
             ),
             new Entry(
                     JolCraftMaterials.Material.MITHRIL,
-                    JolCraftTags.Items.REPAIRS_MITHRIL,
                     BlockTags.INCORRECT_FOR_NETHERITE_TOOL,
                     5000,
                     10.0F,
