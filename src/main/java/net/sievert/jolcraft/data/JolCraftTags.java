@@ -90,6 +90,7 @@ public final class JolCraftTags {
         public static final TagKey<Block> HOPS_BOTTOM = createTag(JolCraftTagIds.HOPS_BOTTOM);
         public static final TagKey<Block> HOPS_TOP = createTag(JolCraftTagIds.HOPS_TOP);
         public static final TagKey<Block> SHEARS_LOOT = createTag(JolCraftTagIds.SHEARS_LOOT);
+        public static final TagKey<Block> MUFFHORN_SPAWNABLE_ON = createTag(JolCraftTagIds.MUFFHORN_SPAWNABLE_ON);
 
         private static TagKey<Block> createTag(String id) {
             return BlockTags.create(JolCraft.location(id));
