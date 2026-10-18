@@ -3,6 +3,7 @@ package net.sievert.jolcraft.data.id.tag;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Items;
 import net.sievert.jolcraft.data.id.JolCraftIds;
+import net.sievert.jolcraft.data.id.entity.creature.JolCraftCreatureIds;
 import net.sievert.jolcraft.data.id.entity.dwarf.JolCraftDwarfIds;
 import net.sievert.jolcraft.data.id.item.JolCraftItemIds;
 import net.sievert.jolcraft.data.id.item.JolCraftMaterialIds;
@@ -92,6 +93,8 @@ public final class JolCraftTagIds extends JolCraftIds {
     public static final String HOPS_BOTTOM = join(plural(JolCraftDictionary.HOP), JolCraftDictionary.BOTTOM);
 
     public static final String SHEARS_LOOT = join(BuiltInRegistries.ITEM.getKey(Items.SHEARS).getPath(), JolCraftDictionary.LOOT);
+
+    public static final String MUFFHORN_SPAWNABLE_ON = join(JolCraftCreatureIds.MUFFHORN, JolCraftDictionary.SPAWNABLE, JolCraftDictionary.ON);
 
     // ---------------------------------------------------------------------
     // Entity

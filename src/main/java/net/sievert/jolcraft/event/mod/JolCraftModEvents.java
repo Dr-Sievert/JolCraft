@@ -3,14 +3,17 @@ package net.sievert.jolcraft.event.mod;
 import net.minecraft.core.Holder;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
+import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.registries.NewRegistryEvent;
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.data.JolCraftRegistries;
@@ -53,6 +56,21 @@ public final class JolCraftModEvents {
         event.put(JolCraftEntities.MUFFHORN.get(), MuffhornEntity.createAttributes().build()); entityTypes++;
 
         JolCraftLogs.info(JolCraftLogTags.INIT, "Registered attributes for {} new entity types", entityTypes);
+    }
+
+    @SubscribeEvent
+    public static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event) {
+        int entityTypes = 0;
+
+        event.register(
+                JolCraftEntities.MUFFHORN.get(),
+                SpawnPlacementTypes.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                MuffhornEntity::checkMuffhornSpawnRules,
+                RegisterSpawnPlacementsEvent.Operation.REPLACE
+        ); entityTypes++;
+
+        JolCraftLogs.info(JolCraftLogTags.INIT, "Registered spawn placements for {} entity types", entityTypes);
     }
 
     @SubscribeEvent

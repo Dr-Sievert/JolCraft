@@ -16,13 +16,15 @@ Ordered by impact as judged in the synthesis.
   Also reported as: repairs_deepslate and repairs_mithril item tags are used as repair ingredients but never generated (`JolCraftTags.java:53`).
   Also reported as: Deepslate and mithril gear can never be repaired with materials (repair tags are empty) (`JolCraftArmorMaterials.java:41`).
 
-- [ ] **R2. Muffhorn is not obtainable in survival, but trades, bounties and recipes depend on its products**  
+- [x] **R2. Muffhorn is not obtainable in survival, but trades, bounties and recipes depend on its products**  
+  Done 2026-10-18: `add_spawn_muffhorn` biome modifier (weight 5, groups 2-4) on `#jolcraft:mountains_and_hills`; `jolcraft:muffhorn_spawnable_on` block tag (= `#minecraft:goats_spawnable_on`); `MuffhornEntity.checkMuffhornSpawnRules` registered via `RegisterSpawnPlacementsEvent` (on ground, `MOTION_BLOCKING_NO_LEAVES`, daylight) in `JolCraftModEvents`.  
   Correction 2026-10-17: the Journeyman Merchant pooled trades (DwarfMerchantTrades.java:476-480, `pooledBuy` = coins for item) SELL fur and milk, so the products are buyable. Only the animal itself is unobtainable (no spawn placement, no biome modifier, not in any structure piece, egg only in creative).  
   `JolCraftModEvents.java:53` · registration · `src/main/java/net/sievert/jolcraft/event/mod/JolCraftModEvents.java`  
   The Muffhorn never spawns in survival: it has no spawn placement, no add_spawns biome modifier, is in none of the 201 structure NBTs, and its spawn egg is in no loot table or trade. So Muffhorn fur and milk can only come from creative or commands. That leaves two journeyman bounty pool entries impossible to complete, plus the fur-block recipe and the two milk-to-Inverix mortar recipes. Inverix itself can still be found in crate loot.  
   Fix: Add a neoforge:add_spawns biome modifier for jolcraft:muffhorn (for example in plains or mountain biomes) in JolCraftBiomeModifiers. Register SpawnPlacements.ON_GROUND with Animal.checkAnimalSpawnRules in a RegisterSpawnPlacementsEvent handler. Alternatively, spawn it in a structure, or give another way to obtain the fur and milk.
 
-- [ ] **R3. Unopened loot-table strongbox loses its loot when broken without Silk Touch**  
+- [x] **R3. Unopened loot-table strongbox loses its loot when broken without Silk Touch**  
+  Done 2026-10-18: `StrongboxBlock.getStrongboxDrops` calls `unpackLootTable(null)` in the unlocked non-silk branch (no-op while locked, matches vanilla container access).  
   `StrongboxBlock.java:191` · persistence · `src/main/java/net/sievert/jolcraft/world/block/custom/StrongboxBlock.java`  
   getStrongboxDrops reads the raw items list without calling unpackLootTable, so an unlocked strongbox with a pending loot table drops only the empty box and its loot is discarded.  
   Fix: In the unlocked non-silk branch, call strongbox.unpackLootTable(null) before iterating the items.

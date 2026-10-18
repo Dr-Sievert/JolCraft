@@ -89,6 +89,9 @@ public final class JolCraftBlockTagProvider
                 .add(JolCraftBlocks.VERDANT_SOIL.get())
                 .add(JolCraftBlocks.VERDANT_FARMLAND.get());
 
+        target.tag(JolCraftTags.Blocks.MUFFHORN_SPAWNABLE_ON)
+                .addTag(BlockTags.GOATS_SPAWNABLE_ON);
+
         // Vanilla
 
         target.tag(BlockTags.MINEABLE_WITH_PICKAXE)

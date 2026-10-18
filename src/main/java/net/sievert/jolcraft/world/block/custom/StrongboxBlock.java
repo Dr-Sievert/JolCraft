@@ -192,6 +192,10 @@ public class StrongboxBlock extends BaseEntityBlock implements SimpleWaterlogged
             return List.of(new ItemStack(JolCraftItems.STRONGBOX_ITEM.get()));
         }
 
+        // Unopened worldgen boxes still hold a pending loot table: roll it like vanilla containers do on access,
+        // otherwise breaking the box discards the loot. The entity's override is a no-op while locked.
+        strongbox.unpackLootTable(null);
+
         List<ItemStack> drops = new java.util.ArrayList<>();
         drops.add(new ItemStack(JolCraftItems.STRONGBOX_ITEM.get()));
 

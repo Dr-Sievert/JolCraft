@@ -2,6 +2,7 @@ package net.sievert.jolcraft.data.id.worldgen;
 
 import net.sievert.jolcraft.data.id.JolCraftIds;
 import net.sievert.jolcraft.data.id.block.JolCraftBlockIds;
+import net.sievert.jolcraft.data.id.entity.creature.JolCraftCreatureIds;
 import net.sievert.jolcraft.data.language.JolCraftDictionary;
 import net.sievert.jolcraft.util.JolCraftStrings;
 
@@ -65,6 +66,13 @@ public final class JolCraftBiomeModifierIds extends JolCraftIds {
 
     public static final String ADD_BASALT_GEODE =
             add(JolCraftConfiguredFeatureIds.BASALT_GEODE);
+
+    // ---------------------------------------------------------------------
+    // Spawns
+    // ---------------------------------------------------------------------
+
+    public static final String ADD_SPAWN_MUFFHORN =
+            add(JolCraftDictionary.SPAWN, JolCraftCreatureIds.MUFFHORN);
 
     // ---------------------------------------------------------------------
     // Helper

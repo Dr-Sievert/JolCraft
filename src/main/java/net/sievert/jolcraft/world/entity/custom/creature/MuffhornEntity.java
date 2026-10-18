@@ -12,6 +12,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -32,8 +33,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUtils;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.IShearable;
+import net.sievert.jolcraft.data.JolCraftTags;
 import net.sievert.jolcraft.world.block.JolCraftBlocks;
 import net.sievert.jolcraft.world.entity.JolCraftEntities;
 import net.sievert.jolcraft.world.item.JolCraftItems;
@@ -151,6 +154,17 @@ public class MuffhornEntity extends Animal implements IShearable {
                 .add(Attributes.MAX_HEALTH, 20.0)
                 .add(Attributes.MOVEMENT_SPEED, 0.2F)
                 .add(Attributes.FOLLOW_RANGE, 24D);
+    }
+
+    /**
+     * Natural spawn rule, registered through {@code RegisterSpawnPlacementsEvent}: a block from
+     * {@code jolcraft:muffhorn_spawnable_on} underfoot and daylight, like goats on their blocks.
+     * Which biomes list the Muffhorn at all is decided by the {@code add_spawn_muffhorn} biome modifier.
+     */
+    public static boolean checkMuffhornSpawnRules(
+            EntityType<? extends Animal> type, LevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random
+    ) {
+        return level.getBlockState(pos.below()).is(JolCraftTags.Blocks.MUFFHORN_SPAWNABLE_ON) && isBrightEnoughToSpawn(level, pos);
     }
 
     @Override

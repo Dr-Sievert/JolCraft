@@ -6,6 +6,7 @@ import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.neoforged.neoforge.common.world.BiomeModifier;
 import net.neoforged.neoforge.common.world.BiomeModifiers;
@@ -13,6 +14,7 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.data.JolCraftTags;
 import net.sievert.jolcraft.data.id.worldgen.JolCraftBiomeModifierIds;
+import net.sievert.jolcraft.world.entity.JolCraftEntities;
 import net.sievert.jolcraft.world.worldgen.feature.JolCraftPlacedFeatures;
 
 public class JolCraftBiomeModifiers {
@@ -67,6 +69,11 @@ public class JolCraftBiomeModifiers {
 
     public static final ResourceKey<BiomeModifier> ADD_BASALT_GEODE =
             registerKey(JolCraftBiomeModifierIds.ADD_BASALT_GEODE);
+
+    // Spawns
+
+    public static final ResourceKey<BiomeModifier> ADD_SPAWN_MUFFHORN =
+            registerKey(JolCraftBiomeModifierIds.ADD_SPAWN_MUFFHORN);
 
     public static void bootstrap(BootstrapContext<BiomeModifier> context) {
         var placedFeatures = context.lookup(Registries.PLACED_FEATURE);
@@ -196,6 +203,15 @@ public class JolCraftBiomeModifiers {
                         biomes.getOrThrow(BiomeTags.IS_OVERWORLD),
                         HolderSet.direct(placedFeatures.getOrThrow(JolCraftPlacedFeatures.BASALT_GEODE_PLACED_KEY)),
                         GenerationStep.Decoration.UNDERGROUND_STRUCTURES
+                )
+        );
+
+        //Spawns
+        context.register(
+                ADD_SPAWN_MUFFHORN,
+                BiomeModifiers.AddSpawnsBiomeModifier.singleSpawn(
+                        biomes.getOrThrow(JolCraftTags.Biomes.MOUNTAINS_AND_HILLS),
+                        new MobSpawnSettings.SpawnerData(JolCraftEntities.MUFFHORN.get(), 5, 2, 4)
                 )
         );
 
