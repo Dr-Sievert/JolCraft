@@ -3,7 +3,9 @@ package net.sievert.jolcraft.datagen.recipe.subprovider;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 import net.sievert.jolcraft.data.language.JolCraftDictionary;
 import net.sievert.jolcraft.datagen.base.JolCraftDataProvider;
@@ -80,8 +82,8 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 JolCraftItems.MITHRIL_WARHAMMER.get()
         );
 
-        artisanHammer(output, Items.OAK_PLANKS, Items.STICK, JolCraftItems.WOODEN_ARTISAN_HAMMER.get());
-        artisanHammer(output, Items.COBBLESTONE, Items.STICK, JolCraftItems.STONE_ARTISAN_HAMMER.get());
+        artisanHammer(output, Ingredient.of(ItemTags.PLANKS), Items.OAK_PLANKS, Items.STICK, JolCraftItems.WOODEN_ARTISAN_HAMMER.get());
+        artisanHammer(output, Ingredient.of(ItemTags.STONE_TOOL_MATERIALS), Items.COBBLESTONE, Items.STICK, JolCraftItems.STONE_ARTISAN_HAMMER.get());
         artisanHammer(output, Items.IRON_INGOT, Items.STICK, JolCraftItems.IRON_ARTISAN_HAMMER.get());
         artisanHammer(output, Items.GOLD_INGOT, Items.STICK, JolCraftItems.GOLDEN_ARTISAN_HAMMER.get());
         artisanHammer(output, Items.DIAMOND, Items.STICK, JolCraftItems.DIAMOND_ARTISAN_HAMMER.get());
@@ -96,8 +98,8 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .unlockedByHas(Items.NETHERITE_INGOT)
                 .save(output, FOLDER);
 
-        chisel(output, Items.OAK_PLANKS, Items.STICK, JolCraftItems.WOODEN_CHISEL.get());
-        chisel(output, Items.COBBLESTONE, Items.STICK, JolCraftItems.STONE_CHISEL.get());
+        chisel(output, Ingredient.of(ItemTags.PLANKS), Items.OAK_PLANKS, Items.STICK, JolCraftItems.WOODEN_CHISEL.get());
+        chisel(output, Ingredient.of(ItemTags.STONE_TOOL_MATERIALS), Items.COBBLESTONE, Items.STICK, JolCraftItems.STONE_CHISEL.get());
         chisel(output, Items.IRON_INGOT, Items.STICK, JolCraftItems.IRON_CHISEL.get());
         chisel(output, Items.GOLD_INGOT, Items.STICK, JolCraftItems.GOLDEN_CHISEL.get());
         chisel(output, Items.DIAMOND, Items.STICK, JolCraftItems.DIAMOND_CHISEL.get());
@@ -112,8 +114,8 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .unlockedByHas(Items.NETHERITE_INGOT)
                 .save(output, FOLDER);
 
-        pestle(output, Items.OAK_PLANKS, Items.STICK, JolCraftItems.WOODEN_PESTLE.get());
-        pestle(output, Items.COBBLESTONE, Items.STICK, JolCraftItems.STONE_PESTLE.get());
+        pestle(output, Ingredient.of(ItemTags.PLANKS), Items.OAK_PLANKS, Items.STICK, JolCraftItems.WOODEN_PESTLE.get());
+        pestle(output, Ingredient.of(ItemTags.STONE_TOOL_MATERIALS), Items.COBBLESTONE, Items.STICK, JolCraftItems.STONE_PESTLE.get());
         pestle(output, Items.IRON_INGOT, Items.STICK, JolCraftItems.IRON_PESTLE.get());
         pestle(output, Items.GOLD_INGOT, Items.STICK, JolCraftItems.GOLDEN_PESTLE.get());
         pestle(output, Items.DIAMOND, Items.STICK, JolCraftItems.DIAMOND_PESTLE.get());
@@ -128,8 +130,8 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .unlockedByHas(Items.NETHERITE_INGOT)
                 .save(output, FOLDER);
 
-        spanner(output, Items.OAK_PLANKS, Items.STICK, JolCraftItems.WOODEN_SPANNER.get());
-        spanner(output, Items.COBBLESTONE, Items.STICK, JolCraftItems.STONE_SPANNER.get());
+        spanner(output, Ingredient.of(ItemTags.PLANKS), Items.OAK_PLANKS, Items.STICK, JolCraftItems.WOODEN_SPANNER.get());
+        spanner(output, Ingredient.of(ItemTags.STONE_TOOL_MATERIALS), Items.COBBLESTONE, Items.STICK, JolCraftItems.STONE_SPANNER.get());
         spanner(output, Items.IRON_INGOT, Items.STICK, JolCraftItems.IRON_SPANNER.get());
         spanner(output, Items.GOLD_INGOT, Items.STICK, JolCraftItems.GOLDEN_SPANNER.get());
         spanner(output, Items.DIAMOND, Items.STICK, JolCraftItems.DIAMOND_SPANNER.get());
@@ -371,6 +373,17 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
             ItemLike rod,
             ItemLike outItem
     ) {
+        artisanHammer(out, Ingredient.of(head), head, rod, outItem);
+    }
+
+    // head may be a tag ingredient; unlock is the representative item for the advancement.
+    private static void artisanHammer(
+            RecipeOutput out,
+            Ingredient head,
+            ItemLike unlock,
+            ItemLike rod,
+            ItemLike outItem
+    ) {
         VanillaRecipeBuilder.shaped(
                         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, outItem)
                 )
@@ -378,7 +391,7 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .pattern("X")
                 .define('B', head)
                 .define('X', rod)
-                .unlockedByHas(head)
+                .unlockedByHas(unlock)
                 .save(out, FOLDER, outItem);
     }
 
@@ -388,6 +401,16 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
             ItemLike rod,
             ItemLike outItem
     ) {
+        chisel(out, Ingredient.of(head), head, rod, outItem);
+    }
+
+    private static void chisel(
+            RecipeOutput out,
+            Ingredient head,
+            ItemLike unlock,
+            ItemLike rod,
+            ItemLike outItem
+    ) {
         String baseId = itemName(outItem);
 
         VanillaRecipeBuilder.shaped(
@@ -397,7 +420,7 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .pattern("X ")
                 .define('B', head)
                 .define('X', rod)
-                .unlockedByHas(head)
+                .unlockedByHas(unlock)
                 .save(out, FOLDER, baseId + "_right");
 
         VanillaRecipeBuilder.shaped(
@@ -407,7 +430,7 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .pattern(" X")
                 .define('B', head)
                 .define('X', rod)
-                .unlockedByHas(head)
+                .unlockedByHas(unlock)
                 .save(out, FOLDER, baseId + "_left");
     }
 
@@ -417,6 +440,16 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
             ItemLike rod,
             ItemLike outItem
     ) {
+        pestle(out, Ingredient.of(head), head, rod, outItem);
+    }
+
+    private static void pestle(
+            RecipeOutput out,
+            Ingredient head,
+            ItemLike unlock,
+            ItemLike rod,
+            ItemLike outItem
+    ) {
         String baseId = itemName(outItem);
 
         VanillaRecipeBuilder.shaped(
@@ -426,7 +459,7 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .pattern(" B")
                 .define('B', head)
                 .define('X', rod)
-                .unlockedByHas(head)
+                .unlockedByHas(unlock)
                 .save(out, FOLDER, baseId + "_right");
 
         VanillaRecipeBuilder.shaped(
@@ -436,13 +469,23 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .pattern("B ")
                 .define('B', head)
                 .define('X', rod)
-                .unlockedByHas(head)
+                .unlockedByHas(unlock)
                 .save(out, FOLDER, baseId + "_left");
     }
 
     private static void spanner(
             RecipeOutput out,
             ItemLike head,
+            ItemLike rod,
+            ItemLike outItem
+    ) {
+        spanner(out, Ingredient.of(head), head, rod, outItem);
+    }
+
+    private static void spanner(
+            RecipeOutput out,
+            Ingredient head,
+            ItemLike unlock,
             ItemLike rod,
             ItemLike outItem
     ) {
@@ -456,7 +499,7 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .pattern(" X")
                 .define('B', head)
                 .define('X', rod)
-                .unlockedByHas(head)
+                .unlockedByHas(unlock)
                 .save(out, FOLDER, baseId + "_right");
 
         VanillaRecipeBuilder.shaped(
@@ -467,7 +510,7 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .pattern("X ")
                 .define('B', head)
                 .define('X', rod)
-                .unlockedByHas(head)
+                .unlockedByHas(unlock)
                 .save(out, FOLDER, baseId + "_left");
     }
 

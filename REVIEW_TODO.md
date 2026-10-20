@@ -138,7 +138,8 @@ Ordered by impact as judged in the synthesis.
   Items.LILAC, ROSE_BUSH and SUNFLOWER (the double-tall flowers) are ground for 4 dye, but Items.PEONY has no recipe.  
   Fix: Add MortarRecipeBuilder.create().input(Items.PEONY).result(Items.PINK_DYE, 4).grindingWork(20).toolDamage(1).
 
-- [ ] **R21. Wooden and stone tool recipes accept only oak planks and plain cobblestone**  
+- [x] **R21. Wooden and stone tool recipes accept only oak planks and plain cobblestone**  
+  Done 2026-10-20: `artisanHammer`, `chisel`, `pestle` and `spanner` in `ToolRecipesSubProvider` now have an `Ingredient` core with a separate unlock item (the `ItemLike` overloads delegate to it). The wooden tier keys on `#minecraft:planks` and the stone tier on `#minecraft:stone_tool_materials`; unlocks stay on oak planks / cobblestone.  
   `ToolRecipesSubProvider.java:83` · logic · `src/main/java/net/sievert/jolcraft/datagen/recipe/subprovider/ToolRecipesSubProvider.java`  
   The wooden and stone artisan hammer, chisel, pestle and spanner recipes accept only oak planks and cobblestone, where vanilla tools accept any plank and any stone tool material. This is an inconsistency and a convenience gap, not a progression blocker: oak and cobblestone are widely available, and the iron and higher tiers need only vanilla materials.  
   Fix: Change the helper parameter type to a TagKey or Ingredient and pass ItemTags.PLANKS and ItemTags.STONE_TOOL_MATERIALS. Keep unlockedBy on a representative item.
