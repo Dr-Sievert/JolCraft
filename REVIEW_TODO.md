@@ -120,7 +120,8 @@ Ordered by impact as judged in the synthesis.
 
 ### Logic and gameplay
 
-- [ ] **R18. Festerling crop drops nothing at ages 1-2 and no seed or flesh at age 3**  
+- [x] **R18. Festerling crop drops nothing at ages 1-2 and no seed or flesh at age 3**  
+  Done 2026-10-20, intended design per the author: the planted rotten flesh is never refunded, at any age. Removed the age 0 rotten flesh pool, so the crop drops nothing until age 3, where it drops a festerling.  
   `JolCraftBlockLootTableProvider.java:132` · logic · `src/main/java/net/sievert/jolcraft/datagen/loot/table/subprovider/JolCraftBlockLootTableProvider.java`  
   The festerling crop loot table only refunds rotten flesh at age 0, so a crop broken at age 1 or 2 drops nothing and the planted rotten flesh is lost. The flesh pool should be conditioned on age < 3, not age == 0. The age 3 festerling-only drop is intended.  
   Fix: Make the rotten flesh pool unconditional, or condition it on age < 3 (inverted condition). Keep the age 3 pool for the festerling.
