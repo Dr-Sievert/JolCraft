@@ -129,15 +129,9 @@ public final class JolCraftBlockLootTableProvider
         target.add(JolCraftBlocks.FESTERLING_BLOCK.get(), block -> this.createMushroomBlockDrop(block, JolCraftBlocks.FESTERLING.get()));
         target.dropWhenSilkTouch(JolCraftBlocks.FESTERLING_STEM.get());
 
+        // The planted rotten flesh is never refunded; only a mature crop drops anything.
         target.add(JolCraftBlocks.FESTERLING_CROP.get(),
                 LootTable.lootTable()
-                        .withPool(LootPool.lootPool()
-                                .when(LootItemBlockStatePropertyCondition
-                                        .hasBlockStateProperties(JolCraftBlocks.FESTERLING_CROP.get())
-                                        .setProperties(StatePropertiesPredicate.Builder.properties().hasProperty(FesterlingCropBlock.AGE, 0)))
-                                .setRolls(ConstantValue.exactly(1))
-                                .add(LootItem.lootTableItem(Items.ROTTEN_FLESH))
-                        )
                         .withPool(LootPool.lootPool()
                                 .when(LootItemBlockStatePropertyCondition
                                         .hasBlockStateProperties(JolCraftBlocks.FESTERLING_CROP.get())
