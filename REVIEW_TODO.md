@@ -126,7 +126,8 @@ Ordered by impact as judged in the synthesis.
   The festerling crop loot table only refunds rotten flesh at age 0, so a crop broken at age 1 or 2 drops nothing and the planted rotten flesh is lost. The flesh pool should be conditioned on age < 3, not age == 0. The age 3 festerling-only drop is intended.  
   Fix: Make the rotten flesh pool unconditional, or condition it on age < 3 (inverted condition). Keep the age 3 pool for the festerling.
 
-- [ ] **R19. Coin detection by item uses registry-holder tags, which are unbound during datagen**  
+- [x] **R19. Coin detection by item uses registry-holder tags, which are unbound during datagen**  
+  Done 2026-10-20: `DwarfTradeRecipeBuilder.isCoinItem` matches gold coin / coin pouch by item, and `isCoinCost` inspects the ingredient's values for the coins tag or a coin item; the five generic setters use these instead of `builtInRegistryHolder().is(COINS_TAG)` / `TradeCost.contains()`. Generated recipes are unchanged.  
   `DwarfTradeRecipeBuilder.java:556` · logic · `src/main/java/net/sievert/jolcraft/datagen/recipe/builder/DwarfTradeRecipeBuilder.java`  
   The generic costA/costB/result setters that take an ItemLike or a TradeCost (DwarfTradeRecipeBuilder.java:556, 624, 727, 786, 977) check for coins with builtInRegistryHolder().is(COINS_TAG) or TradeCost.contains(), which calls ingredient.getItems(). Item tags are never bound during runData, so both checks always return false. A trade written as costA(GOLD_COIN) or costA(coinsAsCost(..)) would be named TRADE instead of BUY, and the TradeCost version would also fail with 'has no filename token'. Every current caller uses the coin-specific setters, so this cannot happen yet.  
   Fix: Compare the item against DwarfTradeRecipe.GOLD_COIN or the coin item ids directly. For TradeCost, carry a coin flag with the cost or require callers to use the coin-specific setters.
@@ -497,7 +498,8 @@ Ordered by impact as judged in the synthesis.
 - [ ] **R88. corruption_effects.json flaps between datagen runs**  
   `CorruptionEffectsConfigProvider.java`, `CorruptionEffectsConfig.java:21` · build-ci · `src/main/java/net/sievert/jolcraft/datagen/config/subprovider/CorruptionEffectsConfigProvider.java`  
   The weighted effects are written through the full `MobEffectInstance` codec, which includes NeoForge's `cures` set (`milk`, `protected_by_totem`) stored in a hash set, so two `runData` runs produce different orderings of the same file. Harmless at runtime, but it defeats diffing generated output and will show up as noise in any datagen determinism check.  
-  Fix: encode only what the config needs (effect id, duration, amplifier) in `WeightedEffect.CODEC`, or sort the cures before writing. Belongs to roadmap item 3 (datagen overhaul).
+  Fix: encode only what the config needs (effect id, duration, amplifier) in `WeightedEffect.CODEC`, or sort the cures before writing. Belongs to roadmap item 3 (datagen overhaul).  
+  Seen 2026-10-20: the same `cures` ordering also flaps `recipe/fermenting_cauldron/*_effect_unfinished_brew.json` (4 files) and `recipe/hand_interaction/test/supported_outputs.json` between consecutive `runData` runs with no code change.
 
 ## Roadmap (author's list) with related review items
 
