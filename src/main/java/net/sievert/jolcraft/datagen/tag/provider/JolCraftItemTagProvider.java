@@ -98,6 +98,14 @@ public final class JolCraftItemTagProvider
                 .add(JolCraftItems.DEEPSLATE_AXE.get())
                 .add(JolCraftItems.MITHRIL_AXE.get());
 
+        // NeoForge lists only vanilla swords and axes here; JolCraftEquipmentHelper.isMeleeWeapon reads it.
+        target.tag(Tags.Items.MELEE_WEAPON_TOOLS)
+                .add(JolCraftItems.DEEPSLATE_SWORD.get())
+                .add(JolCraftItems.MITHRIL_SWORD.get())
+                .addTags(JolCraftTags.Items.WARHAMMERS)
+                .add(JolCraftItems.DEEPSLATE_AXE.get())
+                .add(JolCraftItems.MITHRIL_AXE.get());
+
         target.tag(ItemTags.HOES)
                 .add(JolCraftItems.DEEPSLATE_HOE.get())
                 .add(JolCraftItems.MITHRIL_HOE.get());
