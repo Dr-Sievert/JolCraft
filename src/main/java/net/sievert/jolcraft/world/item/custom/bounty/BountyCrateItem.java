@@ -130,6 +130,15 @@ public class BountyCrateItem extends AbstractBountyTaskItem {
         return false;
     }
 
+    /**
+     * The crate stores a count, not the stacks, and hands back default stacks on extraction. So only a
+     * stack that already equals a fresh default stack may go in: a damaged, enchanted or renamed item
+     * would otherwise come back out as a new one.
+     */
+    private static boolean acceptsIntoCrate(ItemStack stack, Holder<Item> item) {
+        return !stack.isEmpty() && ItemStack.isSameItemSameComponents(stack, new ItemStack(item.value()));
+    }
+
     private boolean tryFillCrate(ItemStack crate, ItemStack target, SlotAccess access, int maxTransfer) {
         BountyData data = crate.get(JolCraftDataComponents.BOUNTY_DATA.get());
         if (data == null) return false;
@@ -138,7 +147,7 @@ public class BountyCrateItem extends AbstractBountyTaskItem {
             return false;
         }
 
-        if (!target.is(item)) return false;
+        if (!acceptsIntoCrate(target, item)) return false;
 
         int currentFilled = crate.getOrDefault(JolCraftDataComponents.BOUNTY_FILL.get(), 0);
 
@@ -200,7 +209,7 @@ public class BountyCrateItem extends AbstractBountyTaskItem {
 
         for (int i = 0; i < inv.items.size(); i++) {
             ItemStack s = inv.items.get(i);
-            if (!s.is(item)) continue;
+            if (!acceptsIntoCrate(s, item)) continue;
 
             int transfer = Math.min(needed - collected, s.getCount());
             if (transfer <= 0) continue;
