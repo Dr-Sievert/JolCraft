@@ -112,7 +112,8 @@ Ordered by impact as judged in the synthesis.
 
 ### Crashes
 
-- [ ] **R17. Reward crate loot table construction throws on duplicate pool names**  
+- [x] **R17. Reward crate loot table construction throws on duplicate pool names**  
+  Done 2026-10-20: `Serializer.validate` tracks non-null pool names across `rewards` and rejects the recipe with `rewards[i] duplicates pool name '...'`, so the error surfaces at recipe load instead of as a server exception in `finishUsingItem`. Generated recipes never name pools.  
   `BountyRewardRecipe.java:128` · crash · `src/main/java/net/sievert/jolcraft/world/recipe/custom/bounty/BountyRewardRecipe.java`  
   createLootTable() calls NeoForge's LootTable.addPool per reward. That throws a RuntimeException if two pools share a non-null name, and recipe validation does not check this.  
   Fix: Reject duplicate non-null pool names in Serializer.validate, or build the table with LootTable.Builder, which does not check names.
