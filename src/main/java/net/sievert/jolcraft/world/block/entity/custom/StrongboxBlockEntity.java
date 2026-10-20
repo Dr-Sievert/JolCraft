@@ -817,8 +817,6 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
             return;
         }
 
-        this.recheckOpen();
-
         BlockState state =
                 this.level.getBlockState(
                         this.getBlockPos()

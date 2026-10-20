@@ -8,6 +8,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -30,6 +31,7 @@ import net.sievert.jolcraft.world.entity.custom.dwarf.trade.DwarfMerchantOffer;
 import net.sievert.jolcraft.world.entity.custom.dwarf.trade.DwarfMerchantOffers;
 import net.sievert.jolcraft.world.gui.menu.DwarfMerchantMenu;
 import net.sievert.jolcraft.world.gui.menu.LockMenu;
+import net.sievert.jolcraft.world.gui.menu.StrongboxMenu;
 import net.sievert.jolcraft.world.recipe.custom.dwarf_trade.DwarfTradeRecipe;
 
 import java.util.List;
@@ -252,6 +254,53 @@ public class MenuAndPotionRegressionTests {
         int unlock = menu.getUnlockSlotId();
         helper.assertTrue(correct == 3 ? unlock >= 0 && unlock < 3 : unlock == -1,
                 "Received a partial lock layer: correct=" + correct + " unlock=" + unlock);
+    }
+
+    @GameTest(template = "basic")
+    public static void strongboxRechecksOpenersOnlyWhileOpen(GameTestHelper helper) {
+        BlockPos pos = new BlockPos(1, 2, 1);
+        helper.setBlock(pos, JolCraftBlocks.STRONGBOX.get());
+        BlockPos absolute = helper.absolutePos(pos);
+        ServerLevel level = helper.getLevel();
+        StrongboxBlockEntity strongbox = helper.getBlockEntity(pos);
+        ServerPlayer player = TestPlayerHelper.createPlayer(level, "strongbox_test",
+                helper.absolutePos(new BlockPos(2, 2, 1)));
+
+        try {
+            player.openMenu(strongbox, absolute);
+            helper.assertTrue(player.containerMenu instanceof StrongboxMenu,
+                    "Strongbox menu did not open");
+            helper.assertTrue(hasOpenerRecheck(level, absolute),
+                    "Opening the strongbox did not schedule an opener recheck");
+        } catch (RuntimeException e) {
+            TestPlayerHelper.disconnect(player);
+            throw e;
+        }
+
+        helper.runAfterDelay(12, () -> {
+            try {
+                helper.assertTrue(hasOpenerRecheck(level, absolute),
+                        "Opener recheck did not reschedule while the strongbox was open");
+                player.closeContainer();
+            } catch (RuntimeException e) {
+                TestPlayerHelper.disconnect(player);
+                throw e;
+            }
+        });
+
+        helper.runAfterDelay(24, () -> {
+            try {
+                helper.assertFalse(hasOpenerRecheck(level, absolute),
+                        "Opener recheck kept running after the strongbox was closed");
+                helper.succeed();
+            } finally {
+                TestPlayerHelper.disconnect(player);
+            }
+        });
+    }
+
+    private static boolean hasOpenerRecheck(ServerLevel level, BlockPos pos) {
+        return level.getBlockTicks().hasScheduledTick(pos, JolCraftBlocks.STRONGBOX.get());
     }
 
     private static final class LayerStrongbox extends StrongboxBlockEntity {
