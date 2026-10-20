@@ -35,12 +35,14 @@ Ordered by impact as judged in the synthesis.
   readAdditionalSaveData calls setProfession, which calls DwarfAttributes.applyTo and resets the ATTACK_DAMAGE base to the config value (3.0). The weapon-derived base saved in the entity's attributes tag is lost.  
   Fix: After loading, or at the end of setProfession/applyTo, call setCustomAttackDamage(getAttackDamage()). Alternatively skip ATTACK_DAMAGE in DwarfAttributes.applyMap, or re-sync in readAdditionalSaveData after super.readAdditionalSaveData and setProfession.
 
-- [ ] **R5. Hand interaction consumes both inputs even when the recipe fails (deepslate compass assembly destroys compass and dial)**  
+- [x] **R5. Hand interaction consumes both inputs even when the recipe fails (deepslate compass assembly destroys compass and dial)**  
+  Done 2026-10-20: `RecipeHook.canApply` precondition (default true), `JolCraftRecipeHooks.canApply`, `RecipeOutput.hooksCanApply` and `HandInteractionRecipe.hooksCanApply`; the handler refuses before cancelling or consuming (fail sound, cooldown, no actions). `DeepslateCompassHook` resolves compass, dial and target once for both the precondition and the output. Salvage misses still consume, as designed. Verified by three reviewers.  
   `JolCraftHandInteractionEvents.java:133` · logic · `src/main/java/net/sievert/jolcraft/event/game/world/recipe/JolCraftHandInteractionEvents.java`  
   For survival players, the deepslate compass assembly recipe uses up one empty compass and one dial even when DeepslateCompassHook turns the output down (dial has no group, or no undiscovered structure within 20 chunks). The player gets nothing back except the fail sound. The cause is that the hand-interaction handler applies the CONSUME actions without checking whether any output was generated.  
   Fix: Apply the actions only when generatedAny is true. Alternatively, move the fail path to return early after playing the fail sound, before the actions and cooldown. Also decide whether a sound-only or effect-only output should count as success.
 
-- [ ] **R6. One malformed config json aborts the entire datapack reload**  
+- [x] **R6. One malformed config json aborts the entire datapack reload**  
+  Done 2026-10-20: `JolCraftCodecConfigManager.apply` and `CorruptionEffectsConfigManager.prepare` log and skip bad or unknown files (strict: any codec error skips the file); defaults cover skipped entries, matching `applySynced`. Verified by two reviewers.  
   `JolCraftCodecConfigManager.java:67`, `JolCraftCodecConfigManager.java:72` · logic · `src/main/java/net/sievert/jolcraft/config/base/JolCraftCodecConfigManager.java`  
   The config managers throw from the reload listener on any codec error, or on a dwarf_profession file whose path is not a known profession (any namespace counts). This rejects the whole datapack reload: /reload keeps the old data, and a dedicated server refuses to start without --safeMode. The bad entry should be logged and skipped instead.  
   Fix: Log the error and skip that entry, keeping the previous or default value, as applySynced() already does for unknown ids. Use codec.parse(...).resultOrPartial(err -> JolCraftLogs.error(...)) and continue. Do the same in CorruptionEffectsConfigManager.prepare(), falling back to CorruptionEffectsConfig.defaults().
@@ -152,7 +154,8 @@ Ordered by impact as judged in the synthesis.
   The festerling planting handler places the crop without checking spectator mode, adventure mode (mayBuild/canPlaceOn) or the event's useItem=DENY. Spectators and adventure-mode players can therefore plant festerlings, and a protection mod that only denies item use is bypassed. Vanilla spawn protection on the clicked block is already enforced upstream, and protection mods that cancel the event stop it from reaching this handler.  
   Fix: Gate on event.getEntity().mayUseItemAt(cropPos, event.getFace(), event.getItemStack()) and !player.isSpectator(), and validate with canSurvive before placing.
 
-- [ ] **R27. Hand-interaction cooldown is applied to Items.AIR when an input stack was fully consumed**  
+- [x] **R27. Hand-interaction cooldown is applied to Items.AIR when an input stack was fully consumed**  
+  Done 2026-10-20 with R5: both `Item` references are captured before the actions run and used by `applyCooldowns`.  
   `JolCraftHandInteractionEvents.java:145` · logic · `src/main/java/net/sievert/jolcraft/event/game/world/recipe/JolCraftHandInteractionEvents.java`  
   main and off are the live stacks. After the actions shrink one to empty, ItemStack.getItem() returns Items.AIR for an empty stack, so addCooldown targets AIR instead of the real item.  
   Fix: Capture Item mainItem = main.getItem() and Item offItem = off.getItem() before applying the actions, and use those for the cooldowns.

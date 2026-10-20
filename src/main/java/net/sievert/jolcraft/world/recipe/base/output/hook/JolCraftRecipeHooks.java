@@ -26,6 +26,30 @@ public final class JolCraftRecipeHooks {
 
     private JolCraftRecipeHooks() {}
 
+    public static boolean canApply(
+            ResourceLocation id,
+            LootContext context,
+            RecipeInput recipeInput
+    ) {
+        RecipeHook hook =
+                HOOKS.get(id);
+
+        if (hook == null) {
+            JolCraftLogs.error(
+                    JolCraftLogTags.RECIPE,
+                    "Unknown recipe hook id={}",
+                    id
+            );
+
+            return false;
+        }
+
+        return hook.canApply(
+                context,
+                recipeInput
+        );
+    }
+
     public static boolean apply(
             ResourceLocation id,
             LootContext context,
