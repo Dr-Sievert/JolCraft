@@ -332,27 +332,8 @@ public class AbstractDwarfEntity extends AbstractTradingEntity implements Npc, D
         return blockCooldownTicks == 0;
     }
 
-    public void setCustomAttackDamage(double amount) {
-        if (this.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
-            Objects.requireNonNull(this.getAttribute(Attributes.ATTACK_DAMAGE)).setBaseValue(amount);
-        }
-    }
-
-    public double getAttackDamage() {
-        if (this.getMainHandItem().is(JolCraftItems.DEEPSLATE_WARHAMMER.get())) return 16.5D;
-        if (this.getMainHandItem().is(JolCraftItems.DEEPSLATE_AXE.get())) return 9.5D;
-        if (this.getMainHandItem().is(JolCraftItems.DEEPSLATE_PICKAXE.get())) return 4.5D;
-        return  3.0D;
-    }
-
-    @Override
-    public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
-        ItemStack oldStack = this.getItemBySlot(slot);
-        super.setItemSlot(slot, stack);
-        if (slot == EquipmentSlot.MAINHAND && !ItemStack.matches(oldStack, stack)) {
-            this.setCustomAttackDamage(this.getAttackDamage());
-        }
-    }
+    // Attack damage is the shared base from DwarfAttributes plus the held weapon's own attribute
+    // modifier, which vanilla applies to every living entity on equipment change. No per-item table.
 
     //Animation
 

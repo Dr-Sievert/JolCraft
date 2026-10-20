@@ -35,8 +35,6 @@ public class DwarfRevengeGoal extends Goal
             if (this.dwarf.distanceTo(revengeTarget) >= 1.5D) {
                 this.dwarf.getNavigation().moveTo(revengeTarget, 1.3F);
             } else {
-                // Make sure the attack damage attribute is correct right before the attack:
-                this.dwarf.setCustomAttackDamage(this.dwarf.getAttackDamage());
                 revengeTarget.hurt(this.dwarf.damageSources().mobAttack(this.dwarf), (float) Objects.requireNonNull(this.dwarf.getAttribute(Attributes.ATTACK_DAMAGE)).getValue());
                 DwarfAttackGoal.chooseAndSetAttackAction(dwarf, dwarf.getActionHelper());
                 this.dwarf.setLastHurtByMob(null);

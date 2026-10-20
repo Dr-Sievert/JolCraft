@@ -23,8 +23,7 @@ public record DwarfProfessionAttributesConfig(
             new DwarfProfessionAttributesConfig(Map.of(
                     idOf(Attributes.MAX_HEALTH), 30D,
                     idOf(Attributes.MOVEMENT_SPEED), 0.20D,
-                    idOf(Attributes.FOLLOW_RANGE), 24D,
-                    idOf(Attributes.ATTACK_DAMAGE), 3.0D
+                    idOf(Attributes.FOLLOW_RANGE), 24D
             ));
 
     public static final Codec<DwarfProfessionAttributesConfig> CODEC =

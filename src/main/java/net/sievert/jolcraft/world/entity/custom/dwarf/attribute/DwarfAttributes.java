@@ -28,6 +28,13 @@ public final class DwarfAttributes {
     // Base attribute registration
     // ---------------------------------------------------------
 
+    /**
+     * Shared attack-damage base for every dwarf, the same as a player's. The held weapon's attribute
+     * modifier adds the rest, so a dwarf with a deepslate warhammer deals what a player would (16.5).
+     * Not a profession override: professions differ by loadout, not by base damage.
+     */
+    public static final double BASE_ATTACK_DAMAGE = 1.0D;
+
     public static AttributeSupplier.Builder createBase() {
         Map<ResourceLocation, Double> base =
                 DwarfProfessionConfig.DEFAULTS.attributes().overrides();
@@ -36,7 +43,7 @@ public final class DwarfAttributes {
                 .add(Attributes.MAX_HEALTH, require(base, Attributes.MAX_HEALTH))
                 .add(Attributes.MOVEMENT_SPEED, require(base, Attributes.MOVEMENT_SPEED))
                 .add(Attributes.FOLLOW_RANGE, require(base, Attributes.FOLLOW_RANGE))
-                .add(Attributes.ATTACK_DAMAGE, require(base, Attributes.ATTACK_DAMAGE));
+                .add(Attributes.ATTACK_DAMAGE, BASE_ATTACK_DAMAGE);
     }
 
     private static double require(Map<ResourceLocation, Double> base, Holder<Attribute> attr) {
@@ -53,6 +60,10 @@ public final class DwarfAttributes {
     // ---------------------------------------------------------
 
     public static void applyTo(LivingEntity entity, DwarfProfession profession) {
+        // The shared base first. This also migrates dwarves saved by older versions, whose NBT still
+        // carries the old per-item base (16.5 for a warhammer) that would otherwise stack on the weapon modifier.
+        setBase(entity, Attributes.ATTACK_DAMAGE, BASE_ATTACK_DAMAGE, false);
+
         Map<ResourceLocation, Double> merged = new HashMap<>(DwarfProfessionConfig.DEFAULTS.attributes().overrides());
 
         DwarfProfessionConfig cfg = DwarfProfessionConfigManager.INSTANCE.get(profession);

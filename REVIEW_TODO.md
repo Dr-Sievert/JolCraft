@@ -29,7 +29,8 @@ Ordered by impact as judged in the synthesis.
   getStrongboxDrops reads the raw items list without calling unpackLootTable, so an unlocked strongbox with a pending loot table drops only the empty box and its loot is discarded.  
   Fix: In the unlocked non-silk branch, call strongbox.unpackLootTable(null) before iterating the items.
 
-- [ ] **R4. Weapon-based ATTACK_DAMAGE base is overwritten with the config default on every entity load**  
+- [x] **R4. Weapon-based ATTACK_DAMAGE base is overwritten with the config default on every entity load**  
+  Done 2026-10-20: removed the hardcoded per-item damage table, `setCustomAttackDamage`, the `setItemSlot` hook and the revenge-goal re-sync; removed `attack_damage` from the per-profession config defaults. `DwarfAttributes.BASE_ATTACK_DAMAGE` (1.0, player-like) is the shared base, set in `createBase` and re-applied in `applyTo` so older saves migrate; the held weapon's own attribute modifier supplies the rest (warhammer 16.5 instead of the previous double-counted 32). Verified by three adversarial reviewers; the shared base value is a balance knob (unarmed dwarves hit for 1.0 now, 3.0 before).  
   `AbstractDwarfEntity.java:196` · persistence · `src/main/java/net/sievert/jolcraft/world/entity/custom/dwarf/base/AbstractDwarfEntity.java`  
   readAdditionalSaveData calls setProfession, which calls DwarfAttributes.applyTo and resets the ATTACK_DAMAGE base to the config value (3.0). The weapon-derived base saved in the entity's attributes tag is lost.  
   Fix: After loading, or at the end of setProfession/applyTo, call setCustomAttackDamage(getAttackDamage()). Alternatively skip ATTACK_DAMAGE in DwarfAttributes.applyMap, or re-sync in readAdditionalSaveData after super.readAdditionalSaveData and setProfession.
@@ -475,6 +476,13 @@ Ordered by impact as judged in the synthesis.
   `DwarvenFortressStructure.java:98` · quality · `src/main/java/net/sievert/jolcraft/world/worldgen/structure/custom/DwarvenFortressStructure.java`  
   startPos() is overridden to derive Y from the stone column, but the codec still requires a start_height field and the datagen writes absolute 0. The value is dead data.  
   Fix: Either make start_height optional in AbstractJigsawStructure.codec, or apply it as an offset in spawnOrigin. Document that it is unused.
+
+### Found while fixing (added after the review)
+
+- [ ] **R88. corruption_effects.json flaps between datagen runs**  
+  `CorruptionEffectsConfigProvider.java`, `CorruptionEffectsConfig.java:21` · build-ci · `src/main/java/net/sievert/jolcraft/datagen/config/subprovider/CorruptionEffectsConfigProvider.java`  
+  The weighted effects are written through the full `MobEffectInstance` codec, which includes NeoForge's `cures` set (`milk`, `protected_by_totem`) stored in a hash set, so two `runData` runs produce different orderings of the same file. Harmless at runtime, but it defeats diffing generated output and will show up as noise in any datagen determinism check.  
+  Fix: encode only what the config needs (effect id, duration, amplifier) in `WeightedEffect.CODEC`, or sort the cures before writing. Belongs to roadmap item 3 (datagen overhaul).
 
 ## Roadmap (author's list) with related review items
 
