@@ -88,10 +88,35 @@ public class StrongboxMenu extends JolCraftMenu {
         appendPlayerInventory(
                 inventory
         );
+
+        // Server only: the client menu holds the client block entity, whose
+        // opener counter must not run (lid state arrives via block events).
+        if (this.blockEntity != null
+                && !this.level.isClientSide) {
+            this.blockEntity.startOpen(
+                    inventory.player
+            );
+        }
     }
 
     public @Nullable StrongboxBlockEntity getBlockEntity() {
         return this.blockEntity;
+    }
+
+    @Override
+    public void removed(
+            Player player
+    ) {
+        super.removed(
+                player
+        );
+
+        if (this.blockEntity != null
+                && !this.level.isClientSide) {
+            this.blockEntity.stopOpen(
+                    player
+            );
+        }
     }
 
     @Override

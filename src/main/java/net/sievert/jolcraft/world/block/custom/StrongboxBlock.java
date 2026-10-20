@@ -11,6 +11,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
@@ -147,6 +148,17 @@ public class StrongboxBlock extends BaseEntityBlock implements SimpleWaterlogged
             BlockEntityType<T> type
     ) {
         return createTickerHelper(type, JolCraftBlockEntities.STRONGBOX.get(), TickingBlockEntity.tickOnBoth());
+    }
+
+    /**
+     * Scheduled by the opener counter every 5 ticks while the strongbox is open,
+     * like vanilla chests.
+     */
+    @Override
+    protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        if (level.getBlockEntity(pos) instanceof StrongboxBlockEntity strongbox) {
+            strongbox.recheckOpen();
+        }
     }
 
     @Override
