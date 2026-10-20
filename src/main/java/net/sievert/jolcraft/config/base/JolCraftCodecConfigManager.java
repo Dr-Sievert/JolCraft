@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.resources.ResourceLocation;
@@ -25,6 +26,10 @@ import java.util.Map;
  * These are datapack reload listeners, so on a dedicated server the client never runs apply().
  * Anything read client-side must be pushed over with ClientboundConfigSyncPacket; syncPayload(),
  * applySynced() and reset() are that path.
+ *
+ * Bad or unknown files are logged and skipped, as vanilla json listeners do, so one broken file in
+ * any datapack cannot reject the whole reload or keep a dedicated server from starting. A skipped
+ * entry falls back to the manager's defaults.
  */
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -64,17 +69,30 @@ public abstract class JolCraftCodecConfigManager<K, V> extends SimpleJsonResourc
             ResourceLocation id = entry.getKey();
             JsonElement json = entry.getValue();
 
-            V value = codec.parse(JsonOps.INSTANCE, json)
-                    .getOrThrow(error -> new IllegalStateException(
-                            "Failed to parse config '" + id + "' in '" + getName() + "': " + error
-                    ));
-
             K key = keyFromId(id);
             if (key == null) {
-                throw new IllegalStateException(
-                        "Unknown config id '" + id + "' in '" + getName() + "'"
+                JolCraftLogs.error(
+                        JolCraftLogTags.CONFIG,
+                        "Ignored config '{}' in '{}': unknown id",
+                        id,
+                        getName()
                 );
+                continue;
             }
+
+            DataResult<V> result = codec.parse(JsonOps.INSTANCE, json);
+            if (result.error().isPresent() || result.result().isEmpty()) {
+                JolCraftLogs.error(
+                        JolCraftLogTags.CONFIG,
+                        "Ignored config '{}' in '{}': {}",
+                        id,
+                        getName(),
+                        result.error().map(DataResult.Error::message).orElse("no result")
+                );
+                continue;
+            }
+
+            V value = result.result().get();
 
             parsed.put(id, value);
             loaded.put(key, value);
@@ -89,8 +107,9 @@ public abstract class JolCraftCodecConfigManager<K, V> extends SimpleJsonResourc
     }
 
     /**
-     * Applies a snapshot received from the server. Unlike apply(), an unrecognised id is skipped
-     * rather than thrown: a hard failure here would drop the player from the server.
+     * Applies a snapshot received from the server. Unknown ids are skipped like in apply(), but only
+     * logged at debug level: the server already reported them, and a hard failure here would drop
+     * the player from the server.
      */
     public final void applySynced(Map<ResourceLocation, V> values) {
         Map<ResourceLocation, V> parsed = new LinkedHashMap<>();

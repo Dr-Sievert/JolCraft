@@ -1,7 +1,9 @@
 package net.sievert.jolcraft.config.custom.brewing;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
@@ -14,6 +16,8 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.data.language.JolCraftDictionary;
 import net.sievert.jolcraft.util.JolCraftStrings;
+import net.sievert.jolcraft.util.log.JolCraftLogTags;
+import net.sievert.jolcraft.util.log.JolCraftLogs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -140,27 +144,37 @@ public final class CorruptionEffectsConfigManager
                             reader
                     );
 
-            return CorruptionEffectsConfig.CODEC.parse(
+            DataResult<CorruptionEffectsConfig> result =
+                    CorruptionEffectsConfig.CODEC.parse(
                             getRegistryLookup().createSerializationContext(
                                     JsonOps.INSTANCE
                             ),
                             json
-                    )
-                    .getOrThrow(error ->
-                            new IllegalStateException(
-                                    "Failed to parse corruption effects config '"
-                                            + FILE
-                                            + "': "
-                                            + error
-                            )
                     );
-        } catch (IOException exception) {
-            throw new IllegalStateException(
-                    "Failed to read corruption effects config '"
-                            + FILE
-                            + "'",
-                    exception
+
+            if (result.error().isPresent() || result.result().isEmpty()) {
+                // Log and fall back, as for a missing file: one bad datapack file must not
+                // reject the whole reload. Same policy as JolCraftCodecConfigManager.
+                JolCraftLogs.error(
+                        JolCraftLogTags.CONFIG,
+                        "Ignored corruption effects config '{}': {}",
+                        FILE,
+                        result.error().map(DataResult.Error::message).orElse("no result")
+                );
+
+                return CorruptionEffectsConfig.defaults();
+            }
+
+            return result.result().get();
+        } catch (IOException | JsonParseException exception) {
+            JolCraftLogs.error(
+                    JolCraftLogTags.CONFIG,
+                    "Ignored corruption effects config '{}': {}",
+                    FILE,
+                    exception.toString()
             );
+
+            return CorruptionEffectsConfig.defaults();
         }
     }
 

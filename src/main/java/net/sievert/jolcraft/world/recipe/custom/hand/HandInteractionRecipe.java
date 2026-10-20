@@ -11,6 +11,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
@@ -194,6 +195,23 @@ public record HandInteractionRecipe(
                 stackB,
                 ingredientB
         );
+    }
+
+    /**
+     * Whether every hook of every output is willing to run for this input. Checked before the
+     * recipe consumes anything: a refused precondition is not a performed roll with no output.
+     */
+    public boolean hooksCanApply(
+            LootContext context,
+            RecipeInput input
+    ) {
+        for (RecipeOutput output : outputs) {
+            if (!output.hooksCanApply(context, input)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public boolean actionsSatisfied(

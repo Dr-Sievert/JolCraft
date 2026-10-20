@@ -9,6 +9,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -68,8 +69,12 @@ public final class JolCraftHandInteractionEvents {
             return;
         }
 
-        if (player.getCooldowns().isOnCooldown(main.getItem())
-                || player.getCooldowns().isOnCooldown(off.getItem())) {
+        // Captured before any action runs: a stack consumed to empty reports Items.AIR afterwards.
+        Item mainItem = main.getItem();
+        Item offItem = off.getItem();
+
+        if (player.getCooldowns().isOnCooldown(mainItem)
+                || player.getCooldowns().isOnCooldown(offItem)) {
             return;
         }
 
@@ -109,6 +114,34 @@ public final class JolCraftHandInteractionEvents {
                         mapping.stackA()
                 );
 
+        if (!recipe.hooksCanApply(context, resolvedInput)) {
+            // A hook precondition is not met (for the compass: blank dial, or no undiscovered
+            // structure nearby). The recipe did not run, so nothing is consumed and the click is
+            // not cancelled. The cooldown still applies so the check cannot be spammed. This is
+            // different from a performed roll that produced nothing, which does consume.
+            playSoundOutput(
+                    level,
+                    player,
+                    recipe.failSound(),
+                    resolvedInput,
+                    context
+            );
+
+            applyCooldowns(
+                    player,
+                    mainItem,
+                    offItem
+            );
+
+            JolCraftLogs.info(
+                    JolCraftLogTags.RECIPE,
+                    "Refused hand interaction recipe={} (hook precondition not met)",
+                    resolved.id()
+            );
+
+            return;
+        }
+
         cancel(event);
 
         boolean generatedAny =
@@ -142,14 +175,10 @@ public final class JolCraftHandInteractionEvents {
                 mapping.stackB()
         );
 
-        player.getCooldowns().addCooldown(
-                main.getItem(),
-                HAND_INTERACTION_COOLDOWN_TICKS
-        );
-
-        player.getCooldowns().addCooldown(
-                off.getItem(),
-                HAND_INTERACTION_COOLDOWN_TICKS
+        applyCooldowns(
+                player,
+                mainItem,
+                offItem
         );
 
         player.swing(
@@ -472,6 +501,22 @@ public final class JolCraftHandInteractionEvents {
             HandInteractionRecipe recipe,
             HandMapping mapping
     ) {}
+
+    private static void applyCooldowns(
+            @NotNull ServerPlayer player,
+            @NotNull Item mainItem,
+            @NotNull Item offItem
+    ) {
+        player.getCooldowns().addCooldown(
+                mainItem,
+                HAND_INTERACTION_COOLDOWN_TICKS
+        );
+
+        player.getCooldowns().addCooldown(
+                offItem,
+                HAND_INTERACTION_COOLDOWN_TICKS
+        );
+    }
 
     private static void cancel(
             @NotNull PlayerInteractEvent.RightClickItem event

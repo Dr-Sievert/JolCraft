@@ -14,6 +14,27 @@ public interface RecipeOutput extends LootContextUser {
 
     List<ResourceLocation> hooks();
 
+    /**
+     * Precondition pass over every hook of this output. Recipe executors call it before they
+     * consume inputs, so a refusal costs the player nothing.
+     */
+    default boolean hooksCanApply(
+            LootContext context,
+            RecipeInput recipeInput
+    ) {
+        for (ResourceLocation hookId : hooks()) {
+            if (!JolCraftRecipeHooks.canApply(
+                    hookId,
+                    context,
+                    recipeInput
+            )) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     default boolean applyHooks(
             LootContext context,
             Object generatedOutput,
