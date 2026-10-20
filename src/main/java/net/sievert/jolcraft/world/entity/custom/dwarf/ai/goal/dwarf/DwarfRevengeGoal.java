@@ -5,6 +5,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.player.Player;
 import net.sievert.jolcraft.world.entity.custom.dwarf.base.AbstractDwarfEntity;
+import net.sievert.jolcraft.world.item.equipment.JolCraftEquipmentHelper;
 
 import java.util.EnumSet;
 import java.util.Objects;
@@ -34,7 +35,7 @@ public class DwarfRevengeGoal extends Goal
             this.dwarf.getLookControl().setLookAt(revengeTarget, 10.0F, (float) this.dwarf.getHeadRotSpeed());
             if (this.dwarf.distanceTo(revengeTarget) >= 1.5D) {
                 this.dwarf.getNavigation().moveTo(revengeTarget, 1.3F);
-            } else {
+            } else if (!JolCraftEquipmentHelper.isMeleeBlocked(this.dwarf)) {
                 revengeTarget.hurt(this.dwarf.damageSources().mobAttack(this.dwarf), (float) Objects.requireNonNull(this.dwarf.getAttribute(Attributes.ATTACK_DAMAGE)).getValue());
                 DwarfAttackGoal.chooseAndSetAttackAction(dwarf, dwarf.getActionHelper());
                 this.dwarf.setLastHurtByMob(null);

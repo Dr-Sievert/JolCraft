@@ -11,6 +11,7 @@ import net.sievert.jolcraft.world.entity.custom.dwarf.base.AbstractDwarfEntity;
 import net.sievert.jolcraft.world.entity.custom.dwarf.action.DwarfActionHelper;
 import net.sievert.jolcraft.world.entity.custom.dwarf.action.DwarfActionType;
 import net.sievert.jolcraft.world.item.JolCraftItems;
+import net.sievert.jolcraft.world.item.equipment.JolCraftEquipmentHelper;
 import net.sievert.jolcraft.world.sound.util.PlaySound;
 import org.jetbrains.annotations.NotNull;
 
@@ -174,7 +175,9 @@ public class DwarfAttackGoal extends MeleeAttackGoal {
     }
 
     protected boolean canPerformAttack(@NotNull LivingEntity entity) {
-        return this.isTimeToAttack() && this.dwarf.isWithinMeleeAttackRange(entity) && this.dwarf.getSensing().hasLineOfSight(entity);
+        // tick() bypasses MeleeAttackGoal.checkAndPerformAttack, so the mixin's gate is applied here.
+        return this.isTimeToAttack() && this.dwarf.isWithinMeleeAttackRange(entity) && this.dwarf.getSensing().hasLineOfSight(entity)
+                && !JolCraftEquipmentHelper.isMeleeBlocked(this.dwarf);
     }
 
     protected int getTicksUntilNextAttack() {

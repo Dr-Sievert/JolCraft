@@ -2,11 +2,13 @@ package net.sievert.jolcraft.world.item.equipment;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Holder;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.neoforged.neoforge.common.Tags;
+import net.sievert.jolcraft.world.entity.effect.JolCraftEffects;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -57,5 +59,14 @@ public final class JolCraftEquipmentHelper {
     public static boolean isRangedWeapon(ItemStack stack) {
         if (stack.isEmpty()) return false;
         return stack.is(Tags.Items.RANGED_WEAPON_TOOLS) || stack.getItem() instanceof ProjectileWeaponItem;
+    }
+
+    /**
+     * Mob melee gate shared by vanilla melee goals (MeleeAttackGoalMixin) and the dwarf
+     * attack goals: Disarmed or Stunned blocks melee while a weapon is held.
+     */
+    public static boolean isMeleeBlocked(LivingEntity mob) {
+        return (mob.hasEffect(JolCraftEffects.DISARMED) || mob.hasEffect(JolCraftEffects.STUNNED))
+                && isWeapon(mob.getMainHandItem());
     }
 }
