@@ -431,6 +431,51 @@ public final class DwarfTradeRecipeBuilder implements JolCraftOrderedEmissionBui
         );
     }
 
+    /**
+     * Item tags are unbound during runData, so coins are matched by item here
+     * (the entries of {@link DwarfTradeRecipe#COINS_TAG}), never through the tag.
+     */
+    private static boolean isCoinItem(
+            @NotNull ItemLike item
+    ) {
+        Item asItem =
+                item.asItem();
+
+        return asItem == JolCraftItems.GOLD_COIN.get()
+                || asItem == JolCraftItems.COIN_POUCH.get();
+    }
+
+    private static boolean isCoinCost(
+            @NotNull TradeCost cost
+    ) {
+        Ingredient ingredient =
+                cost.ingredient();
+
+        // Custom ingredients (DataComponentIngredient, ...) hide their values, but
+        // their items are resolved without tags, so matching by item is safe here.
+        if (ingredient.isCustom()) {
+            return Arrays.stream(ingredient.getItems())
+                    .anyMatch(stack ->
+                            !stack.isEmpty()
+                                    && isCoinItem(stack.getItem())
+                    );
+        }
+
+        for (Ingredient.Value value : ingredient.getValues()) {
+            if (value instanceof Ingredient.TagValue(TagKey<Item> tag)
+                    && tag.equals(DwarfTradeRecipe.COINS_TAG)) {
+                return true;
+            }
+
+            if (value instanceof Ingredient.ItemValue(ItemStack stack)
+                    && isCoinItem(stack.getItem())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static @NotNull NumberProvider countProvider(
             int min,
             int max
@@ -506,9 +551,7 @@ public final class DwarfTradeRecipeBuilder implements JolCraftOrderedEmissionBui
         this.costA =
                 cost;
 
-        if (cost.contains(
-                DwarfTradeRecipe.COINS_TAG
-        )) {
+        if (isCoinCost(cost)) {
             this.costAName =
                     coinToken();
 
@@ -554,11 +597,7 @@ public final class DwarfTradeRecipeBuilder implements JolCraftOrderedEmissionBui
                 );
 
         this.costAIsCoins =
-                item.asItem()
-                        .builtInRegistryHolder()
-                        .is(
-                                DwarfTradeRecipe.COINS_TAG
-                        );
+                isCoinItem(item);
 
         return this;
     }
@@ -685,9 +724,7 @@ public final class DwarfTradeRecipeBuilder implements JolCraftOrderedEmissionBui
                 false;
 
         if (cost != null
-                && cost.contains(
-                DwarfTradeRecipe.COINS_TAG
-        )) {
+                && isCoinCost(cost)) {
             this.costBName =
                     coinToken();
 
@@ -698,7 +735,6 @@ public final class DwarfTradeRecipeBuilder implements JolCraftOrderedEmissionBui
         return this;
     }
 
-    @SuppressWarnings("deprecation")
     public @NotNull DwarfTradeRecipeBuilder costB(
             @Nullable ItemLike item,
             int min,
@@ -725,11 +761,7 @@ public final class DwarfTradeRecipeBuilder implements JolCraftOrderedEmissionBui
                 );
 
         this.costBIsCoins =
-                item.asItem()
-                        .builtInRegistryHolder()
-                        .is(
-                                DwarfTradeRecipe.COINS_TAG
-                        );
+                isCoinItem(item);
 
         return this;
     }
@@ -975,11 +1007,7 @@ public final class DwarfTradeRecipeBuilder implements JolCraftOrderedEmissionBui
                 );
 
         this.resultIsCoins =
-                item.asItem()
-                        .builtInRegistryHolder()
-                        .is(
-                                DwarfTradeRecipe.COINS_TAG
-                        );
+                isCoinItem(item);
 
         return this;
     }
