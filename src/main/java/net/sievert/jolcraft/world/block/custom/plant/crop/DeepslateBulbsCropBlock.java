@@ -4,6 +4,7 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.BlockGetter;
@@ -15,6 +16,7 @@ import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.common.CommonHooks;
@@ -123,6 +125,12 @@ public class DeepslateBulbsCropBlock extends CropBlock {
     }
 
     public static boolean hasSufficientDarkness(LevelReader level, BlockPos pos) {
+        // Features generate before chunks are lit, where unlit sky light reads as 15;
+        // during worldgen, being under a roof stands in for darkness.
+        if (level instanceof WorldGenRegion) {
+            return pos.getY() < level.getHeight(Heightmap.Types.WORLD_SURFACE, pos.getX(), pos.getZ());
+        }
+
         return level.getRawBrightness(pos, 0) <= 8;
     }
 
