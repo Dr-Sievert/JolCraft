@@ -37,8 +37,10 @@ import net.sievert.jolcraft.world.recipe.base.output.RecipeOutput;
 import net.sievert.jolcraft.world.recipe.base.output.custom.SoundOutput;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -473,6 +475,10 @@ public record BountyRewardRecipe(
                 );
             }
 
+            // LootTable.addPool throws on a duplicate non-null pool name (createLootTable).
+            Set<String> poolNames =
+                    new HashSet<>();
+
             for (int index = 0;
                  index < recipe.rewards().size();
                  index++) {
@@ -519,6 +525,24 @@ public record BountyRewardRecipe(
                                     + "["
                                     + invalidIndex
                                     + "] cannot use recipe hooks because reward crates resolve rewards as a vanilla loot table"
+                    );
+                }
+
+                String poolName =
+                        itemOutput.pool().getName();
+
+                if (poolName != null
+                        && !poolNames.add(poolName)) {
+                    int invalidIndex =
+                            index;
+
+                    return DataResult.error(() ->
+                            REWARDS_KEY
+                                    + "["
+                                    + invalidIndex
+                                    + "] duplicates pool name '"
+                                    + poolName
+                                    + "'"
                     );
                 }
 
