@@ -2,6 +2,7 @@ package net.sievert.jolcraft.event.client.game.effect.curse;
 
 import net.minecraft.client.resources.sounds.Sound;
 import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.client.resources.sounds.TickableSoundInstance;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.client.sounds.WeighedSoundEvents;
 import net.minecraft.resources.ResourceKey;
@@ -28,6 +29,10 @@ public final class JolCraftClientDeliriumEventsHelper {
         if (sound == null || sound.isRelative()) return;
 
         if (isCave(sound)) return;
+
+        // SoundEngine ticks tickable sounds and LevelRenderer stops jukebox songs by
+        // instance; a wrapper would orphan both, so those keep their normal sound.
+        if (sound instanceof TickableSoundInstance || sound.getSource() == SoundSource.RECORDS) return;
 
         event.setSound(new Scaled(sound));
     }
