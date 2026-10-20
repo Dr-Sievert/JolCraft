@@ -55,11 +55,13 @@ Ordered by impact as judged in the synthesis.
   Fix: Only accept pristine stacks (no damage, and components equal to the item's default prototype) in tryFillCrate and use(). Alternatively, refuse damageable items in item objectives at BountyTaskRecipe validation.
 
 - [ ] **R8. Blacksmith and Smelter dwarves cannot level, so their only trades are unreachable**  
+  Parked 2026-10-20 as content work (trade tables for Blacksmith, Smelter, Arcanist, Priest); part of the obtainability pass below.  
   `DwarfSmelterTrades.java:37` · logic · `src/main/java/net/sievert/jolcraft/datagen/recipe/subprovider/dwarf_trade/DwarfSmelterTrades.java`  
   Blacksmith and Smelter dwarves start at level 1 and have no way to earn XP, so their only trades (Blacksmith: EXPERT crate and MASTER mithril_forge_technique tome; Smelter: MASTER coin_press_manual tome) can only be reached with the dev key. Arcanist and Priest have no trades at all, even though the Guildmaster sells their contracts at EXPERT tier and the Blacksmith and Smelter contracts at MASTER tier.  
   Fix: Add NOVICE to JOURNEYMAN trades with dwarfXp > 0 for Blacksmith and Smelter (or add bounty tasks and rewards for them) so XP can accumulate. Alternatively set their level explicitly on promotion. Arcanist and Priest need the same treatment, or an explicit note that they are unfinished.
 
-- [ ] **R9. Item property lookup throws on the render thread for any unregistered lore key**  
+- [x] **R9. Item property lookup throws on the render thread for any unregistered lore key**  
+  Done 2026-10-20: `JolCraftItemProperties.valueOrDefault()` returns 0.0F (base model) for an unregistered key and warns once per key; `LoreKey`, `CoinPouchAmount` and `RewardCrateTheme` use it in their render-path `value()`. `value()` still throws and is used only by datagen (model subproviders). Only `LoreKey` could actually hit it; the other two switched for consistency.  
   `LoreKey.java:59` · crash · `src/main/java/net/sievert/jolcraft/world/item/client/property/custom/LoreKey.java`  
   LoreKey.value() throws IllegalStateException on the render thread when dwarf_lore_key holds a non-blank value that is not one of the six registered lowercase legendary keys. Commands, datapacks or older saves can put such a value there, and the client then crashes every time it renders the saved stack. Everything the mod generates itself uses valid keys.  
   Fix: In the render-path Property.value(), return 0.0F for an unknown key. Add a non-throwing lookup such as JolCraftItemProperties.valueOrDefault(). Keep the throwing variant only for datagen. Apply the same to RewardCrateTheme and CoinPouchAmount.

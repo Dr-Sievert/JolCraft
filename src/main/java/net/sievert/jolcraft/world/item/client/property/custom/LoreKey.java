@@ -56,6 +56,6 @@ public record LoreKey() implements JolCraftItemProperties.Property {
             return 0.0F;
         }
 
-        return JolCraftItemProperties.value(KEY, loreKey);
+        return JolCraftItemProperties.valueOrDefault(KEY, loreKey);
     }
 }
