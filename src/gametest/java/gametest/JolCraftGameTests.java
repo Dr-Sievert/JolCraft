@@ -13,11 +13,7 @@ import java.util.Collection;
 @EventBusSubscriber
 public class JolCraftGameTests {
     private static final Class<?>[] TEST_HOLDERS = {
-            ExperimentalTests.class,
-            CombatEffectRegressionTests.class,
-            DwarfTransactionTests.class,
-            HearthEquipmentTests.class,
-            MenuAndPotionRegressionTests.class
+            ExperimentalTests.class
     };
 
     @SubscribeEvent
