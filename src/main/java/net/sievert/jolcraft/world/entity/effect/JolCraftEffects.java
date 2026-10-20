@@ -388,7 +388,7 @@ public final class JolCraftEffects {
 
     public static final Holder<MobEffect> REJUVENATION = MOB_EFFECTS.register(
             JolCraftEffectIds.REJUVENATION,
-            () -> new OverhealEffect(MobEffectCategory.BENEFICIAL, JolCraftColors.rgb("21be43"))
+            () -> new RejuvenationEffect(MobEffectCategory.BENEFICIAL, JolCraftColors.rgb("21be43"))
                     .addAttributeModifier(
                             JolCraftAttributes.HEAL_INCREASE,
                             JolCraft.location(JolCraftStrings.underscored(JolCraftEffectIds.REJUVENATION, JolCraftDictionary.EFFECT)),

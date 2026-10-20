@@ -10,7 +10,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -18,8 +20,11 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.event.game.world.entity.attribute.JolCraftEntityAttributeEventsHelper;
 import net.sievert.jolcraft.event.game.world.entity.effect.util.harmful.JolCraftCrowdControlEventsHelper;
+import net.sievert.jolcraft.world.entity.JolCraftAttributes;
+import net.sievert.jolcraft.world.entity.attachment.custom.overheal.OverhealAttachmentHelper;
 import net.sievert.jolcraft.world.entity.effect.JolCraftEffects;
 
 @GameTestGroup
@@ -133,5 +138,26 @@ public final class CombatEffectRegressionTests {
         } finally {
             TestPlayerHelper.disconnect(player);
         }
+    }
+
+    @GameTest(template = "basic")
+    public static void onlyOverhealRefillsOverhealBar(GameTestHelper helper) {
+        Cow cow = helper.spawn(EntityType.COW, new BlockPos(1, 2, 1));
+        cow.setNoAi(true);
+        // Stands in for Emberglass trims: a MAX_OVERHEAL source that is not the Overheal effect.
+        cow.getAttribute(JolCraftAttributes.MAX_OVERHEAL).addTransientModifier(new AttributeModifier(
+                JolCraft.location("test_max_overheal"),
+                0.5D,
+                AttributeModifier.Operation.ADD_VALUE));
+        OverhealAttachmentHelper.setAmount(cow, 0.0F);
+
+        cow.addEffect(new MobEffectInstance(JolCraftEffects.REJUVENATION, 200));
+        helper.assertTrue(OverhealAttachmentHelper.getAmount(cow) == 0.0F,
+                "Rejuvenation refilled the overheal bar");
+
+        cow.addEffect(new MobEffectInstance(JolCraftEffects.OVERHEAL, 200));
+        helper.assertTrue(OverhealAttachmentHelper.getAmount(cow) > 0.0F,
+                "Overheal did not refill the overheal bar");
+        helper.succeed();
     }
 }
