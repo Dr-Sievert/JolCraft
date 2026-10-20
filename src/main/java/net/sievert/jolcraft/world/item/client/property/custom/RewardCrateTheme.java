@@ -58,7 +58,7 @@ public record RewardCrateTheme() implements JolCraftItemProperties.Property {
 
         return theme == null
                 ? 0.0F
-                : JolCraftItemProperties.value(
+                : JolCraftItemProperties.valueOrDefault(
                 KEY,
                 theme.getId()
         );

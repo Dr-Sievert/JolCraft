@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings("deprecation")
 @OnlyIn(Dist.CLIENT)
@@ -41,6 +42,9 @@ public final class JolCraftItemProperties {
     private static final float CUSTOM_INDEX_STEP = 0.0001F;
 
     private static final Map<ResourceLocation, Set<String>> KEYS = new LinkedHashMap<>();
+
+    /** Unregistered keys already reported by valueOrDefault, so the render loop logs each once. */
+    private static final Set<String> WARNED_KEYS = ConcurrentHashMap.newKeySet();
 
     private JolCraftItemProperties() {}
 
@@ -158,6 +162,38 @@ public final class JolCraftItemProperties {
         ).add(key);
     }
 
+    /**
+     * Render-path lookup. A key that was never registered (set by a command,
+     * a datapack or an older save) resolves to 0.0F, the base model, instead
+     * of throwing on the render thread.
+     */
+    public static float valueOrDefault(
+            @NotNull ResourceLocation propertyId,
+            @NotNull String key
+    ) {
+        Set<String> keys =
+                KEYS.get(propertyId);
+
+        if (keys == null || !keys.contains(key)) {
+            if (WARNED_KEYS.add(propertyId + " -> " + key)) {
+                JolCraftLogs.warn(
+                        JolCraftLogTags.ITEM,
+                        "Unregistered item property key {} -> {}, using base model",
+                        propertyId,
+                        key
+                );
+            }
+
+            return 0.0F;
+        }
+
+        return value(propertyId, key);
+    }
+
+    /**
+     * Strict lookup for datagen: throws for a key that was never registered.
+     * Render code uses {@link #valueOrDefault}.
+     */
     public static float value(
             @NotNull ResourceLocation propertyId,
             @NotNull String key

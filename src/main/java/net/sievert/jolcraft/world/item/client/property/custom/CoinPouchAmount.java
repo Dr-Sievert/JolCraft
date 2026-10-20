@@ -63,6 +63,6 @@ public record CoinPouchAmount() implements JolCraftItemProperties.Property {
             @Nullable LivingEntity entity,
             int seed
     ) {
-        return JolCraftItemProperties.value(KEY, getKey(stack));
+        return JolCraftItemProperties.valueOrDefault(KEY, getKey(stack));
     }
 }
