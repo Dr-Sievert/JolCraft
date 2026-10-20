@@ -199,6 +199,7 @@ public final class JolCraftProgressRenderer {
         );
     }
 
+    @SuppressWarnings("deprecation") // drawManaged: vanilla still uses it for tooltip backgrounds
     private static void renderInternal(
             GuiGraphics guiGraphics,
             int leftPos,
@@ -250,7 +251,9 @@ public final class JolCraftProgressRenderer {
                 topPos
                         + JolCraftMenu.tile(startTileY);
 
-        renderArrow(
+        // The arrow is drawn with one fill per pixel; managed mode batches them into a
+        // single flush instead of one draw call per pixel.
+        guiGraphics.drawManaged(() -> renderArrow(
                 guiGraphics,
                 screenX,
                 screenY,
@@ -262,7 +265,7 @@ public final class JolCraftProgressRenderer {
                 filledArrowTexture,
                 extensionTexture,
                 filledExtensionTexture
-        );
+        ));
     }
 
     private static int getEffectiveWidth(
