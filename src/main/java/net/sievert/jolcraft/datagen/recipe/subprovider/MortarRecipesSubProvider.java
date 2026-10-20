@@ -441,5 +441,16 @@ public record MortarRecipesSubProvider(
                         .toolDamage(1)
                         .buildValidated()
         );
+
+        emit(
+                output,
+                tracking,
+                MortarRecipeBuilder.create()
+                        .input(Items.PEONY)
+                        .result(Items.PINK_DYE, 4)
+                        .grindingWork(20)
+                        .toolDamage(1)
+                        .buildValidated()
+        );
     }
 }
