@@ -269,7 +269,6 @@ public final class JolCraftDictionary extends JolCraftIds {
     public static final String BREWING = "brewing";
     public static final String BREWMASTER = "brewmaster";
     public static final String BRICK = "brick";
-    public static final String BRIGHTNESS = "brightness";
     public static final String BROW = "brow";
     public static final String BUBBLE = "bubble";
     public static final String BUCKET = "bucket";

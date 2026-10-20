@@ -41,7 +41,6 @@ import net.sievert.jolcraft.world.recipe.base.output.JolCraftRecipeOutputTypes;
 import net.sievert.jolcraft.world.sound.JolCraftSounds;
 import net.sievert.jolcraft.world.worldgen.feature.JolCraftFeatures;
 import net.sievert.jolcraft.world.worldgen.placement.JolCraftPlacementModifierTypes;
-import net.sievert.jolcraft.world.worldgen.predicate.JolCraftBlockPredicateTypes;
 import net.sievert.jolcraft.world.worldgen.processor.JolCraftProcessors;
 import net.sievert.jolcraft.world.worldgen.structure.JolCraftStructures;
 import net.sievert.jolcraft.world.worldgen.test.JolCraftRuleTests;
@@ -75,7 +74,6 @@ public class JolCraft {
         JolCraftPotions.register(modEventBus);
         JolCraftInstruments.register(modEventBus);
         JolCraftProcessors.register(modEventBus);
-        JolCraftBlockPredicateTypes.register(modEventBus);
         JolCraftPlacementModifierTypes.register(modEventBus);
         JolCraftAttachments.register(modEventBus);
         JolCraftStats.register(modEventBus);

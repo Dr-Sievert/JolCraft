@@ -19,7 +19,6 @@ import net.sievert.jolcraft.data.id.worldgen.JolCraftPlacedFeatureIds;
 import net.sievert.jolcraft.world.block.JolCraftBlocks;
 import net.sievert.jolcraft.world.worldgen.placement.custom.MaxYPlacementFilter;
 import net.sievert.jolcraft.world.worldgen.placement.custom.MinYPlacementFilter;
-import net.sievert.jolcraft.world.worldgen.predicate.custom.DarknessPredicate;
 
 import java.util.List;
 
@@ -208,12 +207,9 @@ public class JolCraftPlacedFeatures {
                                 VerticalAnchor.absolute(0)
                         ),
                         BlockPredicateFilter.forPredicate(
-                                BlockPredicate.allOf(
-                                        BlockPredicate.matchesTag(
-                                                new Vec3i(0, -1, 0),
-                                                JolCraftTags.Blocks.DEEPSLATE_BULBS_PLANTABLE
-                                        ),
-                                        new DarknessPredicate(8)
+                                BlockPredicate.matchesTag(
+                                        new Vec3i(0, -1, 0),
+                                        JolCraftTags.Blocks.DEEPSLATE_BULBS_PLANTABLE
                                 )
                         ),
                         BiomeFilter.biome()
