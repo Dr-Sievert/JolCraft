@@ -48,7 +48,8 @@ Ordered by impact as judged in the synthesis.
   Fix: Log the error and skip that entry, keeping the previous or default value, as applySynced() already does for unknown ids. Use codec.parse(...).resultOrPartial(err -> JolCraftLogs.error(...)) and continue. Do the same in CorruptionEffectsConfigManager.prepare(), falling back to CorruptionEffectsConfig.defaults().
   Also reported as: Any unrecognised file in the config directory fails the whole datapack reload (`JolCraftCodecConfigManager.java:72`).
 
-- [ ] **R7. Bounty crate accepts any stack of the item and returns fresh default stacks, enabling repair and component laundering**  
+- [x] **R7. Bounty crate accepts any stack of the item and returns fresh default stacks, enabling repair and component laundering**  
+  Done 2026-10-20: both fill paths accept only stacks equal to a fresh default stack (`ItemStack.isSameItemSameComponents`). Verified: no current bounty objective uses an item whose default stack carries components, strongbox objectives still accept an empty unlocked box.  
   `BountyCrateItem.java:111` · logic · `src/main/java/net/sievert/jolcraft/world/item/custom/bounty/BountyCrateItem.java`  
   The bounty crate accepts any stack of the right item type, ignoring its components (:141, :203), and gives back fresh default stacks (:111, :253). Generated bounties ask for damageable tools (DwarfMerchantBountyTasks.java:146-148, 215-216), and a crate can be refilled after extraction (:145). So any player can fully repair those tools as many times as they like, while enchantments and names are silently lost.  
   Fix: Only accept pristine stacks (no damage, and components equal to the item's default prototype) in tryFillCrate and use(). Alternatively, refuse damageable items in item objectives at BountyTaskRecipe validation.
