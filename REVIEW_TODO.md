@@ -84,7 +84,8 @@ Ordered by impact as judged in the synthesis.
   StrongboxBlockEntity.tickServer calls recheckOpen() every server tick, unconditionally. Each call runs a player AABB query and broadcasts a redundant block event 1 packet to all players within 64 blocks, even when the open count is 0 and unchanged. StrongboxBlock has no scheduled tick() override, so the fix needs to override tick() to call recheckOpen() and drop the per-tick call (or guard it with openerCount > 0).  
   Fix: Remove recheckOpen() from tickServer. Vanilla's ChestBlock/BarrelBlock instead override tick(...) (the scheduled block tick) to call recheckOpeners, and incrementOpeners schedules it. Override StrongboxBlock.tick(state, level, pos, random) to call the block entity's recheckOpen(). Alternatively guard the call with openersCounter.getOpenerCount() > 0 and only signal when the count changes.
 
-- [ ] **R13. Rejuvenation is registered as an OverhealEffect and refills the overheal bar**  
+- [x] **R13. Rejuvenation is registered as an OverhealEffect and refills the overheal bar**  
+  Done 2026-10-20: `REJUVENATION` uses a plain `RejuvenationEffect` (combat/defence). The refill only mattered with another `MAX_OVERHEAL` source (Emberglass trims, an active Overheal). Game test `onlyOverhealRefillsOverhealBar`.  
   `JolCraftEffects.java:391` · logic · `src/main/java/net/sievert/jolcraft/world/entity/effect/JolCraftEffects.java`  
   REJUVENATION (a heal-increase potion) is constructed with new OverhealEffect(...), so its onEffectStarted tops the overheal bar up to the maximum.  
   Fix: Use a plain MobEffect subclass (for example a new RejuvenationEffect) for REJUVENATION, so the overheal refill logic only runs for OVERHEAL.
