@@ -132,7 +132,8 @@ Ordered by impact as judged in the synthesis.
   The generic costA/costB/result setters that take an ItemLike or a TradeCost (DwarfTradeRecipeBuilder.java:556, 624, 727, 786, 977) check for coins with builtInRegistryHolder().is(COINS_TAG) or TradeCost.contains(), which calls ingredient.getItems(). Item tags are never bound during runData, so both checks always return false. A trade written as costA(GOLD_COIN) or costA(coinsAsCost(..)) would be named TRADE instead of BUY, and the TradeCost version would also fail with 'has no filename token'. Every current caller uses the coin-specific setters, so this cannot happen yet.  
   Fix: Compare the item against DwarfTradeRecipe.GOLD_COIN or the coin item ids directly. For TradeCost, carry a coin flag with the cost or require callers to use the coin-specific setters.
 
-- [ ] **R20. Mortar has no peony recipe although the other dye flowers have one**  
+- [x] **R20. Mortar has no peony recipe although the other dye flowers have one**  
+  Done 2026-10-20: added peony → 4 pink dye (grinding work 20, tool damage 1) after the pink petals recipe, matching lilac, rose bush and sunflower.  
   `MortarRecipesSubProvider.java:273` · logic · `src/main/java/net/sievert/jolcraft/datagen/recipe/subprovider/MortarRecipesSubProvider.java`  
   Items.LILAC, ROSE_BUSH and SUNFLOWER (the double-tall flowers) are ground for 4 dye, but Items.PEONY has no recipe.  
   Fix: Add MortarRecipeBuilder.create().input(Items.PEONY).result(Items.PINK_DYE, 4).grindingWork(20).toolDamage(1).
