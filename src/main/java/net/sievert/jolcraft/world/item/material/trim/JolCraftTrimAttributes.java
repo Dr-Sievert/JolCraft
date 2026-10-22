@@ -13,13 +13,15 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.armortrim.ArmorTrim;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
 import net.sievert.jolcraft.JolCraft;
+import net.sievert.jolcraft.util.JolCraftEnumHelper;
 import net.sievert.jolcraft.world.entity.JolCraftAttributes;
+import net.sievert.jolcraft.world.item.component.JolCraftDataComponents;
 import net.sievert.jolcraft.world.item.equipment.JolCraftEquipmentHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -136,53 +138,100 @@ public final class JolCraftTrimAttributes {
         return Map.copyOf(out);
     }
 
-    public static void applyAttribute(@NotNull ItemStack stack, @NotNull ArmorTrim trim) {
-        JolCraftTrimMaterials.Attribute material = getAttributeTrim(trim);
-        List<TrimAttribute> attributes = material == null ? List.of() : getTrimAttributes(material);
-
+    /**
+     * Adds the attribute trim's modifiers to the stack's computed modifiers.
+     * <p>
+     * The ATTRIBUTE_TRIM component is the only source of truth (TRIM stays cosmetic);
+     * nothing is written to
+     * {@code ATTRIBUTE_MODIFIERS}. A non-empty component replaces the item's defaults
+     * (NeoForge only falls back to {@code Item#getDefaultAttributeModifiers} when the
+     * component list is empty), so baking trim modifiers in there used to strip the
+     * armor's own armor, toughness, knockback resistance and set speed modifiers.
+     */
+    public static void applyAttribute(@NotNull ItemAttributeModifierEvent event) {
+        ItemStack stack = event.getItemStack();
         EquipmentSlot slot = getSlotForArmor(stack);
-        if (slot == null) {
-            throw new IllegalStateException("Item is not valid armor for trim attribute: " + stack);
-        }
+        if (slot == null) return;
 
-        ItemAttributeModifiers modifiers = stack.getOrDefault(
-                DataComponents.ATTRIBUTE_MODIFIERS,
-                stack.getItem().getDefaultAttributeModifiers(stack)
-        );
+        // Must run before any trim-dependent return: legacy pieces whose trim was
+        // replaced or removed still carry the baked component.
+        healBakedTrimModifiers(event, stack);
 
-        ItemAttributeModifiers cleaned = removeOldTrimModifiers(modifiers);
-        // Ordinary trims without our modifiers should retain the item's component/default behavior.
-        if (attributes.isEmpty() && cleaned.modifiers().size() == modifiers.modifiers().size()) return;
-        modifiers = cleaned;
+        JolCraftTrimMaterials.Attribute material = getAttributeTrim(stack);
+        List<TrimAttribute> attributes = material == null ? null : ATTRIBUTES.get(material);
+        if (attributes == null) return;
 
+        EquipmentSlotGroup group = EquipmentSlotGroup.bySlot(slot);
         for (int i = 0; i < attributes.size(); i++) {
             TrimAttribute attribute = attributes.get(i);
 
-            modifiers = modifiers.withModifierAdded(
+            event.replaceModifier(
                     attribute.attribute(),
                     new AttributeModifier(
                             trimModifierId(slot, i),
                             attribute.amount(),
                             attribute.operation()
                     ),
-                    EquipmentSlotGroup.bySlot(slot)
+                    group
             );
         }
-
-        stack.set(DataComponents.ATTRIBUTE_MODIFIERS, modifiers);
     }
 
-    private static @Nullable JolCraftTrimMaterials.Attribute getAttributeTrim(@NotNull ArmorTrim trim) {
+    /**
+     * Stacks trimmed before the event-based path hold a component that contains only
+     * baked trim modifiers, which hides the item's defaults. Strip them and, if nothing
+     * else is left, re-add the item's defaults so the piece behaves like an untrimmed one.
+     */
+    private static void healBakedTrimModifiers(
+            @NotNull ItemAttributeModifierEvent event,
+            @NotNull ItemStack stack
+    ) {
+        // Decide from the stack's own component, not the live builder, so entries that
+        // higher-priority listeners added do not mask a trim-only component.
+        boolean baked = false;
+        boolean onlyBaked = true;
+        for (ItemAttributeModifiers.Entry entry : event.getDefaultModifiers().modifiers()) {
+            if (isTrimModifier(entry.modifier().id())) {
+                baked = true;
+            } else {
+                onlyBaked = false;
+            }
+        }
+        if (!baked) return;
+
+        event.removeIf(entry -> isTrimModifier(entry.modifier().id()));
+        if (!onlyBaked) return;
+
+        ItemAttributeModifiers defaults = stack.getItem().getDefaultAttributeModifiers(stack);
+        for (ItemAttributeModifiers.Entry entry : defaults.modifiers()) {
+            event.addModifier(entry.attribute(), entry.modifier(), entry.slot());
+        }
+    }
+
+    /**
+     * The attribute trim on a stack: the ATTRIBUTE_TRIM component or, for pieces trimmed
+     * before that component existed, the TRIM material itself.
+     */
+    public static @Nullable JolCraftTrimMaterials.Attribute getAttributeTrim(@NotNull ItemStack stack) {
+        JolCraftTrimMaterials.Attribute attribute = stack.get(JolCraftDataComponents.ATTRIBUTE_TRIM);
+        if (attribute != null) return attribute;
+
+        ArmorTrim trim = stack.get(DataComponents.TRIM);
+        return trim == null ? null : getAttributeTrim(trim);
+    }
+
+    public static @Nullable JolCraftTrimMaterials.Attribute getAttributeTrim(@NotNull ArmorTrim trim) {
         ResourceLocation id = trim.material().unwrapKey()
                 .map(ResourceKey::location)
                 .orElse(null);
 
         if (id == null || !id.getNamespace().equals(JolCraft.MOD_ID)) return null;
 
-        return Arrays.stream(JolCraftTrimMaterials.Attribute.values())
-                .filter(attribute -> attribute.getId().equals(id.getPath()))
-                .findFirst()
-                .orElse(null);
+        return JolCraftEnumHelper.byStringIdNullable(
+                JolCraftTrimMaterials.Attribute.class,
+                id.getPath(),
+                null
+        );
     }
 
     public static List<TrimAttribute> getTrimAttributes(@NotNull JolCraftTrimMaterials.Attribute trim) {
@@ -193,15 +242,6 @@ public final class JolCraftTrimAttributes {
         }
 
         return attributes;
-    }
-
-    private static ItemAttributeModifiers removeOldTrimModifiers(@NotNull ItemAttributeModifiers modifiers) {
-        return new ItemAttributeModifiers(
-                modifiers.modifiers().stream()
-                        .filter(entry -> !isTrimModifier(entry.modifier().id()))
-                        .toList(),
-                modifiers.showInTooltip()
-        );
     }
 
     private static boolean isTrimModifier(@NotNull ResourceLocation id) {

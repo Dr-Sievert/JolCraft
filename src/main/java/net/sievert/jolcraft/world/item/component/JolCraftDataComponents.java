@@ -20,6 +20,7 @@ import net.sievert.jolcraft.world.item.component.custom.crate.RewardCrateSource;
 import net.sievert.jolcraft.world.item.component.custom.alchemy.CorruptionData;
 import net.sievert.jolcraft.world.item.component.custom.alchemy.EssenceType;
 import net.sievert.jolcraft.world.item.component.custom.compass.DeepslateCompassDialColor;
+import net.sievert.jolcraft.world.item.material.trim.JolCraftTrimMaterials;
 import net.sievert.jolcraft.data.id.data_component.JolCraftDataComponentIds;
 
 import java.util.function.UnaryOperator;
@@ -161,6 +162,13 @@ public final class JolCraftDataComponents {
             register(JolCraftDataComponentIds.ESSENCE_TYPE, builder -> builder
                     .persistent(EssenceType.CODEC)
                     .networkSynchronized(EssenceType.STREAM_CODEC)
+            );
+
+    /** The attribute trim on an armor piece. Independent of the cosmetic TRIM component. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<JolCraftTrimMaterials.Attribute>> ATTRIBUTE_TRIM =
+            register(JolCraftDataComponentIds.ATTRIBUTE_TRIM, builder -> builder
+                    .persistent(JolCraftTrimMaterials.Attribute.CODEC)
+                    .networkSynchronized(JolCraftTrimMaterials.Attribute.STREAM_CODEC)
             );
 
     // -----------------

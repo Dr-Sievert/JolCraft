@@ -57,6 +57,7 @@ public final class JolCraftDataComponentIds extends JolCraftIds {
 
     public static final String COIN_POUCH_AMOUNT = join(JolCraftItemIds.COIN_POUCH, JolCraftDictionary.AMOUNT);
     public static final String ESSENCE_TYPE = join(JolCraftItemIds.ESSENCE, JolCraftDictionary.TYPE);
+    public static final String ATTRIBUTE_TRIM = join(JolCraftDictionary.ATTRIBUTE, JolCraftDictionary.TRIM);
 
     // -----------------
     // Brewing

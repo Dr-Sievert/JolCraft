@@ -1,7 +1,12 @@
 package net.sievert.jolcraft.world.item.material.trim;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstrapContext;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.armortrim.TrimMaterial;
 import net.sievert.jolcraft.JolCraft;
@@ -84,6 +89,18 @@ public final class JolCraftTrimMaterials {
         VERDANITE(JolCraftTrimIds.VERDANITE),
         WOECRYSTAL(JolCraftTrimIds.WOECRYSTAL);
 
+        public static final Codec<Attribute> CODEC =
+                Codec.STRING.comapFlatMap(
+                        Attribute::decode,
+                        Attribute::getId
+                );
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, Attribute> STREAM_CODEC =
+                StreamCodec.of(
+                        FriendlyByteBuf::writeEnum,
+                        buffer -> buffer.readEnum(Attribute.class)
+                );
+
         private final String id;
 
         Attribute(@NotNull String id) {
@@ -102,6 +119,14 @@ public final class JolCraftTrimMaterials {
         public float itemModelIndex() {
             return CUSTOM_INDEX_BASE
                     + ((JolCraftMaterials.Material.values().length + this.ordinal()) * CUSTOM_INDEX_STEP);
+        }
+
+        private static DataResult<Attribute> decode(String id) {
+            Attribute attribute = JolCraftEnumHelper.byStringIdNullable(Attribute.class, id, null);
+
+            return attribute == null
+                    ? DataResult.error(() -> "Unknown attribute trim: " + id)
+                    : DataResult.success(attribute);
         }
     }
 

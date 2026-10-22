@@ -36,7 +36,7 @@ CI (`.github/workflows/build.yml`) runs `runData`, then `runGameTestServer`, the
 | `config/` | `JolCraftCommonConfig` (ModConfigSpec) and data-driven JSON config managers under `config/base` and `config/custom` (dwarf professions, brewing corruption). |
 | `datagen/` | Providers mirroring the runtime packages: `recipe/builder` and `recipe/subprovider/**`, `loot/table` and `loot/glm`, `tag/provider`, `client/{language,model,sound,atlas}`, `config`, `structure`, `advancement`. |
 | `integration/` | JEI, Jade and JER. These APIs are `compileOnly`; the mods are optional, so nothing outside this package may reference it without a `ModList` guard. |
-| `mixin/` | 36 mixins, all listed in `src/main/resources/jolcraft.mixins.json` with `defaultRequire: 1` (a failed injection crashes at startup). |
+| `mixin/` | 35 mixins, all listed in `src/main/resources/jolcraft.mixins.json` with `defaultRequire: 1` (a failed injection crashes at startup). |
 | `util/log/` | `JolCraftLogs` + `JolCraftLogTags`. Use these, not a raw logger. |
 
 Client-only code lives in packages or classes named `client` (`world/gui/client`, `world/entity/client`, `world/item/client`, `event/client`). Common code must not import `net.minecraft.client.*` or call into those packages without a `Dist` guard; the mod must run on a dedicated server.

@@ -33,7 +33,6 @@
     "SetComponentsFunctionAccessor",
     "SetItemCountFunctionAccessor",
     "SinglePoolElementAccessor",
-    "SmithingTrimRecipeMixin",
     "SpellcasterUseSpellGoalMixin",
     "TagEntryAccessor",
     "UniformGeneratorAccessor",
