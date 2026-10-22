@@ -6,16 +6,25 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalBooleanRef;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
 import net.minecraft.world.level.levelgen.structure.pools.SinglePoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.sievert.jolcraft.world.worldgen.structure.util.JolCraftStructureContext;
 import net.sievert.jolcraft.world.worldgen.structure.util.SinglePlacementPart;
 import org.objectweb.asm.Opcodes;
@@ -48,6 +57,19 @@ public abstract class JigsawPlacementPlacerMixin {
     @Unique
     private ResourceKey<StructureTemplatePool> jolcraft$currentPool;
 
+    @Unique
+    private int jolcraft$minTerrainCover;
+
+    @Unique
+    private ChunkGenerator jolcraft$chunkGenerator;
+
+    /**
+     * Ground height per 16x16 cell, sampled lazily for one placement. Null when the terrain cover
+     * check is disabled for the structure being placed.
+     */
+    @Unique
+    private Long2IntOpenHashMap jolcraft$groundCache;
+
     @Inject(method = "<init>", at = @At("RETURN"))
     private void jolcraft$initializeSinglePlacementParts(
             Registry<StructureTemplatePool> pools,
@@ -65,6 +87,14 @@ public abstract class JigsawPlacementPlacerMixin {
 
         this.jolcraft$consumedSinglePlacementParts = new HashSet<>();
         this.jolcraft$currentPrimaryCandidates = jolcraft$newIdentitySet();
+
+        this.jolcraft$minTerrainCover = JolCraftStructureContext.getMinTerrainCover();
+        this.jolcraft$chunkGenerator = chunkGenerator;
+
+        if (this.jolcraft$minTerrainCover > 0) {
+            this.jolcraft$groundCache = new Long2IntOpenHashMap();
+            this.jolcraft$groundCache.defaultReturnValue(Integer.MIN_VALUE);
+        }
     }
 
     /**
@@ -89,7 +119,7 @@ public abstract class JigsawPlacementPlacerMixin {
     private ResourceKey<StructureTemplatePool> jolcraft$captureCurrentPool(
             ResourceKey<StructureTemplatePool> original
     ) {
-        if (jolcraft$isSinglePlacementEnabled()) {
+        if (jolcraft$isSinglePlacementEnabled() || jolcraft$isTerrainCoverEnabled()) {
             this.jolcraft$currentPool = original;
             this.jolcraft$currentPrimaryCandidates =
                     jolcraft$newIdentitySet();
@@ -120,12 +150,19 @@ public abstract class JigsawPlacementPlacerMixin {
     private List<StructurePoolElement> jolcraft$filterConsumedParts(
             List<StructurePoolElement> original
     ) {
-        if (!jolcraft$isSinglePlacementEnabled()
-                || this.jolcraft$currentPool == null) {
+        boolean singlePlacement = jolcraft$isSinglePlacementEnabled()
+                && this.jolcraft$currentPool != null;
+
+        if (!singlePlacement && !jolcraft$isTerrainCoverEnabled()) {
             return original;
         }
 
+        // Primary-pool candidates. Anything the placer tries afterwards came from the fallback.
         this.jolcraft$currentPrimaryCandidates.addAll(original);
+
+        if (!singlePlacement) {
+            return original;
+        }
 
         return original.stream()
                 .filter(candidate ->
@@ -274,6 +311,105 @@ public abstract class JigsawPlacementPlacerMixin {
         return jolcraft$ignoresDepth(internalJigsaw)
                 ? depth
                 : nextDepth;
+    }
+
+    /**
+     * Terrain cover check. A candidate that fits the free volume is still treated as colliding when
+     * the ground above any of its four roof corners is less than the structure's minimum cover, so
+     * the placer moves on to the next template and finally to the fallback pool.
+     *
+     * Exempt: pieces attached directly to the start (depth 0: entrance, towers, shaft), internal
+     * decoration jigsaws, and fallback-pool candidates (end caps), so a rejected branch is sealed.
+     */
+    @WrapOperation(
+            method = "tryPlacingChildren",
+            at = @At(
+                    value = "INVOKE",
+                    target =
+                            "Lnet/minecraft/world/phys/shapes/Shapes;" +
+                                    "joinIsNotEmpty(" +
+                                    "Lnet/minecraft/world/phys/shapes/VoxelShape;" +
+                                    "Lnet/minecraft/world/phys/shapes/VoxelShape;" +
+                                    "Lnet/minecraft/world/phys/shapes/BooleanOp;" +
+                                    ")Z"
+            )
+    )
+    private boolean jolcraft$requireTerrainCover(
+            VoxelShape free,
+            VoxelShape candidate,
+            BooleanOp op,
+            Operation<Boolean> original,
+            @Local(argsOnly = true) int depth,
+            @Local(argsOnly = true) LevelHeightAccessor level,
+            @Local(argsOnly = true) RandomState randomState,
+            @Local(ordinal = 1) StructurePoolElement candidateElement,
+            @Share("jolcraft$internalJigsaw")
+            LocalBooleanRef internalJigsaw
+    ) {
+        boolean collides = original.call(free, candidate, op);
+
+        if (collides
+                || !jolcraft$isTerrainCoverEnabled()
+                || depth == 0
+                || internalJigsaw.get()
+                || !this.jolcraft$currentPrimaryCandidates.contains(candidateElement)) {
+            return collides;
+        }
+
+        return jolcraft$isExposed(candidate.bounds(), level, randomState);
+    }
+
+    @Unique
+    private boolean jolcraft$isExposed(
+            AABB bounds,
+            LevelHeightAccessor level,
+            RandomState randomState
+    ) {
+        // The tested shape is AABB.of(box).deflate(0.25), so flooring recovers the block box.
+        int minX = Mth.floor(bounds.minX);
+        int maxX = Mth.floor(bounds.maxX);
+        int minZ = Mth.floor(bounds.minZ);
+        int maxZ = Mth.floor(bounds.maxZ);
+        int requiredGround = Mth.floor(bounds.maxY) + this.jolcraft$minTerrainCover;
+
+        return jolcraft$groundHeight(minX, minZ, level, randomState) < requiredGround
+                || jolcraft$groundHeight(maxX, minZ, level, randomState) < requiredGround
+                || jolcraft$groundHeight(minX, maxZ, level, randomState) < requiredGround
+                || jolcraft$groundHeight(maxX, maxZ, level, randomState) < requiredGround;
+    }
+
+    /**
+     * Highest solid block of the base terrain, sampled once at the centre of each 16x16 cell.
+     */
+    @Unique
+    private int jolcraft$groundHeight(
+            int x,
+            int z,
+            LevelHeightAccessor level,
+            RandomState randomState
+    ) {
+        int cellX = x >> 4;
+        int cellZ = z >> 4;
+        long key = ChunkPos.asLong(cellX, cellZ);
+        int ground = this.jolcraft$groundCache.get(key);
+
+        if (ground == Integer.MIN_VALUE) {
+            ground = this.jolcraft$chunkGenerator.getFirstOccupiedHeight(
+                    (cellX << 4) + 8,
+                    (cellZ << 4) + 8,
+                    Heightmap.Types.OCEAN_FLOOR_WG,
+                    level,
+                    randomState
+            );
+            this.jolcraft$groundCache.put(key, ground);
+        }
+
+        return ground;
+    }
+
+    @Unique
+    private boolean jolcraft$isTerrainCoverEnabled() {
+        return this.jolcraft$groundCache != null;
     }
 
     @Unique
