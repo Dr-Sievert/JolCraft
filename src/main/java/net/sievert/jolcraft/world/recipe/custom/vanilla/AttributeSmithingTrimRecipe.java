@@ -3,12 +3,20 @@ package net.sievert.jolcraft.world.recipe.custom.vanilla;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.armortrim.ArmorTrim;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.SmithingRecipeInput;
 import net.minecraft.world.item.crafting.SmithingTrimRecipe;
 import net.sievert.jolcraft.data.language.JolCraftDictionary;
+import net.sievert.jolcraft.world.item.component.JolCraftDataComponents;
+import net.sievert.jolcraft.world.item.material.trim.JolCraftTrimAttributes;
+import net.sievert.jolcraft.world.item.material.trim.JolCraftTrimMaterials;
 import net.sievert.jolcraft.world.recipe.JolCraftRecipes;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -35,6 +43,26 @@ public class AttributeSmithingTrimRecipe extends SmithingTrimRecipe {
     @Override
     public RecipeSerializer<?> getSerializer() {
         return JolCraftRecipes.ATTRIBUTE_SMITHING_TRIM_SERIALIZER.get();
+    }
+
+    /**
+     * Vanilla applies the gem as the cosmetic TRIM. On top of that the gem's attribute is
+     * stored in its own component, so a later cosmetic trim can change the look without
+     * touching the bonus. A piece holds one attribute trim; a new one replaces it.
+     */
+    @Override
+    public ItemStack assemble(SmithingRecipeInput input, HolderLookup.Provider registries) {
+        ItemStack result = super.assemble(input, registries);
+        if (result.isEmpty()) return result;
+
+        ArmorTrim trim = result.get(DataComponents.TRIM);
+        JolCraftTrimMaterials.Attribute attribute =
+                trim == null ? null : JolCraftTrimAttributes.getAttributeTrim(trim);
+        if (attribute != null) {
+            result.set(JolCraftDataComponents.ATTRIBUTE_TRIM.get(), attribute);
+        }
+
+        return result;
     }
 
     public Ingredient templateIngredient() {
