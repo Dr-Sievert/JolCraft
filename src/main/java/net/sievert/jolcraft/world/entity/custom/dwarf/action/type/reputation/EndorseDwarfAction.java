@@ -32,7 +32,6 @@ public class EndorseDwarfAction extends InspectDwarfAction {
     @Override
     public void start() {
         this.ticksRemaining = 40;
-        dwarf.resetPaid();
         tablet = itemstack.copy();
         startInspect(dwarf, player, hand, itemstack);
     }
@@ -54,11 +53,22 @@ public class EndorseDwarfAction extends InspectDwarfAction {
     public void stop() {
         if (dwarf.level().isClientSide) return;
 
+        // The player may have logged out or respawned since start(); never reward a stale instance.
+        ServerPlayer target = resolvePlayer();
+        if (target == null) {
+            dwarf.getActionHelper().rollback(dwarf, this);
+            tablet = ItemStack.EMPTY;
+            return;
+        }
+
+        // Charge only a completed endorsement; an interrupted one keeps its payment.
+        dwarf.resetPaid();
+
         DwarfProfession profession = dwarf.getProfession();
 
-        DwarvenReputationAttachmentHelper.addEndorsement(player, profession);
+        DwarvenReputationAttachmentHelper.addEndorsement(target, profession);
 
-        int total = player.getData(JolCraftAttachments.DWARVEN_REPUTATION.get()).getEndorsementCount();
+        int total = target.getData(JolCraftAttachments.DWARVEN_REPUTATION.get()).getEndorsementCount();
 
         JolCraftLogs.info(
                 JolCraftLogTags.PLAYER,
@@ -66,25 +76,23 @@ public class EndorseDwarfAction extends InspectDwarfAction {
                 DwarfProfession.getDisplayName(dwarf).getString(),
                 JolCraftLogs.roundedPos(dwarf),
                 dwarf.level().dimension().location(),
-                player.getDisplayName().getString(),
+                target.getDisplayName().getString(),
                 total,
                 total <= 1 ? "endorsement" : "endorsements"
         );
 
-        if (player instanceof ServerPlayer serverPlayer) {
-            JolCraftCriteriaTriggers.ENDORSEMENT_GAIN.trigger(serverPlayer, profession);
-        }
+        JolCraftCriteriaTriggers.ENDORSEMENT_GAIN.trigger(target, profession);
 
         ItemStack updatedTablet = tablet;
 
-        int endorsements = DwarvenReputationAttachmentHelper.getEndorsementCount(player);
-        int tier = DwarvenReputationAttachmentHelper.getTier(player);
+        int endorsements = DwarvenReputationAttachmentHelper.getEndorsementCount(target);
+        int tier = DwarvenReputationAttachmentHelper.getTier(target);
 
         updatedTablet.set(JolCraftDataComponents.REPUTATION_ENDORSEMENTS.get(), endorsements);
         updatedTablet.set(JolCraftDataComponents.REPUTATION_TIER.get(), tier);
-        updatedTablet.set(JolCraftDataComponents.REPUTATION_OWNER.get(), player.getName().getString());
+        updatedTablet.set(JolCraftDataComponents.REPUTATION_OWNER.get(), target.getName().getString());
 
-        throwItem(dwarf, player, updatedTablet);
+        throwItem(dwarf, target, updatedTablet);
         tablet = ItemStack.EMPTY;
     }
 

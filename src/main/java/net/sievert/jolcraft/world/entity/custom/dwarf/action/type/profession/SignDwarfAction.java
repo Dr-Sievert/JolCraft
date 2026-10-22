@@ -24,7 +24,6 @@ public class SignDwarfAction extends InspectDwarfAction {
     @Override
     public void start() {
         this.ticksRemaining = 40;
-        dwarf.resetPaid();
         startInspect(dwarf, player, hand, itemstack);
     }
 
@@ -43,6 +42,8 @@ public class SignDwarfAction extends InspectDwarfAction {
 
     @Override
     public void stop() {
+        // Charge only a completed signing; an interrupted one keeps its payment.
+        dwarf.resetPaid();
         throwItem(dwarf, player, DwarfProfessionHelper.getContract(dwarf.getProfession()).toStack());
     }
 }

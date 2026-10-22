@@ -2,6 +2,7 @@ package net.sievert.jolcraft.world.entity.custom.dwarf.action.type.bounty;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -196,47 +197,45 @@ public final class BountyRewardAction extends InspectDwarfAction {
             return;
         }
 
+        // The player may have logged out or respawned since start(); never reward a stale instance.
+        ServerPlayer redeemer = resolvePlayer();
+
+        ItemStack redeemStack =
+                itemstack.copy();
+
+        BountyRecipeInput input =
+                redeemStack.isEmpty()
+                        || BountyRewardRecipe.isIncompleteRewardBountyStack(redeemStack)
+                        ? null
+                        : BountyRecipeInput.of(redeemStack).result().orElse(null);
+
+        RecipeHolder<BountyRewardRecipe> recipeHolder =
+                input == null
+                        ? null
+                        : serverLevel.getRecipeManager()
+                                .getRecipeFor(
+                                        JolCraftRecipes.BOUNTY_REWARD_TYPE.get(),
+                                        input,
+                                        serverLevel
+                                )
+                                .orElse(null);
+
+        if (redeemer == null || recipeHolder == null) {
+            /*
+             * The bounty was consumed at start. Without a live player or a
+             * matching reward recipe (removed by /reload) hand it back
+             * instead of destroying it.
+             */
+            dwarf.getActionHelper().rollback(dwarf, this);
+            return;
+        }
+
         dwarf.setItemSlot(
                 EquipmentSlot.MAINHAND,
                 previousMainHandItem
         );
 
         previousMainHandItem = ItemStack.EMPTY;
-
-        ItemStack redeemStack =
-                itemstack.copy();
-
-        if (redeemStack.isEmpty()) {
-            return;
-        }
-
-        if (BountyRewardRecipe.isIncompleteRewardBountyStack(
-                redeemStack
-        )) {
-            return;
-        }
-
-        BountyRecipeInput input =
-                BountyRecipeInput.of(
-                        redeemStack
-                ).result().orElse(null);
-
-        if (input == null) {
-            return;
-        }
-
-        RecipeHolder<BountyRewardRecipe> recipeHolder =
-                serverLevel.getRecipeManager()
-                        .getRecipeFor(
-                                JolCraftRecipes.BOUNTY_REWARD_TYPE.get(),
-                                input,
-                                serverLevel
-                        )
-                        .orElse(null);
-
-        if (recipeHolder == null) {
-            return;
-        }
 
         DwarfProfession redeemType =
                 input.type();
@@ -247,10 +246,10 @@ public final class BountyRewardAction extends InspectDwarfAction {
         JolCraftLogs.info(
                 JolCraftLogTags.PLAYER,
                 "{} completed a level {} {} bounty at {} in {}",
-                player.getDisplayName().getString(),
+                redeemer.getDisplayName().getString(),
                 redeemTier.getId(),
                 redeemType.professionName(),
-                JolCraftLogs.roundedPos(player),
+                JolCraftLogs.roundedPos(redeemer),
                 serverLevel.dimension().location()
         );
 
@@ -269,10 +268,10 @@ public final class BountyRewardAction extends InspectDwarfAction {
                         );
 
         Vec3 target =
-                player.position()
+                redeemer.position()
                         .add(
                                 0.0D,
-                                player.getBbHeight() * 0.5D,
+                                redeemer.getBbHeight() * 0.5D,
                                 0.0D
                         );
 
@@ -331,7 +330,7 @@ public final class BountyRewardAction extends InspectDwarfAction {
 
         dwarf.restockBountiesOnly();
 
-        player.awardStat(
+        redeemer.awardStat(
                 JolCraftStats.DWARVEN_BOUNTIES_COMPLETED.get()
         );
     }

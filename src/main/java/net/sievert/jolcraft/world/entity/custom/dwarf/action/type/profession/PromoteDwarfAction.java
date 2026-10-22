@@ -38,7 +38,6 @@ public class PromoteDwarfAction extends InspectDwarfAction {
     @Override
     public void start() {
         this.ticksRemaining = 40;
-        dwarf.resetPaid();
         startInspect(dwarf, player, hand, itemstack);
         dwarf.spawnColoredParticles(0.35F, 0.35F, 0.35F, 0.7F, 16, 0.5D);
         JolCraftSoundHelper.entity(dwarf, SoundEvents.EVOKER_CAST_SPELL, 1.0F, 1.5F);
@@ -133,6 +132,8 @@ public class PromoteDwarfAction extends InspectDwarfAction {
                 resolveProfessionType(itemstack);
 
         if (professionType == null) {
+            // Unmapped contract (datapack tag entry): hand it back and keep the payment.
+            dwarf.getActionHelper().rollback(dwarf, this);
             return;
         }
 
@@ -148,6 +149,7 @@ public class PromoteDwarfAction extends InspectDwarfAction {
                     "Failed to create promoted dwarf entity for profession {}",
                     profession
             );
+            dwarf.getActionHelper().rollback(dwarf, this);
             return;
         }
 
@@ -159,6 +161,9 @@ public class PromoteDwarfAction extends InspectDwarfAction {
          */
         promotedDwarf.restoreFrom(dwarf);
         promotedDwarf.setProfession(profession);
+
+        // Charge only a completed promotion; a failed or interrupted one keeps its payment.
+        promotedDwarf.resetPaid();
 
         DwarfLoadouts.applyLoadout(
                 promotedDwarf
@@ -174,6 +179,11 @@ public class PromoteDwarfAction extends InspectDwarfAction {
                     JolCraftLogs.roundedPos(promotedDwarf),
                     level.dimension().location()
             );
+
+            // Put the original dwarf back (its UUID is free again) and hand the contract back.
+            dwarf.revive();
+            level.addWithUUID(dwarf);
+            dwarf.getActionHelper().rollback(dwarf, this);
             return;
         }
 

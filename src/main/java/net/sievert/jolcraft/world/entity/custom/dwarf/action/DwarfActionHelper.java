@@ -376,7 +376,7 @@ public class DwarfActionHelper {
                 .getPlayerList()
                 .getPlayer(state.playerId());
 
-        if (player != null) {
+        if (player != null && player.isAlive()) {
             player.getInventory().add(refund);
 
             if (!refund.isEmpty()) {
@@ -448,13 +448,29 @@ public class DwarfActionHelper {
     /** Cancels the action, rolling back spent inspection inputs exactly once. */
     public void stopAction(AbstractDwarfEntity dwarf) {
         if (activeAction instanceof InspectDwarfAction inspectAction) {
-            interruptedAction = new InterruptedAction(
-                    inspectAction.getPlayerId(),
-                    inspectAction.getActionInput(),
-                    inspectAction.getPreviousMainHandItem(),
-                    inspectAction.wasInputConsumed()
-            );
+            rollback(dwarf, inspectAction);
+            return;
         }
+        clearAction(dwarf);
+        recoverInterruptedAction(dwarf);
+    }
+
+    /**
+     * Rolls back a delayed inspect transaction that cannot be completed:
+     * restores the dwarf's hand and refunds the consumed input to the live
+     * player, or drops it at the dwarf when they are gone. Also used by an
+     * action's own stop() when its player or recipe is no longer available.
+     */
+    public void rollback(
+            AbstractDwarfEntity dwarf,
+            InspectDwarfAction inspectAction
+    ) {
+        interruptedAction = new InterruptedAction(
+                inspectAction.getPlayerId(),
+                inspectAction.getActionInput(),
+                inspectAction.getPreviousMainHandItem(),
+                inspectAction.wasInputConsumed()
+        );
         clearAction(dwarf);
         recoverInterruptedAction(dwarf);
     }

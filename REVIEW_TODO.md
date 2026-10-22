@@ -2,9 +2,11 @@
 
 Working list from the repository review of 2026-10-17. The full report (failure scenarios, evidence, the 26 refuted findings) is `jolcraft-review-2026-10-17.md` in the session scratchpad; ask Claude to re-send it. Numbers are stable: refer to an item as **R12**. Tick items off when fixed, or mark them `won't fix` with a reason. Line numbers are from the `Trades` branch on 2026-10-17 and will drift.
 
-Status: 96 verified findings merged into 87 items (16 medium, 71 low). No critical or high severity. Everything compiles.
+Status: 86 items remain from the review (13 medium, 71 low, 2 balance items parked below). No critical or high severity. Everything compiles.
 
-## Medium (16)
+Working order: bugs first, then the 1.0 content, then balance. Content and balance findings are not review items.
+
+## Medium (13)
 
 Ordered by impact as judged in the synthesis.
 
@@ -53,12 +55,6 @@ Ordered by impact as judged in the synthesis.
   `BountyCrateItem.java:111` · logic · `src/main/java/net/sievert/jolcraft/world/item/custom/bounty/BountyCrateItem.java`  
   The bounty crate accepts any stack of the right item type, ignoring its components (:141, :203), and gives back fresh default stacks (:111, :253). Generated bounties ask for damageable tools (DwarfMerchantBountyTasks.java:146-148, 215-216), and a crate can be refilled after extraction (:145). So any player can fully repair those tools as many times as they like, while enchantments and names are silently lost.  
   Fix: Only accept pristine stacks (no damage, and components equal to the item's default prototype) in tryFillCrate and use(). Alternatively, refuse damageable items in item objectives at BountyTaskRecipe validation.
-
-- [ ] **R8. Blacksmith and Smelter dwarves cannot level, so their only trades are unreachable**  
-  Parked 2026-10-20 as content work (trade tables for Blacksmith, Smelter, Arcanist, Priest); part of the obtainability pass below.  
-  `DwarfSmelterTrades.java:37` · logic · `src/main/java/net/sievert/jolcraft/datagen/recipe/subprovider/dwarf_trade/DwarfSmelterTrades.java`  
-  Blacksmith and Smelter dwarves start at level 1 and have no way to earn XP, so their only trades (Blacksmith: EXPERT crate and MASTER mithril_forge_technique tome; Smelter: MASTER coin_press_manual tome) can only be reached with the dev key. Arcanist and Priest have no trades at all, even though the Guildmaster sells their contracts at EXPERT tier and the Blacksmith and Smelter contracts at MASTER tier.  
-  Fix: Add NOVICE to JOURNEYMAN trades with dwarfXp > 0 for Blacksmith and Smelter (or add bounty tasks and rewards for them) so XP can accumulate. Alternatively set their level explicitly on promotion. Arcanist and Priest need the same treatment, or an explicit note that they are unfinished.
 
 - [x] **R9. Item property lookup throws on the render thread for any unregistered lore key**  
   Done 2026-10-20: `JolCraftItemProperties.valueOrDefault()` returns 0.0F (base model) for an unregistered key and warns once per key; `LoreKey`, `CoinPouchAmount` and `RewardCrateTheme` use it in their render-path `value()`. `value()` still throws and is used only by datagen (model subproviders). Only `LoreKey` could actually hit it; the other two switched for consistency.  
@@ -144,16 +140,6 @@ Ordered by impact as judged in the synthesis.
   The wooden and stone artisan hammer, chisel, pestle and spanner recipes accept only oak planks and cobblestone, where vanilla tools accept any plank and any stone tool material. This is an inconsistency and a convenience gap, not a progression blocker: oak and cobblestone are widely available, and the iron and higher tiers need only vanilla materials.  
   Fix: Change the helper parameter type to a TagKey or Ingredient and pass ItemTags.PLANKS and ItemTags.STONE_TOOL_MATERIALS. Keep unlockedBy on a representative item.
 
-- [ ] **R22. Merchant bounty items are mostly sold by the merchant for no more than the reward (arbitrage)**  
-  `DwarfMerchantBountyTasks.java:60` · logic · `src/main/java/net/sievert/jolcraft/datagen/recipe/subprovider/bounty/task/DwarfMerchantBountyTasks.java`  
-  Most NOVICE and APPRENTICE merchant bounty items are sold by the merchant in the same amounts for less than the expected coin reward. A player can buy the item, fill the bounty and redeem it for about +2-3 coins plus dwarf and player XP each time. The loop is not unlimited. Redeeming restocks only the bounty offer, while the item trades have 3 uses and come from a random pool. It continues only until those trades run out or a restock crate drops.  
-  Fix: Draw task items from things the merchant does not sell, or scale rewards so that expected reward is below the merchant's sell price of the task items.
-
-- [ ] **R23. Artisan buy prices and Merchant sell prices overlap, so coins can be farmed by choosing favourable rolls**  
-  `DwarfArtisanTrades.java:62` · logic · `src/main/java/net/sievert/jolcraft/datagen/recipe/subprovider/dwarf_trade/DwarfArtisanTrades.java`  
-  The per-unit price ranges overlap between Merchant buy offers and Artisan sell offers for quartz, lapis, emerald and amethyst, so with favourable independent rolls a player can turn a profit. The Merchant's 3 uses per restock cap it, so it is a minor balance problem and not a medium logic defect.  
-  Fix: Make Artisan's maximum coins-per-unit strictly lower than the Merchant's minimum coins-per-unit for every shared item, for example by lowering Artisan's coin rewards or raising the Merchant's coin cost.
-
 - [ ] **R24. Two stacked RandomReplaceWithLootProcessors share the same per-position random, so the common archaeology gravel rate is 7% instead of 8%**  
   `JolCraftDwarvenFortressProcessors.java:226` · logic · `src/main/java/net/sievert/jolcraft/datagen/structure/processor/JolCraftDwarvenFortressProcessors.java`  
   Both processors draw their first nextFloat from settings.getRandom(current.pos()), which is seeded only by position. The two rolls are perfectly correlated, not independent.  
@@ -225,18 +211,21 @@ Ordered by impact as judged in the synthesis.
   onSheared returns an empty list without setting the sheared state when player is null. isShearable still returns true, so a dispenser's shears are used up for no result.  
   Fix: Remove the null-player early return. Make the sound play only when player is non-null, or play it at the entity's position.
 
-- [ ] **R38. Stop-time failures consume the player's item with no refund**  
+- [x] **R38. Stop-time failures consume the player's item with no refund**  
+  Done 2026-10-23: `PromoteDwarfAction.transformToProfession` rolls back (hand restored, contract refunded) when the contract has no mapping or the entity cannot be created, and on an `addWithUUID` failure revives and re-adds the original dwarf before refunding; the payment is charged on the promoted copy only. `BountyRewardAction.stop` resolves the recipe before touching the hand and rolls back when it, or the player, is missing. Rollback is `DwarfActionHelper.rollback`, shared with `stopAction`.  
   `BountyRewardAction.java:237`, `PromoteDwarfAction.java:132` · logic · `src/main/java/net/sievert/jolcraft/world/entity/custom/dwarf/action/type/profession/PromoteDwarfAction.java`  
   PromoteDwarfAction.stop() and BountyRewardAction.stop() have failure branches that leave the consumed contract or bounty without a refund. These are a datapack-added contract tag entry with no mapping, a bounty recipe removed by /reload during the 2-second window, and, for promote, a third-party mod cancelling EntityJoinLevelEvent after the original dwarf was discarded. None can happen with the shipped data. The discard-before-add order is needed to free the UUID, so on add failure the fix is to re-add the original dwarf or refund the contract, not to reorder the calls.  
   Fix: On every failure branch, refund via throwItem(dwarf, player, getActionInput()), or via the helper's recover path, and restore previousMainHandItem. In Promote, call discard() only after addWithUUID succeeds. If that is impossible because of the UUID clash, re-add the original dwarf on failure.
   Also reported as: Bounty reward item is consumed at action start, but the recipe is re-resolved at stop with no refund (`BountyRewardAction.java:237`).
 
-- [ ] **R39. Payment is destroyed when an in-flight transaction is rolled back**  
+- [x] **R39. Payment is destroyed when an in-flight transaction is rolled back**  
+  Done 2026-10-23: `resetPaid()` moved from `start()` to the success path of `stop()` in Sign and Endorse, and onto the promoted copy in Promote, as ReputationGain already did. An interrupted action now keeps the coin or pouch charge.  
   `SignDwarfAction.java:27` · logic · `src/main/java/net/sievert/jolcraft/world/entity/custom/dwarf/action/type/profession/SignDwarfAction.java`  
   Sign, Promote and Endorse actions clear the dwarf's paid state in start(). The rollback (stopAction on death or when the revenge goal ends, plus reload after an unload) refunds the contract or tablet but does not restore paidTicks. So the player loses one coin, or one pouch charge, each time an action is interrupted.  
   Fix: Move resetPaid() from start() to stop(), i.e. only on successful completion, as ReputationGainDwarfAction already does. Alternatively record the paid state in InterruptedAction and restore it in recoverInterruptedAction.
 
-- [ ] **R40. Actions keep a Player reference across ticks and write rewards to a possibly stale player**  
+- [x] **R40. Actions keep a Player reference across ticks and write rewards to a possibly stale player**  
+  Done 2026-10-23: `InspectDwarfAction.resolvePlayer()` re-fetches the player by UUID from the player list (null when offline, removed, dead or in another level). Endorse, ReputationGain and BountyReward use it in `stop()` and roll back through `DwarfActionHelper.rollback` instead of rewarding a stale instance. The recovery refund drops at the dwarf when the player is dead instead of adding to an inventory that is about to be discarded.  
   `EndorseDwarfAction.java:59` · logic · `src/main/java/net/sievert/jolcraft/world/entity/custom/dwarf/action/type/reputation/EndorseDwarfAction.java`  
   Delayed inspect actions (Endorse, ReputationGain, BountyReward) apply their rewards in stop() to the Player object captured at start, with no online or removed check. If the player logs out on a multiplayer server while the dwarf's chunk keeps ticking, or respawns in under 2 s, the reward is written to a discarded ServerPlayer and lost. The tablet still drops showing the updated count. Singleplayer logout and a normal death-then-respawn are handled correctly by the interrupted-action refund and copyOnDeath.  
   Fix: Store only the UUID. In stop(), re-resolve the player with server.getPlayerList().getPlayer(uuid). If the player is absent, removed, dead or in another level, route through the same refund path as recoverInterruptedAction instead of granting rewards.
@@ -503,6 +492,20 @@ Ordered by impact as judged in the synthesis.
   Fix: encode only what the config needs (effect id, duration, amplifier) in `WeightedEffect.CODEC`, or sort the cures before writing. Belongs to roadmap item 3 (datagen overhaul).  
   Seen 2026-10-20: the same `cures` ordering also flaps `recipe/fermenting_cauldron/*_effect_unfinished_brew.json` (4 files) and `recipe/hand_interaction/test/supported_outputs.json` between consecutive `runData` runs with no code change.
 
+## Parked: balance (after the 1.0 content)
+
+Working order agreed 2026-10-23: fix every bug above first, then implement the 1.0 content, then balance. These two are balance findings, not defects, so they wait for that pass. R8 (Blacksmith/Smelter levelling) was removed the same day as content work, not a review item.
+
+- [ ] **R22. Merchant bounty items are mostly sold by the merchant for no more than the reward (arbitrage)**  
+  `DwarfMerchantBountyTasks.java:60` · logic · `src/main/java/net/sievert/jolcraft/datagen/recipe/subprovider/bounty/task/DwarfMerchantBountyTasks.java`  
+  Most NOVICE and APPRENTICE merchant bounty items are sold by the merchant in the same amounts for less than the expected coin reward. A player can buy the item, fill the bounty and redeem it for about +2-3 coins plus dwarf and player XP each time. The loop is not unlimited. Redeeming restocks only the bounty offer, while the item trades have 3 uses and come from a random pool. It continues only until those trades run out or a restock crate drops.  
+  Fix: Draw task items from things the merchant does not sell, or scale rewards so that expected reward is below the merchant's sell price of the task items.
+
+- [ ] **R23. Artisan buy prices and Merchant sell prices overlap, so coins can be farmed by choosing favourable rolls**  
+  `DwarfArtisanTrades.java:62` · logic · `src/main/java/net/sievert/jolcraft/datagen/recipe/subprovider/dwarf_trade/DwarfArtisanTrades.java`  
+  The per-unit price ranges overlap between Merchant buy offers and Artisan sell offers for quartz, lapis, emerald and amethyst, so with favourable independent rolls a player can turn a profit. The Merchant's 3 uses per restock cap it, so it is a minor balance problem and not a medium logic defect.  
+  Fix: Make Artisan's maximum coins-per-unit strictly lower than the Merchant's minimum coins-per-unit for every shared item, for example by lowering Artisan's coin rewards or raising the Merchant's coin cost.
+
 ## Roadmap (author's list) with related review items
 
 The author's own planned work, in the author's order. Review items that touch the same area are listed so they can be folded into that work instead of being fixed in isolation.
@@ -522,8 +525,8 @@ The author's own planned work, in the author's order. Review items that touch th
 ## Larger design items from the review (not single fixes)
 
 - Strongbox menu lifecycle: wire startOpen/stopOpen/removed(), drop the per-tick recheck, clear the interacting-player id (R12, R15, R34, R33).
-- Dwarf transactions as refund-safe units: resolve before consuming, store player UUIDs, move resetPaid() to success (R39, R40, R38).
+- Dwarf transactions as refund-safe units: resolve before consuming, store player UUIDs, move resetPaid() to success (R39, R40, R38). Done 2026-10-23.
 - One fail-soft policy for data-driven config and recipe validation (R6, R86, R48, R17).
-- Obtainability and economy pass: Muffhorn spawn, Blacksmith/Smelter/Arcanist/Priest progression, Artisan vs Merchant price overlap, bounty arbitrage (R2, R8, R23, R22).
+- Obtainability and economy pass (balance, after the 1.0 content): Muffhorn spawn, Blacksmith/Smelter/Arcanist/Priest progression, Artisan vs Merchant price overlap, bounty arbitrage (R2, R23, R22).
 - Event-handler preamble: isCanceled, getUseBlock/getUseItem, mayUseItemAt, spectator and sneak checks for every RightClickBlock and BreakEvent handler (R25, R26, R28, R31).
 - Per-tick early-outs: skip getPersistentData/getData unless the entity has the relevant effect or attachment (R57, R58, R63).

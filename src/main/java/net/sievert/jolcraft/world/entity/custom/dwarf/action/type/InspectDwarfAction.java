@@ -1,6 +1,7 @@
 package net.sievert.jolcraft.world.entity.custom.dwarf.action.type;
 
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -84,6 +85,36 @@ public class InspectDwarfAction implements DwarfAction {
 
     public void markInputConsumed() {
         inputConsumed = true;
+    }
+
+    /**
+     * Re-resolves the acting player at completion time. The Player captured
+     * in the constructor may be a discarded instance if the player logged
+     * out or respawned while the dwarf kept ticking.
+     *
+     * @return the live player, or null if they are offline, removed, dead
+     *         or in another level
+     */
+    @Nullable
+    protected ServerPlayer resolvePlayer() {
+        if (player == null
+                || !(dwarf.level() instanceof ServerLevel level)) {
+            return null;
+        }
+
+        ServerPlayer live =
+                level.getServer()
+                        .getPlayerList()
+                        .getPlayer(player.getUUID());
+
+        if (live == null
+                || live.isRemoved()
+                || !live.isAlive()
+                || live.level() != level) {
+            return null;
+        }
+
+        return live;
     }
 
     /**

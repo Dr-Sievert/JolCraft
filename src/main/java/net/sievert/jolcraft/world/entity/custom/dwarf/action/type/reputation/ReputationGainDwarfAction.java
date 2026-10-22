@@ -56,15 +56,20 @@ public class ReputationGainDwarfAction extends InspectDwarfAction {
 
     @Override
     public void stop() {
+        // The player may have logged out or respawned since start(); never reward a stale instance.
+        ServerPlayer target = resolvePlayer();
+        if (target == null) {
+            dwarf.getActionHelper().rollback(dwarf, this);
+            return;
+        }
 
-        int rep = DwarvenReputationAttachmentHelper.getTier(player);
+        int rep = DwarvenReputationAttachmentHelper.getTier(target);
 
-        if (!(player instanceof ServerPlayer)
-                || rep != startingTier
+        if (rep != startingTier
                 || rep >= DwarvenReputationAttachmentHelper.getMaxTier()
-                || !DwarvenReputationAttachmentHelper.canAdvance(player)) {
+                || !DwarvenReputationAttachmentHelper.canAdvance(target)) {
             if (wasInputConsumed()) {
-                throwItem(dwarf, player, itemstack.copy());
+                throwItem(dwarf, target, itemstack.copy());
             } else {
                 dwarf.setItemSlot(EquipmentSlot.MAINHAND, previousMainHandItem);
                 previousMainHandItem = ItemStack.EMPTY;
@@ -75,12 +80,10 @@ public class ReputationGainDwarfAction extends InspectDwarfAction {
         // Charge only a successful promotion; a stale inspection keeps its payment.
         dwarf.resetPaid();
 
-        if (player instanceof ServerPlayer serverPlayer) {
-            DwarvenReputationAttachmentHelper.setReputationTier(serverPlayer, rep + 1);
-            JolCraftCriteriaTriggers.REPUTATION_GAIN.trigger(serverPlayer);
-        }
+        DwarvenReputationAttachmentHelper.setReputationTier(target, rep + 1);
+        JolCraftCriteriaTriggers.REPUTATION_GAIN.trigger(target);
 
-        int newRep = DwarvenReputationAttachmentHelper.getTier(player);
+        int newRep = DwarvenReputationAttachmentHelper.getTier(target);
 
         if (!dwarf.level().isClientSide) {
             JolCraftLogs.info(
@@ -89,12 +92,12 @@ public class ReputationGainDwarfAction extends InspectDwarfAction {
                     DwarfProfession.getDisplayName(dwarf).getString(),
                     JolCraftLogs.roundedPos(dwarf),
                     dwarf.level().dimension().location(),
-                    player.getDisplayName().getString(),
+                    target.getDisplayName().getString(),
                     Component.translatable(DwarvenReputationAttachmentHelper.getTierLangKey(newRep)).getString()
             );
         }
 
-        player.displayClientMessage(
+        target.displayClientMessage(
                 Component.translatable(JolCraftLanguageKeys.TOOLTIP_DWARVEN_REPUTATION_LEVEL_UP)
                         .withStyle(ChatFormatting.DARK_PURPLE),
                 true
@@ -110,13 +113,13 @@ public class ReputationGainDwarfAction extends InspectDwarfAction {
 
         nextTablet.set(
                 JolCraftDataComponents.REPUTATION_ENDORSEMENTS.get(),
-                DwarvenReputationAttachmentHelper.getEndorsementCount(player)
+                DwarvenReputationAttachmentHelper.getEndorsementCount(target)
         );
         nextTablet.set(JolCraftDataComponents.REPUTATION_TIER.get(), newRep);
-        nextTablet.set(JolCraftDataComponents.REPUTATION_OWNER.get(), player.getName().getString());
+        nextTablet.set(JolCraftDataComponents.REPUTATION_OWNER.get(), target.getName().getString());
 
-        throwItem(dwarf, player, nextTablet);
-        PlaySound.levelUp(player);
+        throwItem(dwarf, target, nextTablet);
+        PlaySound.levelUp(target);
         dwarf.spawnColoredParticles(0.4F, 0.0F, 0.5F, 1.25F, 64, 2.5D);
     }
 }
