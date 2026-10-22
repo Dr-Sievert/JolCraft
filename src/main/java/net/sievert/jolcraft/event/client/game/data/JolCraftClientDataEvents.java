@@ -18,6 +18,15 @@ public final class JolCraftClientDataEvents {
     public static void onLoggingOut(
             ClientPlayerNetworkEvent.LoggingOut event
     ) {
+        // Minecraft.doWorldLoad starts with disconnect(), which fires this event with no player
+        // after the world's datapacks have already filled the config managers. Those managers are
+        // the integrated server's own singletons, so clearing them here would start every single
+        // player world on empty defaults (no trade pools, no corruption effects). Only a real
+        // logout, which has a player, leaves stale synced data behind.
+        if (event.getPlayer() == null) {
+            return;
+        }
+
         RewardLootTableClientCache.clear();
         ClientboundConfigSyncPacket.clear();
     }
