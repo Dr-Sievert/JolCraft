@@ -29,6 +29,7 @@ public class DwarvenFortressStructure extends AbstractJigsawStructure {
 
     private static final int START_STRUCTURE_HEIGHT = 27;
     private static final int GENERATION_PADDING_Y = 2;
+    private static final int MIN_TERRAIN_COVER = 8;
 
     public static final MapCodec<DwarvenFortressStructure> CODEC =
             RecordCodecBuilder.mapCodec(instance ->
@@ -67,6 +68,11 @@ public class DwarvenFortressStructure extends AbstractJigsawStructure {
     @Override
     protected boolean extraSpawningChecks(GenerationContext context) {
         return true;
+    }
+
+    @Override
+    protected int minTerrainCover() {
+        return MIN_TERRAIN_COVER;
     }
 
     private static BlockPos spawnOrigin(GenerationContext context) {

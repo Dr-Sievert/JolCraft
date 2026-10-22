@@ -187,6 +187,7 @@ public abstract class AbstractJigsawStructure extends Structure {
             Optional<Direction> direction
     ) {
         JolCraftStructureContext.activate(this.singlePlacementParts);
+        JolCraftStructureContext.setMinTerrainCover(this.minTerrainCover());
 
         direction.ifPresent(value ->
                 JolCraftStructureContext.setRotation(
@@ -210,6 +211,15 @@ public abstract class AbstractJigsawStructure extends Structure {
     protected abstract boolean extraSpawningChecks(
             GenerationContext context
     );
+
+    /**
+     * Blocks of terrain that must sit above the roof of every buried piece (anything not attached
+     * directly to the start piece) for it to be placed. Candidates from a pool's fallback are
+     * always allowed so a rejected branch is still sealed. Zero disables the check.
+     */
+    protected int minTerrainCover() {
+        return 0;
+    }
 
     protected Optional<Direction> startDirection(
             GenerationContext context
