@@ -8,6 +8,7 @@ import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.world.entity.attachment.player.custom.hearth.HearthAttachmentHelper;
 import net.sievert.jolcraft.world.item.custom.armor.ArmorSetItem;
 
+@SuppressWarnings("removal")
 @EventBusSubscriber(modid = JolCraft.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public final class HearthEquipmentEvents {
     private HearthEquipmentEvents() {}

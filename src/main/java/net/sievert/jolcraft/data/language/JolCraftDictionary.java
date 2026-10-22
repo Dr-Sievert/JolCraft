@@ -587,6 +587,7 @@ public final class JolCraftDictionary extends JolCraftIds {
     public static final String SETTING = "setting";
     public static final String SHAFT = "shaft";
     public static final String SHAPELESS = "shapeless";
+    public static final String SHELF = "shelf";
     public static final String SHIELD = "shield";
     public static final String SHIFT = "shift";
     public static final String SHOVEL = "shovel";

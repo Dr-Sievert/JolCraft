@@ -58,6 +58,9 @@ public abstract class JolCraftTemplatePoolIds extends JolCraftIds {
     public static final String TILE = JolCraftDictionary.TILE;
     public static final String HOUSE = JolCraftDictionary.HOUSE;
     public static final String DWARF = JolCraftDwarfIds.DWARF;
+    public static final String SHELF = JolCraftDictionary.SHELF;
+    public static final String DECORATION = JolCraftDictionary.DECORATION;
+    public static final String PLACED = JolCraftDictionary.PLACED;
 
     public static final String LARGE_JUNCTION =  join(LARGE, JUNCTION);
     public static final String MEDIUM_JUNCTION = join(MEDIUM, JUNCTION);
@@ -76,7 +79,7 @@ public abstract class JolCraftTemplatePoolIds extends JolCraftIds {
     public static final String LANTERN_3 = three(LANTERN);
     public static final String LANTERN_4 = four(LANTERN);
     public static final String LANTERN_5 = five(LANTERN);
-    public static final String PLACED_LANTERN = join(JolCraftDictionary.PLACED, LANTERN);
+    public static final String PLACED_LANTERN = join(PLACED, LANTERN);
 
     public static final String GRAVEL_1 = one(GRAVEL);
     public static final String GRAVEL_2 = two(GRAVEL);
@@ -167,6 +170,9 @@ public abstract class JolCraftTemplatePoolIds extends JolCraftIds {
     public static final String BOOKSHELF_62 = sixtyTwo(BOOKSHELF);
     public static final String BOOKSHELF_63 = sixtyThree(BOOKSHELF);
     public static final String BOOKSHELF_64 = sixtyFour(BOOKSHELF);
+
+    public static final String SMALL_SHELF = join(SMALL, SHELF);
+    public static final String SMALL_DECORATION = join(SMALL, DECORATION);
 
     protected static String one(String name) { return JolCraftStrings.underscored(name, "1"); }
     protected static String two(String name) { return JolCraftStrings.underscored(name, "2"); }

@@ -40,6 +40,12 @@ public class JolCraftMiscStructurePools extends AbstractPoolProvider {
     public static final ResourceKey<StructureTemplatePool> SMALL_LANTERNS_POOL = poolKey(JolCraftStrings.underscored(
             JolCraftTemplatePoolIds.SMALL, JolCraftStrings.plural(JolCraftTemplatePoolIds.LANTERN)));
 
+    public static final ResourceKey<StructureTemplatePool> SMALL_SHELF_POOL = poolKey(JolCraftStrings.underscored(
+            JolCraftTemplatePoolIds.SMALL, JolCraftTemplatePoolIds.SHELF));
+
+    public static final ResourceKey<StructureTemplatePool> SMALL_DECORATION_POOL = poolKey(JolCraftStrings.underscored(
+            JolCraftTemplatePoolIds.SMALL, JolCraftTemplatePoolIds.DECORATION));
+
     private JolCraftMiscStructurePools(BootstrapContext<StructureTemplatePool> context) {
         super(context, DIRECTORY_ID);
     }
@@ -168,6 +174,18 @@ public class JolCraftMiscStructurePools extends AbstractPoolProvider {
                 bookshelf(JolCraftTemplatePoolIds.BOOKSHELF_62),
                 bookshelf(JolCraftTemplatePoolIds.BOOKSHELF_63),
                 bookshelf(JolCraftTemplatePoolIds.BOOKSHELF_64)
+        );
+
+        register(
+                SMALL_SHELF_POOL,
+                entry(JolCraftTemplatePoolIds.SMALL_SHELF, 1),
+                empty(9)
+        );
+
+        register(
+                SMALL_DECORATION_POOL,
+                entry(JolCraftTemplatePoolIds.PLACED_LANTERN, 1),
+                empty(1)
         );
     }
 
