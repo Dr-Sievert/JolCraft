@@ -134,10 +134,15 @@ public class MuffhornEntity extends Animal implements IShearable {
 
     @Override
     public List<ItemStack> onSheared(@Nullable Player player, ItemStack item, Level level, BlockPos pos) {
-        if (player == null) return List.of();
+        // A dispenser shears with no player (ShearsDispenseItemBehavior); it still takes
+        // the fur, and the sound plays at the animal instead of at the player.
         this.setSheared(true);
         if (!level.isClientSide()) {
-            JolCraftSoundHelper.player(player, SoundEvents.SHEEP_SHEAR, 1.0F, 0.8F);
+            if (player != null) {
+                JolCraftSoundHelper.player(player, SoundEvents.SHEEP_SHEAR, 1.0F, 0.8F);
+            } else {
+                JolCraftSoundHelper.entity(this, SoundEvents.SHEEP_SHEAR, 1.0F, 0.8F);
+            }
             return List.of(new ItemStack(JolCraftItems.MUFFHORN_FUR.get(), 1 + this.random.nextInt(2)));
         }
         return List.of();

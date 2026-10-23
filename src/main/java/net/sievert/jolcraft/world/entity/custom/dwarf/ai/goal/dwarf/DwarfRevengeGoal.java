@@ -21,10 +21,18 @@ public class DwarfRevengeGoal extends Goal
         this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
     }
 
+    /**
+     * Only a living, non-creative player attacker is worth a grudge. Mobs are
+     * DwarfAttackGoal's job; holding MOVE and LOOK for one it cannot reach
+     * just froze the dwarf.
+     */
     @Override
     public boolean canUse()
     {
-        return this.dwarf.getLastHurtByMob() != null && this.dwarf.getLastHurtByMob().isAlive() && this.dwarf.distanceTo(this.dwarf.getLastHurtByMob()) <= 10.0F && (!(this.dwarf.getLastHurtByMob() instanceof Player) || !((Player)this.dwarf.getLastHurtByMob()).isCreative());
+        return this.dwarf.getLastHurtByMob() instanceof Player player
+                && player.isAlive()
+                && !player.isCreative()
+                && this.dwarf.distanceTo(player) <= 10.0F;
     }
 
     @SuppressWarnings("deprecation")
@@ -46,13 +54,18 @@ public class DwarfRevengeGoal extends Goal
     @Override
     public boolean canContinueToUse()
     {
-        return this.dwarf.getLastHurtByMob() != null && this.dwarf.getLastHurtByMob().isAlive() && this.dwarf.distanceTo(this.dwarf.getLastHurtByMob()) <= 10.0F && this.dwarf.getTradingPlayer() == null;
+        return this.dwarf.getLastHurtByMob() instanceof Player player
+                && player.isAlive()
+                && this.dwarf.distanceTo(player) <= 10.0F
+                && this.dwarf.getTradingPlayer() == null;
     }
 
     @Override
     public void stop()
     {
-        this.dwarf.getActionHelper().stopAction(dwarf);
+        // No stopAction here: it cut the attack animation this goal had just started
+        // and rolled back any inspect transaction in progress. Attack actions end on
+        // their own after their few ticks.
         this.dwarf.setLastHurtByMob(null);
     }
 }

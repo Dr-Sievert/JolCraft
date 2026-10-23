@@ -206,6 +206,13 @@ public final class BountyTaskAction extends InspectDwarfAction {
         }
 
         if (plannedResult.isEmpty()) {
+            /*
+             * No bounty could be made: the objective pool resolved to nothing
+             * (planned in start(), on the same tick the handler found the recipe).
+             * The parchment was consumed at start: hand it back instead of
+             * destroying it.
+             */
+            dwarf.getActionHelper().rollback(dwarf, this);
             return;
         }
 

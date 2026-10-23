@@ -79,7 +79,10 @@ public class DeliriumCurseEffect extends AbstractCurseEffect {
         MobEffectInstance effect =
                 player.getEffect(JolCraftEffects.DELIRIUM_CURSE);
 
-        if (effect == null || effect.getDuration() <= 1) {
+        // An infinite instance reports duration -1; only a finite one about to
+        // expire is cleaned up, otherwise no episode could ever fire.
+        if (effect == null
+                || (!effect.isInfiniteDuration() && effect.getDuration() <= 1)) {
             cleanupRuntime(player);
             return true;
         }

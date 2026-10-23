@@ -211,7 +211,8 @@ Ordered by impact as judged in the synthesis.
   isValidProfessionId ignores the namespace. A save edited offline can hold foreign-namespace endorsement ids, and the same profession can be stored under several namespaces. Each copy adds to getEndorsementCount and canAdvance, while hasEndorsement, which looks up the jolcraft namespace only, returns false. Normal gameplay never creates such ids.  
   Fix: Also require `JolCraft.MOD_ID.equals(id.getNamespace())` in isValidProfessionId.
 
-- [ ] **R37. Dispenser shearing consumes shears but does nothing**  
+- [x] **R37. Dispenser shearing consumes shears but does nothing**  
+  Done 2026-10-23: `MuffhornEntity.onSheared` no longer returns early for a null player. A dispenser (`ShearsDispenseItemBehavior` passes null) now sets the sheared state and gets 1-2 fur; the shear sound plays at the animal when there is no player.  
   `MuffhornEntity.java:134` · logic · `src/main/java/net/sievert/jolcraft/world/entity/custom/creature/MuffhornEntity.java`  
   onSheared returns an empty list without setting the sheared state when player is null. isShearable still returns true, so a dispenser's shears are used up for no result.  
   Fix: Remove the null-player early return. Make the sound play only when player is non-null, or play it at the entity's position.
@@ -235,7 +236,8 @@ Ordered by impact as judged in the synthesis.
   Delayed inspect actions (Endorse, ReputationGain, BountyReward) apply their rewards in stop() to the Player object captured at start, with no online or removed check. If the player logs out on a multiplayer server while the dwarf's chunk keeps ticking, or respawns in under 2 s, the reward is written to a discarded ServerPlayer and lost. The tablet still drops showing the updated count. Singleplayer logout and a normal death-then-respawn are handled correctly by the interrupted-action refund and copyOnDeath.  
   Fix: Store only the UUID. In stop(), re-resolve the player with server.getPlayerList().getPlayer(uuid). If the player is absent, removed, dead or in another level, route through the same refund path as recoverInterruptedAction instead of granting rewards.
 
-- [ ] **R41. DwarfRevengeGoal holds MOVE/LOOK for non-player attackers and its stop() cancels any in-progress action**  
+- [x] **R41. DwarfRevengeGoal holds MOVE/LOOK for non-player attackers and its stop() cancels any in-progress action**  
+  Done 2026-10-23: `canUse` and `canContinueToUse` require a `Player` attacker (alive, within 10 blocks, non-creative to start), so a mob the attack goal cannot path to no longer freezes the dwarf; mobs are still answered through `DwarfNonPlayerAlertGoal` and `DwarfAttackGoal`. `stop()` no longer calls `stopAction`: that cut the goal's own 10-tick attack animation after one tick and rolled back any inspect transaction in progress; attack actions end on their own.  
   `DwarfRevengeGoal.java:52` · logic · `src/main/java/net/sievert/jolcraft/world/entity/custom/dwarf/ai/goal/dwarf/DwarfRevengeGoal.java`  
   DwarfRevengeGoal.stop() calls stopAction unconditionally. After the goal's own player hit it sets lastHurtByMob to null, so on the next tick the goal stops and that call cuts the ATTACK animation it just started after about 1 of its 10 ticks. The same call also aborts and refunds any inspect transaction running at the time. The idle MOVE/LOOK hold only happens for non-player attackers the priority-2 DwarfAttackGoal cannot path to, because for any mob it can reach that goal takes over.  
   Fix: Restrict canUse and canContinueToUse to Player attackers (or return false for non-players). Drop the stopAction call in stop(), or only stop when the active action type is ATTACK.
@@ -269,7 +271,8 @@ Ordered by impact as judged in the synthesis.
   AbstractTradingEntity never overrides the interface default, so every offers packet carries canRestock=false.  
   Fix: Override canRestock() in AbstractTradingEntity with a real condition, for example shouldRestock() or any offer being out of stock. Or remove the flag and the dead tooltip branch.
 
-- [ ] **R47. Delirium curse is inert when the effect has infinite duration**  
+- [x] **R47. Delirium curse is inert when the effect has infinite duration**  
+  Done 2026-10-23: the expiry check in `DeliriumCurseEffect.applyEffectTick` is now `effect == null || (!effect.isInfiniteDuration() && effect.getDuration() <= 1)`, so an infinite instance keeps its episode timer instead of being cleaned up every tick.  
   `DeliriumCurseEffect.java:82` · logic · `src/main/java/net/sievert/jolcraft/world/entity/effect/custom/harmful/curse/DeliriumCurseEffect.java`  
   An infinite-duration Delirium Curse reports getDuration() == -1, so the `<= 1` expiry check at DeliriumCurseEffect.java:82 runs cleanup on every tick and no episode ever fires. It is only reachable through commands, other mods, or corruption brewing with an input that is already infinite.  
   Fix: Use effect == null || (!effect.isInfiniteDuration() && effect.getDuration() <= 1).
@@ -285,7 +288,8 @@ Ordered by impact as judged in the synthesis.
   Fix: Wrap each in tooltip.add(...) in both RewardCrateItem (line 161) and SalvageItem (line 27).
   Also reported as: Reward crate tooltip line is built and discarded (`RewardCrateItem.java:181`).
 
-- [ ] **R50. Bounty task parchment is consumed but nothing is returned when objective resolution yields no single stack**  
+- [x] **R50. Bounty task parchment is consumed but nothing is returned when objective resolution yields no single stack**  
+  Done 2026-10-23: `BountyTaskAction.stop` rolls back through `DwarfActionHelper.rollback` when `plannedResult` is empty (the objective pool resolved to nothing; the recipe itself is looked up in `start()` on the same tick the handler checked it, so a reload cannot empty it), restoring the dwarf's hand and handing the parchment back to the live player, or dropping it at the dwarf. Before, the dwarf also kept holding the parchment copy.  
   `BountyTaskRecipe.java:221` · logic · `src/main/java/net/sievert/jolcraft/world/recipe/custom/bounty/BountyTaskRecipe.java`  
   If a datapack or third-party bounty_task recipe has an objective pool that can produce zero or several stacks (because of conditions, several entries or extra rolls), or an entity count that can be 0 or less, createBounty returns EMPTY and BountyTaskAction.stop returns silently. The parchment, which was already consumed with CONSUME_ONE, is lost without any refund or message. This cannot happen with the mod's own shipped recipes.  
   Fix: Re-roll or fall back to another objective in createBounty. Alternatively, resolve the objective in BountyInteractionHandler before the item is consumed and deny the interaction if it is empty. At minimum, refund the input item in stop() when plannedResult is empty.
