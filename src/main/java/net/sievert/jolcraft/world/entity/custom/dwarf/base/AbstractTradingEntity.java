@@ -81,9 +81,6 @@ public class AbstractTradingEntity extends AbstractBreedingEntity implements Dwa
     private Player tradingPlayer;
 
     @Nullable
-    public Player lastTradedPlayer;
-
-    @Nullable
     protected DwarfMerchantOffers offers;
 
     protected AbstractTradingEntity(EntityType<? extends AgeableMob> entityType, Level level) {
@@ -777,7 +774,6 @@ public class AbstractTradingEntity extends AbstractBreedingEntity implements Dwa
         int xpReward = 3 + this.random.nextInt(4);
 
         this.dwarfXp += offer.getXp();
-        this.lastTradedPlayer = this.getTradingPlayer();
 
         xpReward += triggerLevelUp(this);
 

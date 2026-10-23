@@ -159,7 +159,8 @@ public final class JolCraftItemTagProvider
         target.tag(Tags.Items.TOOLS)
                 .addTags(JolCraftTags.Items.SPANNERS)
                 .addTags(JolCraftTags.Items.ARTISAN_HAMMERS)
-                .addTags(JolCraftTags.Items.CHISELS);
+                .addTags(JolCraftTags.Items.CHISELS)
+                .addTags(JolCraftTags.Items.PESTLES);
 
         // Armor
 

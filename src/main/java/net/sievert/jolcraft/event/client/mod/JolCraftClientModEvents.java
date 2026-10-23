@@ -7,6 +7,7 @@ import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -27,6 +28,7 @@ import net.sievert.jolcraft.world.block.entity.custom.client.render.FermentingCa
 import net.sievert.jolcraft.world.block.fluid.util.brewing.BrewingColors;
 import net.sievert.jolcraft.world.block.fluid.JolCraftFluids;
 import net.sievert.jolcraft.world.gui.client.screen.*;
+import net.sievert.jolcraft.world.gui.client.util.JolCraftProgressRenderer;
 import net.sievert.jolcraft.world.item.JolCraftItems;
 import net.sievert.jolcraft.world.item.component.JolCraftDataComponents;
 import net.sievert.jolcraft.world.item.client.color.JolCraftItemColors;
@@ -188,6 +190,15 @@ public final class JolCraftClientModEvents {
         event.register(JolCraftMenuTypes.MORTAR_MENU.get(), MortarScreen::new); screens++;
 
         JolCraftLogs.info(JolCraftLogTags.INIT, "Registered {} menu screens", screens);
+    }
+
+    @SubscribeEvent
+    public static void registerReloadListeners(RegisterClientReloadListenersEvent event) {
+        // The progress-arrow textures are cached as NativeImages; drop them on a resource
+        // reload so a changed pack is picked up instead of the stale copies living on until restart.
+        event.registerReloadListener(
+                (ResourceManagerReloadListener) manager -> JolCraftProgressRenderer.clearTextureCache()
+        );
     }
 
     @SubscribeEvent

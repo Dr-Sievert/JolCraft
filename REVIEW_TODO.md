@@ -100,7 +100,8 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
 
 ### Resources, tags and ids
 
-- [ ] **R65. Block tag shears_loot is declared but never generated or used**  
+- [x] **R65. Block tag shears_loot is declared but never generated or used**  
+  Done 2026-10-23: `JolCraftTags.Blocks.SHEARS_LOOT` and `JolCraftTagIds.SHEARS_LOOT` are deleted, with the two imports only they used. The tag translation came from `TagLangSubProvider` reflecting over the tag fields, so it disappears with the constant on the next `runData`.  
   `JolCraftTags.java:89` · resource-consistency · `src/main/java/net/sievert/jolcraft/data/JolCraftTags.java`  
   JolCraftTags.Blocks.SHEARS_LOOT (id built in JolCraftTagIds.SHEARS_LOOT) has no generated json and no code reference.  
   Fix: Delete the constant and the id, or populate it in JolCraftBlockTagProvider.
@@ -111,17 +112,20 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
   generateLegendaryTomeModels hardcodes layer0 to item/book/tome/ancient_dwarven_tome for the base model. The shipped texture item/book/tome/ancient_dwarven_tome_legendary.png is referenced by no model, so it is dead.  
   Fix: If the base legendary art was intended, point layer0 at item/book/tome/ancient_dwarven_tome_legendary. Otherwise delete the orphan png.
 
-- [ ] **R67. Pestles are in durability_enchantable but not in c:tools, and the c:tools children include no mod melee or armor items**  
+- [x] **R67. Pestles are in durability_enchantable but not in c:tools, and the c:tools children include no mod melee or armor items**  
+  Done 2026-10-23: `JolCraftTags.Items.PESTLES` is added to the `c:tools` builder in `JolCraftItemTagProvider`, next to spanners, hammers and chisels. The melee and armor half of the title was already refuted in the finding text. Needs `runData` to regenerate the tag json.  
   `JolCraftItemTagProvider.java:150` · resource-consistency · `src/main/java/net/sievert/jolcraft/datagen/tag/provider/JolCraftItemTagProvider.java`  
   Pestles (PestleItem extends ToolItem) are in minecraft:durability_enchantable but are missing from the c:tools builder at JolCraftItemTagProvider.java:150-153, while the other three custom tool tags are in it. The claim that the c:tools children include no mod melee or armor items is wrong: mod swords and warhammers reach c:tools through minecraft:swords, and armor does not belong in c:tools.  
   Fix: Add .addTags(JolCraftTags.Items.PESTLES) to the Tags.Items.TOOLS builder.
 
-- [ ] **R68. lastTradedPlayer keeps a strong reference to a Player and is never read**  
+- [x] **R68. lastTradedPlayer keeps a strong reference to a Player and is never read**  
+  Done 2026-10-23: the field and its single assignment in `rewardTradeXp` are removed from `AbstractTradingEntity`.  
   `AbstractTradingEntity.java:84` · resource-consistency · `src/main/java/net/sievert/jolcraft/world/entity/custom/dwarf/base/AbstractTradingEntity.java`  
   rewardTradeXp stores the ServerPlayer in a public field that is never cleared or used anywhere else.  
   Fix: Remove the field, or store a UUID or WeakReference.
 
-- [ ] **R69. JolCraftProgressRenderer.clearTextureCache is never called, so cached NativeImages go stale after a resource reload**  
+- [x] **R69. JolCraftProgressRenderer.clearTextureCache is never called, so cached NativeImages go stale after a resource reload**  
+  Done 2026-10-23: `JolCraftClientModEvents.registerReloadListeners` registers a `ResourceManagerReloadListener` on `RegisterClientReloadListenersEvent` that calls `clearTextureCache()`, which closes and drops the cached images; the renderer reloads them lazily on the next draw. The image map is the renderer's only static cache.  
   `JolCraftProgressRenderer.java:620` · resource-consistency · `src/main/java/net/sievert/jolcraft/world/gui/client/util/JolCraftProgressRenderer.java`  
   JolCraftProgressRenderer.IMAGE_CACHE is never cleared, because clearTextureCache() has no caller and no client reload listener is registered. A resource reload does not reach the Mortar progress textures, so they stay stale until restart. The off-heap memory it holds is small and fixed and does not grow.  
   Fix: Register a ResourceManagerReloadListener on the client (RegisterClientReloadListenersEvent) that calls clearTextureCache(). Alternatively, drop the cache by baking to a texture as in the previous finding.
