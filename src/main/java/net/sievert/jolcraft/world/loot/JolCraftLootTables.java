@@ -2,7 +2,6 @@ package net.sievert.jolcraft.world.loot;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.data.id.loot.JolCraftLootTableIds;
@@ -33,29 +32,29 @@ public final class JolCraftLootTables {
     public static final class Chests {
 
 
-        public static final ResourceKey<LootTable> MISC_SALVAGE = chest(register(JolCraftLootTableIds.MISC_SALVAGE));
-        public static final ResourceKey<LootTable> DEEPSLATE_SALVAGE = chest(register(JolCraftLootTableIds.DEEPSLATE_SALVAGE));
-        public static final ResourceKey<LootTable> MITHRIL_SALVAGE = chest(register(JolCraftLootTableIds.MITHRIL_SALVAGE));
-        public static final ResourceKey<LootTable> SALVAGE = chest(register(JolCraftLootTableIds.SALVAGE));
-        public static final ResourceKey<LootTable> SMITHING_SALVAGE = chest(register(JolCraftLootTableIds.SMITHING_SALVAGE));
+        public static final ResourceKey<LootTable> MISC_SALVAGE = chest(JolCraftLootTableIds.MISC_SALVAGE);
+        public static final ResourceKey<LootTable> DEEPSLATE_SALVAGE = chest(JolCraftLootTableIds.DEEPSLATE_SALVAGE);
+        public static final ResourceKey<LootTable> MITHRIL_SALVAGE = chest(JolCraftLootTableIds.MITHRIL_SALVAGE);
+        public static final ResourceKey<LootTable> SALVAGE = chest(JolCraftLootTableIds.SALVAGE);
+        public static final ResourceKey<LootTable> SMITHING_SALVAGE = chest(JolCraftLootTableIds.SMITHING_SALVAGE);
 
-        public static final ResourceKey<LootTable> DWARVEN_TOMES = chest(register(JolCraftLootTableIds.DWARVEN_TOMES));
+        public static final ResourceKey<LootTable> DWARVEN_TOMES = chest(JolCraftLootTableIds.DWARVEN_TOMES);
 
-        public static final ResourceKey<LootTable> VANILLA_GEMS = chest(register(JolCraftLootTableIds.VANILLA_GEMS));
-        public static final ResourceKey<LootTable> VANILLA_METAL = chest(register(JolCraftLootTableIds.VANILLA_METAL));
+        public static final ResourceKey<LootTable> VANILLA_GEMS = chest(JolCraftLootTableIds.VANILLA_GEMS);
+        public static final ResourceKey<LootTable> VANILLA_METAL = chest(JolCraftLootTableIds.VANILLA_METAL);
 
-        public static final ResourceKey<LootTable> DWARVEN_METAL = chest(register(JolCraftLootTableIds.DWARVEN_METAL));
+        public static final ResourceKey<LootTable> DWARVEN_METAL = chest(JolCraftLootTableIds.DWARVEN_METAL);
 
-        public static final ResourceKey<LootTable> DEEPSLATE_ARMOR = chest(register(JolCraftLootTableIds.DEEPSLATE_ARMOR));
-        public static final ResourceKey<LootTable> DEEPSLATE_GEAR = chest(register(JolCraftLootTableIds.DEEPSLATE_GEAR));
-        public static final ResourceKey<LootTable> MITHRIL_ARMOR = chest(register(JolCraftLootTableIds.MITHRIL_ARMOR));
-        public static final ResourceKey<LootTable> MITHRIL_GEAR = chest(register(JolCraftLootTableIds.MITHRIL_GEAR));
+        public static final ResourceKey<LootTable> DEEPSLATE_ARMOR = chest(JolCraftLootTableIds.DEEPSLATE_ARMOR);
+        public static final ResourceKey<LootTable> DEEPSLATE_GEAR = chest(JolCraftLootTableIds.DEEPSLATE_GEAR);
+        public static final ResourceKey<LootTable> MITHRIL_ARMOR = chest(JolCraftLootTableIds.MITHRIL_ARMOR);
+        public static final ResourceKey<LootTable> MITHRIL_GEAR = chest(JolCraftLootTableIds.MITHRIL_GEAR);
 
-        public static final ResourceKey<LootTable> UNCUT_GEMS = chest(register(JolCraftLootTableIds.UNCUT_GEMS));
+        public static final ResourceKey<LootTable> UNCUT_GEMS = chest(JolCraftLootTableIds.UNCUT_GEMS);
 
-        public static final ResourceKey<LootTable> GEODES = chest(register(JolCraftLootTableIds.GEODES));
+        public static final ResourceKey<LootTable> GEODES = chest(JolCraftLootTableIds.GEODES);
 
-        public static final ResourceKey<LootTable> SUPPLIES = chest(register(JolCraftLootTableIds.SUPPLIES));
+        public static final ResourceKey<LootTable> SUPPLIES = chest(JolCraftLootTableIds.SUPPLIES);
     }
 
     /* ---------------------------------------------------------------------
@@ -64,11 +63,11 @@ public final class JolCraftLootTables {
 
     public static final class Strongbox {
 
-        public static final ResourceKey<LootTable> DWARVEN_FORTRESS_FORGE = strongbox(register(JolCraftLootTableIds.DWARVEN_FORTRESS_FORGE));
-        public static final ResourceKey<LootTable> DWARVEN_FORTRESS_VAULT = strongbox(register(JolCraftLootTableIds.DWARVEN_FORTRESS_VAULT));
-        public static final ResourceKey<LootTable> DWARVEN_FORTRESS_GARDEN = strongbox(register(JolCraftLootTableIds.DWARVEN_FORTRESS_GARDEN));
-        public static final ResourceKey<LootTable> DWARVEN_FORTRESS_ARCHIVES = strongbox(register(JolCraftLootTableIds.DWARVEN_FORTRESS_ARCHIVES));
-        public static final ResourceKey<LootTable> DWARVEN_FORTRESS_CATACOMBS = strongbox(register(JolCraftLootTableIds.DWARVEN_FORTRESS_CATACOMBS));
+        public static final ResourceKey<LootTable> DWARVEN_FORTRESS_FORGE = strongbox(JolCraftLootTableIds.DWARVEN_FORTRESS_FORGE);
+        public static final ResourceKey<LootTable> DWARVEN_FORTRESS_VAULT = strongbox(JolCraftLootTableIds.DWARVEN_FORTRESS_VAULT);
+        public static final ResourceKey<LootTable> DWARVEN_FORTRESS_GARDEN = strongbox(JolCraftLootTableIds.DWARVEN_FORTRESS_GARDEN);
+        public static final ResourceKey<LootTable> DWARVEN_FORTRESS_ARCHIVES = strongbox(JolCraftLootTableIds.DWARVEN_FORTRESS_ARCHIVES);
+        public static final ResourceKey<LootTable> DWARVEN_FORTRESS_CATACOMBS = strongbox(JolCraftLootTableIds.DWARVEN_FORTRESS_CATACOMBS);
     }
 
     /* ---------------------------------------------------------------------
@@ -77,7 +76,7 @@ public final class JolCraftLootTables {
 
     public static final class Crates {
 
-        public static final ResourceKey<LootTable> SUPPLY_CRATE = crate(register(JolCraftLootTableIds.SUPPLY_CRATE));
+        public static final ResourceKey<LootTable> SUPPLY_CRATE = crate(JolCraftLootTableIds.SUPPLY_CRATE);
 
         public static final ResourceKey<LootTable> ALCHEMY_SUPPLIES = crate(
                 CrateTheme.ALCHEMY,
@@ -132,10 +131,10 @@ public final class JolCraftLootTables {
     public static final class Archaeology {
 
         public static final ResourceKey<LootTable> DWARVEN_FORTRESS_COMMON =
-                archaeology(register(JolCraftLootTableIds.DWARVEN_FORTRESS_COMMON));
+                archaeology(JolCraftLootTableIds.DWARVEN_FORTRESS_COMMON);
 
         public static final ResourceKey<LootTable> DWARVEN_FORTRESS_RARE =
-                archaeology(register(JolCraftLootTableIds.DWARVEN_FORTRESS_RARE));
+                archaeology(JolCraftLootTableIds.DWARVEN_FORTRESS_RARE);
     }
 
     /* ---------------------------------------------------------------------
@@ -145,13 +144,13 @@ public final class JolCraftLootTables {
     public static final class Fishing {
 
         public static final ResourceKey<LootTable> FISHING =
-                fishing(register(JolCraftLootTableIds.FISHING));
+                fishing(JolCraftLootTableIds.FISHING);
 
         public static final ResourceKey<LootTable> JUNK =
-                fishing(register(JolCraftLootTableIds.JUNK));
+                fishing(JolCraftLootTableIds.JUNK);
 
         public static final ResourceKey<LootTable> TREASURE =
-                fishing(register(JolCraftLootTableIds.TREASURE));
+                fishing(JolCraftLootTableIds.TREASURE);
     }
 
     /* ---------------------------------------------------------------------
@@ -171,25 +170,28 @@ public final class JolCraftLootTables {
         throw new IllegalArgumentException(key.location() + " is already a registered JolCraft loot table");
     }
 
-    private static ResourceKey<LootTable> inFolder(String folder, ResourceKey<LootTable> key) {
-        ResourceLocation id = key.location();
-        return register(JolCraftStrings.slashed(folder, id.getPath()));
+    /**
+     * Registers only the foldered key. The bare path is never a table of its own, so it must
+     * not end up in {@link #LOCATIONS}.
+     */
+    private static ResourceKey<LootTable> inFolder(String folder, String path) {
+        return register(JolCraftStrings.slashed(folder, path));
     }
 
-    private static ResourceKey<LootTable> inject(ResourceKey<LootTable> key){
-        return inFolder(JolCraftDictionary.INJECT, key);
+    private static ResourceKey<LootTable> inject(String path){
+        return inFolder(JolCraftDictionary.INJECT, path);
     }
 
-    private static ResourceKey<LootTable> chest(ResourceKey<LootTable> key){
-        return inFolder(JolCraftDictionary.CHEST, key);
+    private static ResourceKey<LootTable> chest(String path){
+        return inFolder(JolCraftDictionary.CHEST, path);
     }
 
-    private static ResourceKey<LootTable> strongbox(ResourceKey<LootTable> key){
-        return inFolder(JolCraftDictionary.STRONGBOX, key);
+    private static ResourceKey<LootTable> strongbox(String path){
+        return inFolder(JolCraftDictionary.STRONGBOX, path);
     }
 
-    private static ResourceKey<LootTable> crate(ResourceKey<LootTable> key){
-        return inFolder(JolCraftDictionary.CRATE, key);
+    private static ResourceKey<LootTable> crate(String path){
+        return inFolder(JolCraftDictionary.CRATE, path);
     }
 
     private static ResourceKey<LootTable> crate(
@@ -205,12 +207,12 @@ public final class JolCraftLootTables {
         );
     }
 
-    private static ResourceKey<LootTable> archaeology(ResourceKey<LootTable> key){
-        return inFolder(JolCraftDictionary.ARCHAEOLOGY, key);
+    private static ResourceKey<LootTable> archaeology(String path){
+        return inFolder(JolCraftDictionary.ARCHAEOLOGY, path);
     }
 
-    private static ResourceKey<LootTable> fishing(ResourceKey<LootTable> key){
-        return inFolder(JolCraftDictionary.FISHING, key);
+    private static ResourceKey<LootTable> fishing(String path){
+        return inFolder(JolCraftDictionary.FISHING, path);
     }
 
     public static Set<ResourceKey<LootTable>> all() {

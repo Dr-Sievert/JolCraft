@@ -164,7 +164,8 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
   ChestLootGameTest and OreDensityOverworldTest are entirely commented out and are not in TEST_HOLDERS. ExperimentalTests is a registered scratch test ('Does whatever you want!') that prints to stdout and only asserts player presence.  
   Fix: Delete or revive the commented-out tests. Remove ExperimentalTests from TEST_HOLDERS, or disconnect the reconnected player in a finally block.
 
-- [ ] **R76. Generator debug log reports 10 server providers but 14 are registered**  
+- [x] **R76. Generator debug log reports 10 server providers but 14 are registered**  
+  Done 2026-10-23: the debug line in `JolCraftDataGenerator` now names all 14 server providers in registration order, with a comment to keep it in step with the `addProvider` calls.  
   `JolCraftDataGenerator.java:199` · quality · `src/main/java/net/sievert/jolcraft/datagen/JolCraftDataGenerator.java`  
   The 'Server providers' debug line lists only 10 names, while 14 server providers are added. The damage-type, entity-type, instrument and advancement providers are not listed.  
   Fix: Build the log from a list of the providers that were actually added, or add the missing names.
@@ -175,7 +176,8 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
   Items.COOKED_PORKCHOP is added twice with weight 3 (lines 252 and 255), so its effective weight is 6 against 3 for every other cooked meat. This is almost certainly a copy-paste error.  
   Fix: Remove the duplicate, or replace it with the intended item (for example COOKED_RABBIT).
 
-- [ ] **R78. Builder state is not reset or validated consistently, and there is dead code**  
+- [x] **R78. Builder state is not reset or validated consistently, and there is dead code**  
+  Done 2026-10-23: the unused `LootPool` local in `result(ItemLike, min, max)` is deleted; `costA(TradeCost)` and `result(ItemOutput)` now reset their name token and coin flag before deriving them (the other cost and result setters already did). The subproviders never set a name token before the matching setter, so generated file names are unchanged.  
   `DwarfTradeRecipeBuilder.java:937` · quality · `src/main/java/net/sievert/jolcraft/datagen/recipe/builder/DwarfTradeRecipeBuilder.java`  
   result(ItemLike,min,max) builds a LootPool local that is never used, and shadows the `pool` field. Several setters leave stale naming metadata when called twice.  
   Fix: Delete the unused local. Reset the name and coin flags at the start of every costA, costB and result setter, or compute them lazily at build time.
@@ -202,7 +204,8 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
   The private helper compassExamples(...) at JeiHandInteractionHelper.java:198 is never called, because the JEI builder makes its examples from group.structures(). Datagen builds the structure tag from that same list, so the examples only differ from what the compass really targets if a datapack overrides the tag.  
   Fix: Delete the method, or use it in place of the group.structures() stream if the tag is the source of truth.
 
-- [ ] **R83. AbstractSyncingBlockEntity is dead code with a write-only hook**  
+- [x] **R83. AbstractSyncingBlockEntity is dead code with a write-only hook**  
+  Done 2026-10-23: the class is deleted. `SyncingBlockEntity` stays, since the barrel and cauldron implement it directly.  
   `AbstractSyncingBlockEntity.java:11` · quality · `src/main/java/net/sievert/jolcraft/world/block/entity/custom/base/AbstractSyncingBlockEntity.java`  
   AbstractSyncingBlockEntity has no subclasses, so it is dead code, and Barrel and Cauldron repeat its boilerplate. The client is not left without data: NeoForge's default handleUpdateTag and onDataPacket pass the update tag to loadWithComponents/loadAdditional, so no paired load hook is needed.  
   Fix: Delete the class, or make Barrel and Cauldron extend it and add a paired loadClientData hook.
@@ -213,7 +216,8 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
   normalizeBrewingFluid (void) makes a copy at line 283 and then throws away the result of isSameFluidSameComponents at lines 346-349, so both are dead code. The callers in FermentingCauldronBlockEntity:709 and FermentingBarrelBlockEntity:539 already make their own pre-normalization copies, so no change-tracking is lost.  
   Fix: Remove the copy and the call. Alternatively, return the comparison result as a boolean 'changed' if callers need it.
 
-- [ ] **R85. Intermediate un-generated keys are registered in JolCraftLootTables.LOCATIONS**  
+- [x] **R85. Intermediate un-generated keys are registered in JolCraftLootTables.LOCATIONS**  
+  Done 2026-10-23: the folder helpers in `JolCraftLootTables` take the path string and register only the foldered key, so `all()` holds exactly the generated tables. Every constant resolves to the same id as before.  
   `JolCraftLootTables.java:161`, `JolCraftLootTables.java:196` · quality · `src/main/java/net/sievert/jolcraft/world/loot/JolCraftLootTables.java`  
   Every constant wrapped with chest/strongbox/crate(key)/archaeology/fishing also registers its bare key in LOCATIONS (the themed crate overload does not). So all() would return keys that have no generated table. Nothing calls all() today, so this is latent.  
   Fix: Build the foldered key directly, without registering the intermediate one, and register only the final key.

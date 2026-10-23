@@ -196,17 +196,22 @@ public final class JolCraftDataGenerator {
                     )
             );
 
+            // Keep this list in registration order and in step with the addProvider calls above.
             JolCraftLogs.debug(
                     JolCraftLogTags.DATAGEN,
-                    "Server providers: {}, {}, {}, {}, {}, {}, {}, {}, {}, {}",
-                    JolCraftBlockTagProvider.class.getSimpleName(),
+                    "Server providers: {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}",
                     JolCraftDataMapProvider.class.getSimpleName(),
                     JolCraftRecipeProvider.class.getSimpleName(),
                     JolCraftGlobalLootModifierProvider.class.getSimpleName(),
                     JolCraftMainLootTableProvider.class.getSimpleName(),
-                    JolCraftItemTagProvider.class.getSimpleName(),
                     JolCraftBiomeTagProvider.class.getSimpleName(),
+                    JolCraftBlockTagProvider.class.getSimpleName(),
+                    JolCraftDamageTypeTagProvider.class.getSimpleName(),
+                    JolCraftEntityTypeTagProvider.class.getSimpleName(),
+                    JolCraftInstrumentTagProvider.class.getSimpleName(),
+                    JolCraftItemTagProvider.class.getSimpleName(),
                     JolCraftStructureTagProvider.class.getSimpleName(),
+                    AdvancementProvider.class.getSimpleName(),
                     JolCraftDatapackProvider.class.getSimpleName(),
                     JolCraftConfigProvider.class.getSimpleName()
             );

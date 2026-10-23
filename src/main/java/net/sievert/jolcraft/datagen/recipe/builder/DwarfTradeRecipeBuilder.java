@@ -551,6 +551,12 @@ public final class DwarfTradeRecipeBuilder implements JolCraftOrderedEmissionBui
         this.costA =
                 cost;
 
+        this.costAName =
+                null;
+
+        this.costAIsCoins =
+                false;
+
         if (isCoinCost(cost)) {
             this.costAName =
                     coinToken();
@@ -902,6 +908,12 @@ public final class DwarfTradeRecipeBuilder implements JolCraftOrderedEmissionBui
         this.result =
                 result;
 
+        this.resultName =
+                null;
+
+        this.resultIsCoins =
+                false;
+
         return this;
     }
 
@@ -965,23 +977,6 @@ public final class DwarfTradeRecipeBuilder implements JolCraftOrderedEmissionBui
                         min,
                         max
                 );
-
-        LootPool pool =
-                LootPool.lootPool()
-                        .add(
-                                LootItem.lootTableItem(
-                                                item.asItem()
-                                        )
-                                        .apply(
-                                                SetItemCountFunction.setCount(
-                                                        countProvider(
-                                                                lower,
-                                                                upper
-                                                        )
-                                                )
-                                        )
-                        )
-                        .build();
 
         this.result =
                 ItemOutput.of(
