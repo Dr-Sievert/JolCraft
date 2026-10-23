@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'net.neoforged.moddev' version '2.0.142'
+    id 'net.neoforged.moddev' version '2.0.148'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -14,27 +14,17 @@ repositories {
     maven {
         name = "BlameJared"
         url = "https://maven.blamejared.com/"
-
         content {
             includeGroup "mezz.jei"
+            includeGroup "net.mezzdev.config"
         }
     }
 
     maven {
         name = "Modrinth"
         url = "https://api.modrinth.com/maven"
-
         content {
             includeGroup "maven.modrinth"
-        }
-    }
-
-    maven {
-        name = "CurseMaven"
-        url = "https://www.cursemaven.com"
-
-        content {
-            includeGroup "curse.maven"
         }
     }
 }
@@ -44,9 +34,11 @@ base {
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
 }
 
+// Game tests live in their own source set and load as the dev-only mod jolcraft_gametest
+// (src/gametest/resources/META-INF/neoforge.mods.toml). Every run loads it; the jar never does.
 sourceSets {
     gametest {
         compileClasspath += sourceSets.main.output + configurations.runtimeClasspath
@@ -63,22 +55,15 @@ configurations {
 neoForge {
     version = project.neo_version
 
-    parchment {
-        minecraftVersion = project.parchment_minecraft_version
-        mappingsVersion = project.parchment_mappings_version
-    }
-
     runs {
         client {
             client()
             sourceSet = sourceSets.gametest
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         client2 {
             client()
             sourceSet = sourceSets.gametest
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             programArguments.addAll '--username', 'Dev2'
             gameDirectory = file('run/client2')
         }
@@ -87,20 +72,17 @@ neoForge {
             server()
             sourceSet = sourceSets.gametest
             programArgument '--nogui'
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         gameTestServer {
             type = "gameTestServer"
             sourceSet = sourceSets.gametest
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             gameDirectory = file('run/gametest')
         }
 
         data {
-            data()
-            // -Pjolcraft.datagen.dev=true also emits the dev-only test data (the dev_key recipe)
-            systemProperty 'jolcraft.datagen.dev', providers.gradleProperty('jolcraft.datagen.dev').getOrElse('false')
+            clientData()
+            gameDirectory = file('run/data')
             programArguments.addAll '--mod', project.mod_id, '--all',
                     '--output', file('src/generated/resources/').getAbsolutePath(),
                     '--existing', file('src/main/resources/').getAbsolutePath()
@@ -108,6 +90,8 @@ neoForge {
 
         configureEach {
             systemProperty 'forge.logging.markers', 'REGISTRIES'
+            // No real terminal in IDE or Gradle consoles; skip JLine so the console appender stays quiet.
+            systemProperty 'terminal.jline', 'false'
             logLevel = org.slf4j.event.Level.DEBUG
         }
     }
@@ -117,194 +101,90 @@ neoForge {
             sourceSet(sourceSets.main)
         }
 
-        // Dev-only mod carrying the game tests and their mixin config (declared in
-        // src/gametest/resources/META-INF/neoforge.mods.toml). Every run loads it; the jar never does.
         "${mod_id}_gametest" {
             sourceSet(sourceSets.gametest)
         }
     }
-
-    unitTest {
-        enable()
-        testedMod = mods."${mod_id}"
-    }
 }
 
+// Datagen output. Gitignored; runData regenerates it.
 sourceSets.main.resources {
     srcDir 'src/generated/resources'
     exclude '.cache/**'
 }
 
-
 // ============================================================
-// Optional Development Integrations
+// Optional integrations (integrations.properties)
 // ============================================================
+// Mods JolCraft integrates with but never requires. Each enabled one adds its artifacts to
+// the named Gradle configurations (compileOnly APIs, localRuntime jars for the dev runs) and
+// an optional [[dependencies]] entry to neoforge.mods.toml (${integration_dependencies}).
 
 def integrationProperties = new Properties()
+file('integrations.properties').withInputStream { integrationProperties.load(it) }
 
-file("integrations.properties").withInputStream {
-    integrationProperties.load(it)
-}
-
-def integrationNames = integrationProperties.stringPropertyNames()
-        .collect { key -> key.substring(0, key.indexOf('.')) }
-        .unique()
-        .sort()
-
-def requiredIntegrationProperty = { String integration, String property ->
-    def key = "${integration}.${property}"
-    def value = integrationProperties.getProperty(key)
-
-    if (value == null || value.isBlank()) {
-        throw new GradleException(
-                "Missing '${key}' in integrations.properties"
-        )
-    }
-
-    value
-}
-
-integrationNames.each { integrationName ->
-    def enabled = requiredIntegrationProperty(
-            integrationName,
-            "enabled"
-    )
-
-    if (enabled != "true" && enabled != "false") {
-        throw new GradleException(
-                "'${integrationName}.enabled' must be true or false"
-        )
-    }
-
-    requiredIntegrationProperty(integrationName, "modId")
-    requiredIntegrationProperty(integrationName, "versionRange")
-
-    def side = requiredIntegrationProperty(
-            integrationName,
-            "side"
-    )
-
-    if (!(side in ["CLIENT", "SERVER", "BOTH"])) {
-        throw new GradleException(
-                "'${integrationName}.side' must be CLIENT, SERVER, or BOTH"
-        )
-    }
-
-    def artifactPrefix = "${integrationName}.artifact."
-
-    def artifactNames = integrationProperties.stringPropertyNames()
-            .findAll {
-                it.startsWith(artifactPrefix) &&
-                        it.endsWith(".dependency")
+// name -> [enabled, modId, versionRange, side, artifacts: [[configuration, dependency], ...]]
+def integrations = integrationProperties.stringPropertyNames()
+        .collect { it.substring(0, it.indexOf('.')) }
+        .unique().sort()
+        .collectEntries { name ->
+            def prop = { String key ->
+                def value = integrationProperties.getProperty("${name}.${key}")
+                if (!value?.trim()) {
+                    throw new GradleException("integrations.properties: missing '${name}.${key}'")
+                }
+                value.trim()
             }
-            .collect {
-                it.substring(
-                        artifactPrefix.length(),
-                        it.length() - ".dependency".length()
-                )
+            def enabled = prop('enabled')
+            if (!(enabled in ['true', 'false'])) {
+                throw new GradleException("integrations.properties: '${name}.enabled' must be true or false")
             }
-            .unique()
-            .sort()
-
-    if (artifactNames.isEmpty()) {
-        throw new GradleException(
-                "Integration '${integrationName}' defines no artifacts"
-        )
-    }
-
-    artifactNames.each { artifactName ->
-        def configurationName = requiredIntegrationProperty(
-                integrationName,
-                "artifact.${artifactName}.configuration"
-        )
-
-        requiredIntegrationProperty(
-                integrationName,
-                "artifact.${artifactName}.dependency"
-        )
-
-        if (configurations.findByName(configurationName) == null) {
-            throw new GradleException(
-                    "Unknown Gradle configuration '${configurationName}' " +
-                            "for ${integrationName}.${artifactName}"
-            )
+            def artifactNames = integrationProperties.stringPropertyNames()
+                    .findAll { it.startsWith("${name}.artifact.") && it.endsWith('.dependency') }
+                    .collect { it.tokenize('.')[2] }
+                    .sort()
+            [(name): [
+                    enabled     : enabled.toBoolean(),
+                    modId       : prop('modId'),
+                    versionRange: prop('versionRange'),
+                    side        : prop('side'),
+                    artifacts   : artifactNames.collect {
+                        [configuration: prop("artifact.${it}.configuration"), dependency: prop("artifact.${it}.dependency")]
+                    }
+            ]]
         }
-    }
-}
 
-def enabledIntegrations = integrationNames.findAll { integrationName ->
-    integrationProperties.getProperty(
-            "${integrationName}.enabled"
-    ).toBoolean()
-}
+def enabledIntegrations = integrations.values().findAll { it.enabled }
 
 dependencies {
-    enabledIntegrations.each { integrationName ->
-        def artifactPrefix = "${integrationName}.artifact."
-
-        def artifactNames = integrationProperties.stringPropertyNames()
-                .findAll {
-                    it.startsWith(artifactPrefix) &&
-                            it.endsWith(".dependency")
-                }
-                .collect {
-                    it.substring(
-                            artifactPrefix.length(),
-                            it.length() - ".dependency".length()
-                    )
-                }
-                .unique()
-                .sort()
-
-        artifactNames.each { artifactName ->
-            def configurationName = integrationProperties.getProperty(
-                    "${integrationName}.artifact.${artifactName}.configuration"
-            )
-
-            def dependencyNotation = integrationProperties.getProperty(
-                    "${integrationName}.artifact.${artifactName}.dependency"
-            )
-
-            add(configurationName, dependencyNotation)
-        }
+    enabledIntegrations.each { integration ->
+        integration.artifacts.each { add(it.configuration, it.dependency) }
     }
-
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
 }
 
-
-// ============================================================
-// Generated Mod Metadata
-// ============================================================
-
-def integrationDependenciesToml = enabledIntegrations.collect { integrationName ->
+def integrationDependenciesToml = enabledIntegrations.collect { integration ->
     """
 [[dependencies.${mod_id}]]
-modId="${integrationProperties.getProperty("${integrationName}.modId")}"
+modId="${integration.modId}"
 type="optional"
-versionRange="${integrationProperties.getProperty("${integrationName}.versionRange")}"
+versionRange="${integration.versionRange}"
 ordering="NONE"
-side="${integrationProperties.getProperty("${integrationName}.side")}"
+side="${integration.side}"
 """
-}.join("\n")
+}.join('')
 
-def generateModMetadata = tasks.register(
-        "generateModMetadata",
-        ProcessResources
-) {
+// Expands src/main/templates (neoforge.mods.toml) with the properties above.
+def generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
     def replaceProperties = [
-            minecraft_version        : minecraft_version,
-            minecraft_version_range  : minecraft_version_range,
-            neo_version              : neo_version,
-            neo_version_range        : neo_version_range,
-            loader_version_range     : loader_version_range,
-            mod_id                   : mod_id,
-            mod_name                 : mod_name,
-            mod_license              : mod_license,
-            mod_version              : mod_version,
-            mod_authors              : mod_authors,
-            mod_description          : mod_description,
+            minecraft_version       : minecraft_version,
+            minecraft_version_range : minecraft_version_range,
+            neo_version             : neo_version,
+            mod_id                  : mod_id,
+            mod_name                : mod_name,
+            mod_license             : mod_license,
+            mod_version             : mod_version,
+            mod_authors             : mod_authors,
+            mod_description         : mod_description,
             integration_dependencies: integrationDependenciesToml
     ]
 
@@ -325,46 +205,4 @@ tasks.withType(JavaCompile).configureEach {
 // Ship the MIT text with the mod so redistributors have it.
 tasks.named('jar', Jar) {
     from('LICENSE')
-}
-
-test {
-    useJUnitPlatform()
-    maxHeapSize = "8G"
-}
-
-abstract class VerifyModJar extends DefaultTask {
-    @InputFile
-    @PathSensitive(PathSensitivity.NONE)
-    abstract RegularFileProperty getModJar()
-
-    @Input
-    abstract ListProperty<String> getRequiredEntries()
-
-    @TaskAction
-    void verifyContents() {
-        new java.util.zip.ZipFile(modJar.get().asFile).withCloseable { archive ->
-            def missing = requiredEntries.get().findAll { archive.getEntry(it) == null }
-            if (!missing.isEmpty()) {
-                throw new GradleException("Mod JAR is missing required generated resources: ${missing.join(', ')}. Run './gradlew runData' before building.")
-            }
-        }
-    }
-}
-
-def verifyModJar = tasks.register('verifyModJar', VerifyModJar) {
-    modJar = tasks.named('jar', Jar).flatMap { it.archiveFile }
-    requiredEntries = [
-            'assets/jolcraft/blockstates/strongbox.json',
-            'assets/jolcraft/models/item/lockpick.json',
-            'assets/jolcraft/lang/en_us.json',
-            'assets/jolcraft/sounds.json',
-            'data/jolcraft/recipe/trim/forge_armor_trim_smithing_template.json',
-            'data/jolcraft/config/brewing/corruption_effects.json',
-            'data/jolcraft/damage_type/vitality_curse.json',
-            'data/jolcraft/worldgen/structure/dwarven_fortress.json'
-    ]
-}
-
-tasks.named('check') {
-    dependsOn verifyModJar
 }

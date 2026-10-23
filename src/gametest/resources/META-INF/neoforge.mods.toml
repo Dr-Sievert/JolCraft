@@ -1,15 +1,12 @@
-# Dev-only mod that carries the game tests and their mixin config. ModDevGradle loads it in
-# every run (see the mods block in build.gradle); the jar is built from the main source set
-# only, so neither this file nor the mixin config it registers ever ships.
-modLoader="javafml"
-loaderVersion="[4,)"
+# Dev-only mod that carries the game tests. ModDevGradle loads it in every run (mods block in
+# build.gradle); the jar is built from the main source set only, so this never ships.
 license="MIT"
 
 [[mods]]
 modId="jolcraft_gametest"
 version="0.1"
 displayName="JolCraft Game Tests"
-description='''Game tests and test-only mixins for JolCraft. Development runs only.'''
+description='''Game tests for JolCraft. Development runs only.'''
 
 [[dependencies.jolcraft_gametest]]
 modId="jolcraft"
@@ -17,6 +14,3 @@ type="required"
 versionRange="[0,)"
 ordering="AFTER"
 side="BOTH"
-
-[[mixins]]
-config="jolcraft.gametest.mixins.json"

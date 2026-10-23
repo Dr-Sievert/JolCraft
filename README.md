@@ -1,40 +1,49 @@
 # JolCraft
 
-A Minecraft mod for **NeoForge 1.21.1**: dwarven professions, trading, reputation,
+A Minecraft mod for **NeoForge 26.1.2**: dwarven professions, trading, reputation,
 brewing, bounties, structures and effects.
+
+The mod is being rewritten from the ground up for 26.1.2. The previous 1.21.1 code is
+kept in `old/` for reference only; nothing in it is built.
 
 ## Requirements
 
-- Java 21
-- Gradle wrapper (included); the build uses NeoForge `21.1.243` with Parchment mappings
+- Java 25 (an installed JDK; Gradle finds it itself)
+- Gradle wrapper (included); the build uses NeoForge `26.1.2.122` through ModDevGradle.
+  No mappings are needed: vanilla ships Mojang names since 26.1.
 
 ## Building
 
-`src/generated/resources` is datagen output and is gitignored, so the data generator has
-to run before anything that packages or runs the mod:
+`src/generated/resources` is datagen output and is gitignored, so run the data
+generator before packaging:
 
 ```bash
-./gradlew runData        # regenerate src/generated/resources (required first)
-./gradlew build          # jar + verifyModJar (fails if generated resources are missing)
+./gradlew runData        # regenerate src/generated/resources
+./gradlew build          # jar in build/libs/
 ```
-
-The jar ends up in `build/libs/`.
 
 ## Development
 
 ```bash
-./gradlew runClient                 # dev client (runClient2 starts a second player)
+./gradlew runClient                 # dev client (runClient2 starts a second player "Dev2")
 ./gradlew runServer                 # dev server
 ./gradlew runGameTestServer         # headless game tests, the same step CI runs
-./gradlew runData -Pjolcraft.datagen.dev=true   # also emits the dev-only test data
 ```
 
-Resources under `src/generated/resources` are produced by the providers in the
-`datagen` package; change a provider and rerun `runData` instead of editing the JSON.
-Hand-authored assets (textures, sounds, structure NBTs, mixin configs) live in
-`src/main/resources`.
+Each run has its own folder under `run/`: the client uses `run/`, the second client
+`run/client2`, the game tests `run/gametest` and datagen `run/data`.
 
-CI (`.github/workflows/build.yml`) runs `runData`, then `runGameTestServer`, then `build`.
+Resources under `src/generated/resources` are produced by datagen providers; change the
+provider and rerun `runData` instead of editing the JSON. Hand-authored assets live in
+`src/main/resources`. Game tests live in `src/gametest` and load as the dev-only mod
+`jolcraft_gametest`, which never ships in the jar.
+
+Optional mod integrations (JEI, Jade) are declared in `integrations.properties`: the
+artifacts for the dev environment and the optional dependency in the mod metadata.
+Set `<name>.enabled=false` to drop one from both.
+
+CI (`.github/workflows/build.yml`) runs `runData`, then `runGameTestServer`, then `build`
+on JDK 25.
 
 ## License
 

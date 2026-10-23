@@ -6,6 +6,7 @@ bin
 .classpath
 .project
 src/generated/
+old/src/generated/
 
 # idea
 out
@@ -25,3 +26,5 @@ runs
 run-data
 
 repo
+# claude code: local, per-machine permissions
+.claude/settings.local.json

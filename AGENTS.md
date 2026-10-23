@@ -1,61 +1,50 @@
 # JolCraft
 
-Minecraft mod for **NeoForge 1.21.1** (`neo_version` 21.1.243), Java 21, Parchment mappings, built with ModDevGradle. Mod id `jolcraft`, root package `net.sievert.jolcraft`. Dwarven professions, trading, reputation, brewing, bounties, structures and effects. About 830 Java files.
+Ground-up rewrite of the mod for **Minecraft 26.1.2 / NeoForge 26.1.2.122**, Java 25, ModDevGradle 2.0.148, Gradle 9.8.2, Groovy build scripts. Mod id `jolcraft`, root package `net.sievert.jolcraft`. The tree currently holds only the build skeleton: an entry class, the mod metadata template and a dev-only game-test mod with one smoke test. No gameplay code has been migrated yet; the 1.21.1 tree lives in `old/` as reference.
+
+## Toolchain pins (2026-10-23, latest stable of everything)
+
+| Component | Pin | Note |
+|---|---|---|
+| Minecraft | 26.1.2 | `minecraft_version_range=[26.1.2]` until wider support is decided |
+| NeoForge | 26.1.2.122 | `neo_version`; the mods.toml requires `[${neo_version},)` |
+| Java | 25 | Gradle finds the installed JDK itself; CI installs it with setup-java. No foojay plugin |
+| ModDevGradle | 2.0.148 | |
+| Gradle | 9.8.2 | wrapper |
+| JEI | 29.47.0.111 | declared in `integrations.properties`; its MezzConfig comes from the `net.mezzdev.config` group on BlameJared |
+| Jade | 26.1.12+neoforge | declared in `integrations.properties`, from the Modrinth maven |
+| Mappings | none | vanilla ships Mojang names since 26.1; Parchment publishes nothing for 26.x |
+| JER | dropped | no stable 26.1.2 build |
+| Mixin / MixinExtras | not pinned | bundled with NeoForge (sponge-mixin 0.17.4, mixinextras 0.5.5) |
 
 ## Commands
 
 ```bash
-./gradlew compileJava compileGametestJava   # fast correctness check (a few minutes)
-./gradlew runData                           # regenerate src/generated/resources (REQUIRED before build)
-./gradlew runData -Pjolcraft.datagen.dev=true  # runData plus the dev-only test data (dev_key recipe)
-./gradlew runGameTestServer                 # headless game tests (what CI runs)
-./gradlew runClient                         # dev client; runClient2 starts a second player "Dev2"
-./gradlew build                             # jar + verifyModJar (fails if generated resources are missing)
+./gradlew compileJava compileGametestJava   # fast correctness check
+./gradlew runData                           # datagen into src/generated/resources (no providers yet); game dir run/data
+./gradlew runGameTestServer                 # headless game tests, game dir run/gametest (what CI runs)
+./gradlew runClient                         # dev client in run/; runClient2 starts a second player "Dev2" in run/client2
+./gradlew build                             # jar in build/libs
 ```
 
-CI (`.github/workflows/build.yml`) runs `runData`, then `runGameTestServer`, then `build`. Gradle uses the configuration cache and 8 GB heap.
+CI (`.github/workflows/build.yml`) runs `runData`, then `runGameTestServer`, then `build` on JDK 25. Gradle uses the configuration cache and an 8 GB heap.
 
-## Resources are datagen output
+## Layout
 
-- `src/generated/resources` is **gitignored** and produced by the `datagen` package (entry point `datagen/JolCraftDataGenerator.java`, which registers every provider on `GatherDataEvent`). Never hand-edit a generated JSON; change the provider and rerun `runData`.
-- `src/main/resources` holds only hand-authored assets: textures, sounds (`.ogg`), structure NBTs, `jolcraft.mixins.json`, `META-INF/` (`accesstransformer.cfg` with one entry opening `ChunkMap.getChunks` for the brewing sleep handler, `enumextensions.json`, the JEI `IModPlugin` service file).
-- `src/main/templates/META-INF/neoforge.mods.toml` is expanded by the `generateModMetadata` task from `gradle.properties` and `integrations.properties`.
-- A tag that is declared in `data/JolCraftTags.java` is empty unless a tag provider fills it. Code that reads a tag (repair ingredients, loot, recipes) silently gets nothing otherwise.
-
-## Where things live
-
-| Package under `net.sievert.jolcraft` | Contents |
-|---|---|
-| `JolCraft.java` | Mod constructor: every `DeferredRegister` is registered to the mod bus here. A new `JolCraft*` registry holder must be added to this list. |
-| `data/id/**` | All id strings (`JolCraftIds`, one class per registry kind). Never write a raw `"jolcraft:..."` string elsewhere. |
-| `data/language/` | `JolCraftLanguageKeys` (every translation key) and `JolCraftDictionary` (word constants keys and ids are built from). No raw `Component.translatable("...")` literals. |
-| `data/JolCraftTags.java`, `data/JolCraftColors.java` | Tag keys and centralised colours. |
-| `world/**` | Runtime game content: `entity` (dwarves, Muffhorn, effects, attachments, player data), `item`, `block` (block entities, fluids, brewing), `recipe` (custom recipe framework: `base/{input,output,condition}` plus `custom/*`), `worldgen`, `gui` (menus, screens, slots), `loot`, `sound`. |
-| `world/entity/custom/dwarf/` | `base` (abstract entities), `ai/goal`, `interaction` (handler pipeline with gates), `action` (multi-tick transactions with interrupted-action recovery), `trade`, `profession`, `variant`, `loadout`. |
-| `event/` | Event handlers, split by bus and side: `event/mod` (mod bus), `event/game/**` (game bus), `event/client/**` (client only). Helpers are suffixed `*EventsHelper`. |
-| `network/` | Custom payloads (`packet/s2c`, `packet/c2s`) and proxies. |
-| `config/` | `JolCraftCommonConfig` (ModConfigSpec) and data-driven JSON config managers under `config/base` and `config/custom` (dwarf professions, brewing corruption). |
-| `datagen/` | Providers mirroring the runtime packages: `recipe/builder` and `recipe/subprovider/**`, `loot/table` and `loot/glm`, `tag/provider`, `client/{language,model,sound,atlas}`, `config`, `structure`, `advancement`. |
-| `integration/` | JEI, Jade and JER. These APIs are `compileOnly`; the mods are optional, so nothing outside this package may reference it without a `ModList` guard. |
-| `mixin/` | 35 mixins, all listed in `src/main/resources/jolcraft.mixins.json` with `defaultRequire: 1` (a failed injection crashes at startup). |
-| `util/log/` | `JolCraftLogs` + `JolCraftLogTags`. Use these, not a raw logger. |
-
-Client-only code lives in packages or classes named `client` (`world/gui/client`, `world/entity/client`, `world/item/client`, `event/client`). Common code must not import `net.minecraft.client.*` or call into those packages without a `Dist` guard; the mod must run on a dedicated server.
-
-## Tests
-
-- Game tests are a separate source set, `src/gametest/java`, with their own mixin config `src/gametest/resources/jolcraft.gametest.mixins.json`, registered by the dev-only mod `jolcraft_gametest` (`src/gametest/resources/META-INF/neoforge.mods.toml`), which every run loads and the jar never contains. Test classes are listed in `TEST_HOLDERS` in `gametest/JolCraftGameTests.java`; a test that is not in that array does not run.
-- `src/test` is empty; JUnit is wired in `build.gradle` but unused.
-- `ExperimentalTests` is a scratch holder. Do not put real regressions there.
+- `src/main/java` — mod code. Only `net/sievert/jolcraft/JolCraft.java` so far.
+- `integrations.properties` — optional mod integrations (JEI, Jade). Per mod: the Gradle artifacts (`compileOnly` API, `localRuntime` jar for the dev runs) and the optional `[[dependencies]]` entry that `generateModMetadata` writes into `neoforge.mods.toml`. `<name>.enabled=false` drops a mod from both. Minecraft and NeoForge are pinned in `gradle.properties`, never here. Code that touches an integration API must stay behind a `ModList` guard, because the mods are optional.
+- `src/main/templates/META-INF/neoforge.mods.toml` — expanded by the `generateModMetadata` task from `gradle.properties` and the enabled integrations. In 26.1 the file has no `modLoader`, `loaderVersion`, `neo_version_range` or `loader_version_range`; the 26.1 MDK dropped them.
+- `src/main/resources` — hand-authored assets only. `src/generated/resources` is gitignored datagen output; never hand-edit a generated JSON, change the provider and rerun `runData`.
+- `src/gametest` — separate source set compiled against main, loaded as the dev-only mod `jolcraft_gametest` by every run and never put in the jar. Tests are registered in code in `gametest/JolCraftGameTests.java`: test functions in `BuiltInRegistries.TEST_FUNCTION` through a `DeferredRegister`, test instances through NeoForge's `RegisterGameTestsEvent` (fired from the patched `RegistryDataLoader`). A test not registered there does not run. The old `neoforge.enabledGameTestNamespaces` property no longer exists in 26.1: every registered instance runs, including vanilla's `minecraft:always_pass`.
+- `old/` — the complete 1.21.1 tree (`src`, its Gradle files, `CLAUDE.md`, `AGENTS.md`, `REVIEW_TODO.md`), kept for migration reference only. Nothing in it is compiled. Its layout map is `old/CLAUDE.md`.
+- Common code must not import `net.minecraft.client.*`; the mod must run on a dedicated server.
 
 ## Verifying framework behaviour
 
-The decompiled NeoForge + Minecraft sources for the exact version are at `build/moddev/artifacts/neoforge-21.1.243-sources.jar` (after any Gradle run). Check vanilla semantics there instead of guessing, for example:
+Decompiled sources exist after any Gradle run. Vanilla with NeoForge's patches: `build/moddev/artifacts/minecraft-patched-26.1.2.122-sources.jar`. NeoForge's own classes are a separate dependency; their sources are in the Gradle cache at `~/.gradle/caches/modules-2/files-2.1/net.neoforged/neoforge/26.1.2.122/<hash>/neoforge-26.1.2.122-sources.jar`. Check semantics there instead of guessing, for example:
 
 ```bash
-unzip -p build/moddev/artifacts/neoforge-21.1.243-sources.jar net/minecraft/world/entity/LivingEntity.java | grep -n "addEffect"
+unzip -p build/moddev/artifacts/minecraft-patched-26.1.2.122-sources.jar net/minecraft/gametest/framework/TestData.java
 ```
 
-## Review backlog
-
-`REVIEW_TODO.md` in the repo root lists every verified finding from the 2026-10-17 repository review as numbered items (R1, R2, ...) plus the author's roadmap. Pick items from there; tick them off when fixed.
+Renames to expect against the 1.21.1 code: `ResourceLocation` is `Identifier` (`Identifier.fromNamespaceAndPath`, `Identifier.withDefaultNamespace`).

@@ -1,10 +1,6 @@
-modLoader="javafml"
-loaderVersion="${loader_version_range}"
 license="${mod_license}"
 
 [[mods]]
-enumExtensions="META-INF/enumextensions.json"
-
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
@@ -14,7 +10,7 @@ description='''${mod_description}'''
 [[dependencies.${mod_id}]]
 modId="neoforge"
 type="required"
-versionRange="${neo_version_range}"
+versionRange="[${neo_version},)"
 ordering="NONE"
 side="BOTH"
 
@@ -26,6 +22,3 @@ ordering="NONE"
 side="BOTH"
 
 ${integration_dependencies}
-
-[[mixins]]
-config="${mod_id}.mixins.json"

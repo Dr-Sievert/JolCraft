@@ -1,0 +1,370 @@
+plugins {
+    id 'java'
+    id 'net.neoforged.moddev' version '2.0.142'
+}
+
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
+}
+
+version = mod_version
+group = mod_group_id
+
+repositories {
+    maven {
+        name = "BlameJared"
+        url = "https://maven.blamejared.com/"
+
+        content {
+            includeGroup "mezz.jei"
+        }
+    }
+
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+
+        content {
+            includeGroup "maven.modrinth"
+        }
+    }
+
+    maven {
+        name = "CurseMaven"
+        url = "https://www.cursemaven.com"
+
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+}
+
+base {
+    archivesName = mod_id
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+sourceSets {
+    gametest {
+        compileClasspath += sourceSets.main.output + configurations.runtimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+configurations {
+    gametestImplementation.extendsFrom implementation
+    gametestRuntimeOnly.extendsFrom runtimeOnly
+    runtimeClasspath.extendsFrom localRuntime
+}
+
+neoForge {
+    version = project.neo_version
+
+    parchment {
+        minecraftVersion = project.parchment_minecraft_version
+        mappingsVersion = project.parchment_mappings_version
+    }
+
+    runs {
+        client {
+            client()
+            sourceSet = sourceSets.gametest
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        client2 {
+            client()
+            sourceSet = sourceSets.gametest
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            programArguments.addAll '--username', 'Dev2'
+            gameDirectory = file('run/client2')
+        }
+
+        server {
+            server()
+            sourceSet = sourceSets.gametest
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        gameTestServer {
+            type = "gameTestServer"
+            sourceSet = sourceSets.gametest
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            gameDirectory = file('run/gametest')
+        }
+
+        data {
+            data()
+            // -Pjolcraft.datagen.dev=true also emits the dev-only test data (the dev_key recipe)
+            systemProperty 'jolcraft.datagen.dev', providers.gradleProperty('jolcraft.datagen.dev').getOrElse('false')
+            programArguments.addAll '--mod', project.mod_id, '--all',
+                    '--output', file('src/generated/resources/').getAbsolutePath(),
+                    '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+
+        // Dev-only mod carrying the game tests and their mixin config (declared in
+        // src/gametest/resources/META-INF/neoforge.mods.toml). Every run loads it; the jar never does.
+        "${mod_id}_gametest" {
+            sourceSet(sourceSets.gametest)
+        }
+    }
+
+    unitTest {
+        enable()
+        testedMod = mods."${mod_id}"
+    }
+}
+
+sourceSets.main.resources {
+    srcDir 'src/generated/resources'
+    exclude '.cache/**'
+}
+
+
+// ============================================================
+// Optional Development Integrations
+// ============================================================
+
+def integrationProperties = new Properties()
+
+file("integrations.properties").withInputStream {
+    integrationProperties.load(it)
+}
+
+def integrationNames = integrationProperties.stringPropertyNames()
+        .collect { key -> key.substring(0, key.indexOf('.')) }
+        .unique()
+        .sort()
+
+def requiredIntegrationProperty = { String integration, String property ->
+    def key = "${integration}.${property}"
+    def value = integrationProperties.getProperty(key)
+
+    if (value == null || value.isBlank()) {
+        throw new GradleException(
+                "Missing '${key}' in integrations.properties"
+        )
+    }
+
+    value
+}
+
+integrationNames.each { integrationName ->
+    def enabled = requiredIntegrationProperty(
+            integrationName,
+            "enabled"
+    )
+
+    if (enabled != "true" && enabled != "false") {
+        throw new GradleException(
+                "'${integrationName}.enabled' must be true or false"
+        )
+    }
+
+    requiredIntegrationProperty(integrationName, "modId")
+    requiredIntegrationProperty(integrationName, "versionRange")
+
+    def side = requiredIntegrationProperty(
+            integrationName,
+            "side"
+    )
+
+    if (!(side in ["CLIENT", "SERVER", "BOTH"])) {
+        throw new GradleException(
+                "'${integrationName}.side' must be CLIENT, SERVER, or BOTH"
+        )
+    }
+
+    def artifactPrefix = "${integrationName}.artifact."
+
+    def artifactNames = integrationProperties.stringPropertyNames()
+            .findAll {
+                it.startsWith(artifactPrefix) &&
+                        it.endsWith(".dependency")
+            }
+            .collect {
+                it.substring(
+                        artifactPrefix.length(),
+                        it.length() - ".dependency".length()
+                )
+            }
+            .unique()
+            .sort()
+
+    if (artifactNames.isEmpty()) {
+        throw new GradleException(
+                "Integration '${integrationName}' defines no artifacts"
+        )
+    }
+
+    artifactNames.each { artifactName ->
+        def configurationName = requiredIntegrationProperty(
+                integrationName,
+                "artifact.${artifactName}.configuration"
+        )
+
+        requiredIntegrationProperty(
+                integrationName,
+                "artifact.${artifactName}.dependency"
+        )
+
+        if (configurations.findByName(configurationName) == null) {
+            throw new GradleException(
+                    "Unknown Gradle configuration '${configurationName}' " +
+                            "for ${integrationName}.${artifactName}"
+            )
+        }
+    }
+}
+
+def enabledIntegrations = integrationNames.findAll { integrationName ->
+    integrationProperties.getProperty(
+            "${integrationName}.enabled"
+    ).toBoolean()
+}
+
+dependencies {
+    enabledIntegrations.each { integrationName ->
+        def artifactPrefix = "${integrationName}.artifact."
+
+        def artifactNames = integrationProperties.stringPropertyNames()
+                .findAll {
+                    it.startsWith(artifactPrefix) &&
+                            it.endsWith(".dependency")
+                }
+                .collect {
+                    it.substring(
+                            artifactPrefix.length(),
+                            it.length() - ".dependency".length()
+                    )
+                }
+                .unique()
+                .sort()
+
+        artifactNames.each { artifactName ->
+            def configurationName = integrationProperties.getProperty(
+                    "${integrationName}.artifact.${artifactName}.configuration"
+            )
+
+            def dependencyNotation = integrationProperties.getProperty(
+                    "${integrationName}.artifact.${artifactName}.dependency"
+            )
+
+            add(configurationName, dependencyNotation)
+        }
+    }
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+}
+
+
+// ============================================================
+// Generated Mod Metadata
+// ============================================================
+
+def integrationDependenciesToml = enabledIntegrations.collect { integrationName ->
+    """
+[[dependencies.${mod_id}]]
+modId="${integrationProperties.getProperty("${integrationName}.modId")}"
+type="optional"
+versionRange="${integrationProperties.getProperty("${integrationName}.versionRange")}"
+ordering="NONE"
+side="${integrationProperties.getProperty("${integrationName}.side")}"
+"""
+}.join("\n")
+
+def generateModMetadata = tasks.register(
+        "generateModMetadata",
+        ProcessResources
+) {
+    def replaceProperties = [
+            minecraft_version        : minecraft_version,
+            minecraft_version_range  : minecraft_version_range,
+            neo_version              : neo_version,
+            neo_version_range        : neo_version_range,
+            loader_version_range     : loader_version_range,
+            mod_id                   : mod_id,
+            mod_name                 : mod_name,
+            mod_license              : mod_license,
+            mod_version              : mod_version,
+            mod_authors              : mod_authors,
+            mod_description          : mod_description,
+            integration_dependencies: integrationDependenciesToml
+    ]
+
+    inputs.properties replaceProperties
+    expand replaceProperties
+
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
+}
+
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+// Ship the MIT text with the mod so redistributors have it.
+tasks.named('jar', Jar) {
+    from('LICENSE')
+}
+
+test {
+    useJUnitPlatform()
+    maxHeapSize = "8G"
+}
+
+abstract class VerifyModJar extends DefaultTask {
+    @InputFile
+    @PathSensitive(PathSensitivity.NONE)
+    abstract RegularFileProperty getModJar()
+
+    @Input
+    abstract ListProperty<String> getRequiredEntries()
+
+    @TaskAction
+    void verifyContents() {
+        new java.util.zip.ZipFile(modJar.get().asFile).withCloseable { archive ->
+            def missing = requiredEntries.get().findAll { archive.getEntry(it) == null }
+            if (!missing.isEmpty()) {
+                throw new GradleException("Mod JAR is missing required generated resources: ${missing.join(', ')}. Run './gradlew runData' before building.")
+            }
+        }
+    }
+}
+
+def verifyModJar = tasks.register('verifyModJar', VerifyModJar) {
+    modJar = tasks.named('jar', Jar).flatMap { it.archiveFile }
+    requiredEntries = [
+            'assets/jolcraft/blockstates/strongbox.json',
+            'assets/jolcraft/models/item/lockpick.json',
+            'assets/jolcraft/lang/en_us.json',
+            'assets/jolcraft/sounds.json',
+            'data/jolcraft/recipe/trim/forge_armor_trim_smithing_template.json',
+            'data/jolcraft/config/brewing/corruption_effects.json',
+            'data/jolcraft/damage_type/vitality_curse.json',
+            'data/jolcraft/worldgen/structure/dwarven_fortress.json'
+    ]
+}
+
+tasks.named('check') {
+    dependsOn verifyModJar
+}
