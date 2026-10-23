@@ -6,6 +6,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
+import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.world.entity.attachment.base.JolCraftSyncedAttachment;
 import net.sievert.jolcraft.data.id.attachment.JolCraftAttachmentIds;
 import net.sievert.jolcraft.data.language.JolCraftDictionary;
@@ -181,8 +182,15 @@ public final class DwarvenReputationAttachment extends JolCraftSyncedAttachment<
         return new DwarvenReputationAttachment(tierId, parsed);
     }
 
+    /**
+     * Endorsements are stored as {@code jolcraft:<profession>}. An id in another
+     * namespace would count towards getEndorsementCount and canAdvance while never
+     * matching hasEndorsement, so it is not valid.
+     */
     private static boolean isValidProfessionId(ResourceLocation id) {
-        return id != null && DwarfProfession.byId(id.getPath()) != DwarfProfession.NONE;
+        return id != null
+                && JolCraft.MOD_ID.equals(id.getNamespace())
+                && DwarfProfession.byId(id.getPath()) != DwarfProfession.NONE;
     }
 
     private static Set<ResourceLocation> normalizeEndorsements(Set<ResourceLocation> ids) {

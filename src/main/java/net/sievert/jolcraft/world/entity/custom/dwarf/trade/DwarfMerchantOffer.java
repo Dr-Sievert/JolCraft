@@ -78,7 +78,13 @@ public class DwarfMerchantOffer {
                                             offer -> offer.baseCostA
                                     ),
 
-                            DwarfItemCost.CODEC.lenientOptionalFieldOf(
+                            /*
+                             * Strict, unlike vanilla's buyB: a cost_b whose item no longer
+                             * exists fails this offer instead of silently dropping the second
+                             * cost. DwarfMerchantOffers decodes each offer without partial
+                             * results, so only this offer is dropped and the rest load.
+                             */
+                            DwarfItemCost.CODEC.optionalFieldOf(
                                             JolCraftStrings.underscored(
                                                     JolCraftDictionary.COST,
                                                     "b"

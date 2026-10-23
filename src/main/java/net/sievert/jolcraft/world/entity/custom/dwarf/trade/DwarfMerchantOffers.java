@@ -11,11 +11,17 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
 import net.sievert.jolcraft.data.language.JolCraftDictionary;
+import net.sievert.jolcraft.util.JolCraftCodecs;
 import net.sievert.jolcraft.util.JolCraftStrings;
 
 public class DwarfMerchantOffers extends ArrayList<DwarfMerchantOffer> {
 
-    public static final Codec<DwarfMerchantOffers> CODEC = DwarfMerchantOffer.CODEC
+    /*
+     * Each offer decodes without partial results, so an offer whose cost or result
+     * no longer exists is dropped by the list (and logged by the loader's
+     * resultOrPartial) instead of loading half-built with that part missing.
+     */
+    public static final Codec<DwarfMerchantOffers> CODEC = JolCraftCodecs.withoutPartials(DwarfMerchantOffer.CODEC)
             .listOf()
             .optionalFieldOf(JolCraftStrings.plural(JolCraftDictionary.RECIPE), List.of())
             .xmap(DwarfMerchantOffers::new, Function.identity())

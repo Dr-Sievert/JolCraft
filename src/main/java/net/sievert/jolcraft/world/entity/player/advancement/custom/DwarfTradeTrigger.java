@@ -1,7 +1,6 @@
 package net.sievert.jolcraft.world.entity.player.advancement.custom;
 
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.critereon.ContextAwarePredicate;
@@ -14,6 +13,8 @@ import net.sievert.jolcraft.world.entity.player.advancement.util.JolCraftSimpleT
 import net.sievert.jolcraft.world.entity.player.advancement.util.JolCraftTriggerCodecs;
 import net.sievert.jolcraft.data.id.advancement.JolCraftCriterionTriggerIds;
 import net.sievert.jolcraft.data.language.JolCraftDictionary;
+import net.sievert.jolcraft.util.JolCraftCodecs;
+import net.sievert.jolcraft.util.JolCraftEnumHelper;
 import net.sievert.jolcraft.util.log.JolCraftLogTags;
 import net.sievert.jolcraft.util.log.JolCraftLogs;
 import net.sievert.jolcraft.world.entity.custom.dwarf.profession.DwarfProfession;
@@ -64,21 +65,23 @@ public final class DwarfTradeTrigger extends JolCraftSimpleTrigger<DwarfTradeTri
             Optional<DwarfProfession> profession
     ) implements SimpleCriterionTrigger.SimpleInstance {
 
+        // byId falls back to NONE, so a misspelled id used to decode silently.
         private static final Codec<DwarfProfession> PROFESSION_CODEC =
-                Codec.STRING.comapFlatMap(
-                        id -> {
-                            DwarfProfession p = DwarfProfession.byId(id);
-                            return p != null
-                                    ? DataResult.success(p)
-                                    : DataResult.error(() -> "Unknown profession: " + id);
-                        },
-                        DwarfProfession::getId
+                JolCraftTriggerCodecs.strictStringMapped(
+                        id -> JolCraftEnumHelper.byStringIdNullable(DwarfProfession.class, id, null),
+                        DwarfProfession::getId,
+                        JolCraftDictionary.PROFESSION
                 );
 
-        public static final Codec<TriggerInstance> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        /*
+         * Without partials: an optional field that fails to parse would otherwise
+         * yield an empty Optional as a partial result, which advancement loading
+         * promotes to a success, turning an unknown profession into "any dwarf".
+         */
+        public static final Codec<TriggerInstance> CODEC = JolCraftCodecs.withoutPartials(RecordCodecBuilder.create(instance -> instance.group(
                 JolCraftTriggerCodecs.optionalPlayer().forGetter(TriggerInstance::player),
                 PROFESSION_CODEC.optionalFieldOf(JolCraftDictionary.PROFESSION).forGetter(TriggerInstance::profession)
-        ).apply(instance, TriggerInstance::new));
+        ).apply(instance, TriggerInstance::new)));
 
         public boolean matches(DwarfProfession actual) {
             return this.profession.map(value -> value == actual).orElse(true);

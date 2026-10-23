@@ -10,6 +10,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
@@ -42,6 +43,9 @@ public class RandomReplaceWithLootProcessor extends StructureProcessor {
     private final float probability;
     private final ResourceLocation lootTable;
 
+    /** Mixed into the position seed so stacked instances of this processor roll independently. */
+    private final long seedSalt;
+
     // Cached resolved blocks (avoid repeated registry lookups in hot path)
     private transient Block cachedInputBlock;
     private transient Block cachedOutputBlock;
@@ -56,6 +60,7 @@ public class RandomReplaceWithLootProcessor extends StructureProcessor {
         this.outputBlockId = outputBlockId;
         this.probability = probability;
         this.lootTable = lootTable;
+        this.seedSalt = 31L * lootTable.hashCode() + Float.floatToIntBits(probability);
     }
 
     private Block resolveInput(LevelReader level) {
@@ -95,7 +100,15 @@ public class RandomReplaceWithLootProcessor extends StructureProcessor {
         Block input = resolveInput(level);
 
         if (current.state().is(input)) {
-            var random = settings.getRandom(current.pos());
+            /*
+             * The position seed alone is shared by every processor that looks at this
+             * block, so two stacked instances would draw the same number and the second
+             * could only ever win where the first lost. Salt it with this instance's
+             * parameters so each rolls independently.
+             */
+            RandomSource random = RandomSource.create(
+                    settings.getRandom(current.pos()).nextLong() ^ seedSalt
+            );
 
             if (random.nextFloat() < probability) {
                 Block output = resolveOutput(level);
