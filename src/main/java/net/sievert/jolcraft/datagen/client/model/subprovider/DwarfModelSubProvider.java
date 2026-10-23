@@ -161,7 +161,8 @@ public record DwarfModelSubProvider(@NotNull JolCraftModelProvider parent) imple
             json.addProperty("parent", "minecraft:item/generated");
 
             JsonObject textures = new JsonObject();
-            textures.addProperty("layer0", JolCraft.location("item/" + SUB_TOME + "/ancient_dwarven_tome").toString());
+            // The base art is the legendary binding; the lore-key overrides above pick the per-tome covers.
+            textures.addProperty("layer0", JolCraft.location("item/" + SUB_TOME + "/" + JolCraftItemIds.ANCIENT_DWARVEN_TOME_LEGENDARY).toString());
             json.add("textures", textures);
 
             json.add("overrides", overrides);

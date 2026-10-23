@@ -18,7 +18,7 @@ CI (`.github/workflows/build.yml`) runs `runData`, then `runGameTestServer`, the
 ## Resources are datagen output
 
 - `src/generated/resources` is **gitignored** and produced by the `datagen` package (entry point `datagen/JolCraftDataGenerator.java`, which registers every provider on `GatherDataEvent`). Never hand-edit a generated JSON; change the provider and rerun `runData`.
-- `src/main/resources` holds only hand-authored assets: textures, sounds (`.ogg`), structure NBTs, `jolcraft.mixins.json`, `META-INF/` (empty `accesstransformer.cfg`, `enumextensions.json`, the JEI `IModPlugin` service file).
+- `src/main/resources` holds only hand-authored assets: textures, sounds (`.ogg`), structure NBTs, `jolcraft.mixins.json`, `META-INF/` (`accesstransformer.cfg` with one entry opening `ChunkMap.getChunks` for the brewing sleep handler, `enumextensions.json`, the JEI `IModPlugin` service file).
 - `src/main/templates/META-INF/neoforge.mods.toml` is expanded by the `generateModMetadata` task from `gradle.properties` and `integrations.properties`.
 - A tag that is declared in `data/JolCraftTags.java` is empty unless a tag provider fills it. Code that reads a tag (repair ingredients, loot, recipes) silently gets nothing otherwise.
 

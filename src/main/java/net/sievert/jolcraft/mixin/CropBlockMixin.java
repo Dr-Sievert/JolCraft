@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.sievert.jolcraft.data.JolCraftTags;
@@ -36,6 +37,25 @@ public abstract class CropBlockMixin {
         return level.getBlockState(pos.below()).is(JolCraftTags.Blocks.VERDANT)
                 ? Math.max(brightness, 9)
                 : brightness;
+    }
+
+    @ModifyExpressionValue(
+            method = "canSurvive",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/level/block/CropBlock;hasSufficientLight(Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;)Z"
+            )
+    )
+    private boolean jolcraft$surviveWithoutLightOnVerdantSoil(
+            boolean sufficientLight,
+            BlockState state,
+            LevelReader level,
+            BlockPos pos
+    ) {
+        // Pairs with the random-tick bypass above: without it, crops below light 8 pop off
+        // before the dark growth can happen.
+        return sufficientLight
+                || level.getBlockState(pos.below()).is(JolCraftTags.Blocks.VERDANT);
     }
 
     @ModifyReturnValue(

@@ -1,9 +1,7 @@
 package net.sievert.jolcraft.event.game.world.recipe.brewing;
 
-import net.minecraft.core.SectionPos;
+import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
@@ -12,18 +10,16 @@ import net.sievert.jolcraft.util.log.JolCraftLogTags;
 import net.sievert.jolcraft.world.block.entity.custom.brewing.FermentingBarrelBlockEntity;
 import net.sievert.jolcraft.world.block.entity.custom.brewing.FermentingCauldronBlockEntity;
 
-import java.util.HashSet;
-import java.util.Set;
-
 /**
- * Advances nearby brewing block entities after the world skips time through sleeping.
+ * Advances every brewing block entity in a loaded chunk after the world skips time through
+ * sleeping.
  *
- * Only loaded chunks around online players are processed to avoid scanning
- * the entire world while matching the global world-time skip.
+ * The skip moves the level's day time, which the brewing block entities do not see (they age
+ * by game time), so the bonus is handed to them here. Every loaded chunk of the level is
+ * walked once; chunks that are not loaded do not tick either and keep aging by game time
+ * alone when they come back.
  */
 public final class BrewingSleepHandler {
-
-    private static final int CHUNK_SEARCH_RADIUS = 4;
 
     private BrewingSleepHandler() {}
 
@@ -41,17 +37,17 @@ public final class BrewingSleepHandler {
             return;
         }
 
-        Set<Long> visitedChunks = new HashSet<>();
         int[] advancedCounts = new int[2];
 
-        for (ServerPlayer player : level.players()) {
-            processChunksAroundPlayer(
-                    level,
-                    player,
-                    skippedTicks,
-                    visitedChunks,
-                    advancedCounts
-            );
+        // getChunks is opened by the access transformer; it is the live view of every loaded chunk.
+        for (ChunkHolder holder : level.getChunkSource().chunkMap.getChunks()) {
+            if (holder.getChunkIfPresent(ChunkStatus.FULL) instanceof LevelChunk chunk) {
+                processChunk(
+                        chunk,
+                        skippedTicks,
+                        advancedCounts
+                );
+            }
         }
 
         JolCraftLogs.debug(
@@ -64,81 +60,16 @@ public final class BrewingSleepHandler {
     }
 
     /**
-     * Visits every loaded chunk within the configured search radius around
-     * the supplied player.
-     */
-    private static void processChunksAroundPlayer(
-            ServerLevel level,
-            ServerPlayer player,
-            long skippedTicks,
-            Set<Long> visitedChunks,
-            int[] advancedCounts
-    ) {
-        int centerChunkX = SectionPos.blockToSectionCoord(
-                player.blockPosition().getX()
-        );
-
-        int centerChunkZ = SectionPos.blockToSectionCoord(
-                player.blockPosition().getZ()
-        );
-
-        for (
-                int offsetX = -CHUNK_SEARCH_RADIUS;
-                offsetX <= CHUNK_SEARCH_RADIUS;
-                offsetX++
-        ) {
-            for (
-                    int offsetZ = -CHUNK_SEARCH_RADIUS;
-                    offsetZ <= CHUNK_SEARCH_RADIUS;
-                    offsetZ++
-            ) {
-                int chunkX = centerChunkX + offsetX;
-                int chunkZ = centerChunkZ + offsetZ;
-
-                long chunkKey = ChunkPos.asLong(
-                        chunkX,
-                        chunkZ
-                );
-
-                if (!visitedChunks.add(chunkKey)) {
-                    continue;
-                }
-
-                processChunk(
-                        level,
-                        chunkX,
-                        chunkZ,
-                        skippedTicks,
-                        advancedCounts
-                );
-            }
-        }
-    }
-
-    /**
      * Advances all supported brewing block entities contained within the chunk.
      */
     private static void processChunk(
-            ServerLevel level,
-            int chunkX,
-            int chunkZ,
+            LevelChunk chunk,
             long skippedTicks,
             int[] advancedCounts
     ) {
-        var chunk = level.getChunk(
-                chunkX,
-                chunkZ,
-                ChunkStatus.FULL,
-                false
-        );
-
-        if (!(chunk instanceof LevelChunk levelChunk)) {
-            return;
-        }
-
         for (
                 BlockEntity blockEntity :
-                levelChunk.getBlockEntities().values()
+                chunk.getBlockEntities().values()
         ) {
             processBlockEntity(
                     blockEntity,
