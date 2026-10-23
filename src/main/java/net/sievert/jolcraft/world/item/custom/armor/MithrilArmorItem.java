@@ -22,6 +22,9 @@ public final class MithrilArmorItem extends ArmorSetItem {
 
     private static final double MOVEMENT_SPEED_MODIFIER = 0.05;
 
+    private static final List<ArmorSetEffect> EFFECTS =
+            List.of(new ArmorSetEffect(MobEffects.GLOWING, 0));
+
     public MithrilArmorItem(
             Holder<ArmorMaterial> material,
             ArmorItem.Type type,
@@ -54,6 +57,6 @@ public final class MithrilArmorItem extends ArmorSetItem {
 
     @Override
     protected @NotNull List<ArmorSetEffect> effects() {
-        return List.of(new ArmorSetEffect(MobEffects.GLOWING, 0));
+        return EFFECTS;
     }
 }

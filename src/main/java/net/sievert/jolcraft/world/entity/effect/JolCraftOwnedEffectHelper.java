@@ -26,6 +26,24 @@ public final class JolCraftOwnedEffectHelper {
             boolean showIcon
     ) {
         MobEffectInstance current = entity.getEffect(effect);
+
+        /*
+         * The common case for every mob: nothing to apply, and nothing applied
+         * that this helper would remove (no instance, or no infinite instance
+         * with our amplifier anywhere in the hidden chain). Return before
+         * isOwned, whose getPersistentData() would create (and then save) an
+         * empty NeoForgeData compound on every living entity. Trade-off: a
+         * flag left behind when the effect and its trigger vanish in the same
+         * tick (milk, totem) survives until an infinite instance with this
+         * amplifier is present again; that instance is then removed once, even
+         * if another source added it (the armor set re-adds its own next tick;
+         * vanilla has no infinite Glowing source).
+         */
+        if (!active
+                && (current == null || !containsOwnedEffect(current, amplifier))) {
+            return;
+        }
+
         boolean owned = isOwned(
                 entity,
                 ownershipRoot,

@@ -12,6 +12,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.sievert.jolcraft.world.entity.JolCraftAttributes;
+import net.sievert.jolcraft.world.entity.attachment.JolCraftAttachments;
 import net.sievert.jolcraft.world.entity.attachment.custom.overheal.OverhealAttachmentHelper;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -77,6 +78,16 @@ public abstract class LivingEntityMixin {
         }
 
         LivingEntity entity = (LivingEntity) (Object) this;
+
+        /*
+         * Only entities that already hold overheal need clamping. getData would
+         * otherwise create, sync and save a zero attachment on every living
+         * entity's first tick. The client gets the clamped value by sync.
+         */
+        if (entity.level().isClientSide()
+                || !entity.hasData(JolCraftAttachments.OVERHEAL)) {
+            return;
+        }
 
         OverhealAttachmentHelper.setAmount(
                 entity,

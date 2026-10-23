@@ -10,8 +10,10 @@ public final class OverhealAttachmentHelper {
 
     private OverhealAttachmentHelper() {}
 
+    /** Reads without creating: getData would materialise, sync and save a zero attachment. */
     public static float getAmount(LivingEntity entity) {
-        return entity.getData(JolCraftAttachments.OVERHEAL);
+        Float amount = entity.getExistingDataOrNull(JolCraftAttachments.OVERHEAL);
+        return amount == null ? 0.0F : amount;
     }
 
     public static float getMaxAmount(LivingEntity entity) {
