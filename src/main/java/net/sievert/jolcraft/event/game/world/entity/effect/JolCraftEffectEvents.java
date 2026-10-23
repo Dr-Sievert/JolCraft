@@ -2,7 +2,6 @@ package net.sievert.jolcraft.event.game.world.entity.effect;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.event.entity.living.ArmorHurtEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
@@ -53,22 +52,6 @@ public final class JolCraftEffectEvents {
         JolCraftEffectDamageEventsHelper
                 .applyEarlyFlatDefenses(event);
     }
-
-    public static void applyFinalDefenses(
-            LivingDamageEvent.Pre event
-    ) {}
-
-    public static void applyPostHitMarkers(
-            LivingDamageEvent.Post event
-    ) {}
-
-    public static void applySecondaryDamage(
-            LivingDamageEvent.Post event
-    ) {}
-
-    public static void applyPostHitSideEffects(
-            LivingDamageEvent.Post event
-    ) {}
 
     public static void onArmorHurt(
             ArmorHurtEvent event

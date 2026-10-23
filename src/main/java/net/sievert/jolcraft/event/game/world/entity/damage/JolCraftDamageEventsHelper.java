@@ -57,21 +57,17 @@ public final class JolCraftDamageEventsHelper {
 
     private static void applyFinalDefenses(LivingDamageEvent.Pre event) {
         JolCraftEntityAttributeEvents.applyFinalDefenses(event);
-        JolCraftEffectEvents.applyFinalDefenses(event);
     }
 
     private static void applyPostHitMarkers(LivingDamageEvent.Post event) {
         JolCraftEntityAttributeEvents.applyPostHitMarkers(event);
-        JolCraftEffectEvents.applyPostHitMarkers(event);
     }
 
     private static void applySecondaryDamage(LivingDamageEvent.Post event) {
         JolCraftEntityAttributeEvents.applySecondaryDamage(event);
-        JolCraftEffectEvents.applySecondaryDamage(event);
     }
 
     private static void applyPostHitSideEffects(LivingDamageEvent.Post event) {
         JolCraftEntityAttributeEvents.applyPostHitSideEffects(event);
-        JolCraftEffectEvents.applyPostHitSideEffects(event);
     }
 }

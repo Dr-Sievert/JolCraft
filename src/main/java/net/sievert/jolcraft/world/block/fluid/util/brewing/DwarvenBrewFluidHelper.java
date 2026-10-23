@@ -280,8 +280,6 @@ public final class DwarvenBrewFluidHelper {
             return;
         }
 
-        FluidStack original = fluid.copy();
-
         if (!fluid.has(JolCraftDataComponents.BREW_COLOR.get())) {
             fluid.set(
                     JolCraftDataComponents.BREW_COLOR.get(),
@@ -342,11 +340,6 @@ public final class DwarvenBrewFluidHelper {
                     DataComponents.POTION_CONTENTS
             );
         }
-
-        FluidStack.isSameFluidSameComponents(
-                original,
-                fluid
-        );
     }
 
     private static int defaultColor(

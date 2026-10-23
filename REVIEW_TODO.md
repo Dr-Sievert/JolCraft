@@ -169,7 +169,8 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
   The 'Server providers' debug line lists only 10 names, while 14 server providers are added. The damage-type, entity-type, instrument and advancement providers are not listed.  
   Fix: Build the log from a list of the providers that were actually added, or add the missing names.
 
-- [ ] **R77. Duplicate COOKED_PORKCHOP entry doubles its weight in chest/supplies**  
+- [x] **R77. Duplicate COOKED_PORKCHOP entry doubles its weight in chest/supplies**  
+  Done 2026-10-23: the second porkchop entry is now `COOKED_RABBIT`, the one vanilla cooked meat the pool lacked (beef, mutton, chicken, porkchop, cod, salmon were all present at weight 3, and rabbit stew sits two lines below), so the total weight is unchanged. Swap it for a plain removal if rabbit was not intended. Needs `runData`.  
   `JolCraftChestLootTableProvider.java:255` · quality · `src/main/java/net/sievert/jolcraft/datagen/loot/table/subprovider/JolCraftChestLootTableProvider.java`  
   Items.COOKED_PORKCHOP is added twice with weight 3 (lines 252 and 255), so its effective weight is 6 against 3 for every other cooked meat. This is almost certainly a copy-paste error.  
   Fix: Remove the duplicate, or replace it with the intended item (for example COOKED_RABBIT).
@@ -189,12 +190,14 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
   Miner task recipes get the ids bounty_novice and crate_<tier>, while every other profession uses plain <tier> ids. The cause is a duplicate emitBountyTier/emitTier pair that differs only in the id prefix and sound2. This is cosmetic: nothing looks the ids up, and the sounds have no shared convention across professions anyway.  
   Fix: Use a single emitTier that outputs id = tier name and one consistent sound pair, as the other three professions do.
 
-- [ ] **R81. Stone Skin degradation guard in the duration helper can never match (dead code)**  
+- [x] **R81. Stone Skin degradation guard in the duration helper can never match (dead code)**  
+  Done 2026-10-23: `isStoneSkinDegradation` and its check are removed from `JolCraftEffectDurationEventsHelper` (confirmed in the sources: `forceAddEffect`, which the degradation uses, posts no `MobEffectEvent.Added`, so the guard could only ever hit an unrelated re-add). The four empty damage hooks in `JolCraftEffectEvents` and their calls in `JolCraftDamageEventsHelper` are gone too.  
   `JolCraftEffectDurationEventsHelper.java:33` · quality · `src/main/java/net/sievert/jolcraft/event/game/world/entity/effect/util/JolCraftEffectDurationEventsHelper.java`  
   isStoneSkinDegradation never matches the case it was written for, because Stone Skin's level loss goes through forceAddEffect, which posts no MobEffectEvent.Added. It can only match an unrelated addEffect of Stone Skin one level lower with the same duration, and then it would wrongly skip Focus. JolCraftEffectEvents also keeps four empty damage hooks.  
   Fix: Remove the guard, or switch the degradation to addEffect and keep it. Delete the empty hook methods.
 
-- [ ] **R82. Dead code: unused compassExamples helper**  
+- [x] **R82. Dead code: unused compassExamples helper**  
+  Done 2026-10-23: the method and the five imports only it used are deleted from `JeiHandInteractionHelper`; the JEI examples keep coming from `group.structures()`.  
   `JeiHandInteractionHelper.java:198` · quality · `src/main/java/net/sievert/jolcraft/integration/jei/custom/hand_interaction/JeiHandInteractionHelper.java`  
   The private helper compassExamples(...) at JeiHandInteractionHelper.java:198 is never called, because the JEI builder makes its examples from group.structures(). Datagen builds the structure tag from that same list, so the examples only differ from what the compass really targets if a datapack overrides the tag.  
   Fix: Delete the method, or use it in place of the group.structures() stream if the tag is the source of truth.
@@ -204,7 +207,8 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
   AbstractSyncingBlockEntity has no subclasses, so it is dead code, and Barrel and Cauldron repeat its boilerplate. The client is not left without data: NeoForge's default handleUpdateTag and onDataPacket pass the update tag to loadWithComponents/loadAdditional, so no paired load hook is needed.  
   Fix: Delete the class, or make Barrel and Cauldron extend it and add a paired loadClientData hook.
 
-- [ ] **R84. Dead no-op call in normalizeBrewingFluid**  
+- [x] **R84. Dead no-op call in normalizeBrewingFluid**  
+  Done 2026-10-23: the unused copy and the discarded `isSameFluidSameComponents` call are removed; the callers make their own pre-normalisation copies, as the finding noted.  
   `DwarvenBrewFluidHelper.java:346` · quality · `src/main/java/net/sievert/jolcraft/world/block/fluid/util/brewing/DwarvenBrewFluidHelper.java`  
   normalizeBrewingFluid (void) makes a copy at line 283 and then throws away the result of isSameFluidSameComponents at lines 346-349, so both are dead code. The callers in FermentingCauldronBlockEntity:709 and FermentingBarrelBlockEntity:539 already make their own pre-normalization copies, so no change-tracking is lost.  
   Fix: Remove the copy and the call. Alternatively, return the comparison result as a boolean 'changed' if callers need it.

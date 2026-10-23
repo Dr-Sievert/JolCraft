@@ -252,7 +252,7 @@ public final class JolCraftChestLootTableProvider implements LootTableSubProvide
                                         .add(LootItem.lootTableItem(Items.COOKED_PORKCHOP).setWeight(3))
                                         .add(LootItem.lootTableItem(Items.COOKED_COD).setWeight(3))
                                         .add(LootItem.lootTableItem(Items.COOKED_SALMON).setWeight(3))
-                                        .add(LootItem.lootTableItem(Items.COOKED_PORKCHOP).setWeight(3))
+                                        .add(LootItem.lootTableItem(Items.COOKED_RABBIT).setWeight(3))
                                         .add(LootItem.lootTableItem(Items.PUMPKIN_PIE).setWeight(1))
                                         .add(LootItem.lootTableItem(Items.BEETROOT_SOUP).setWeight(1))
                                         .add(LootItem.lootTableItem(Items.RABBIT_STEW).setWeight(1))

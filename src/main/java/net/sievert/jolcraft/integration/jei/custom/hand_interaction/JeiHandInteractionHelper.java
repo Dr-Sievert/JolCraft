@@ -1,12 +1,7 @@
 package net.sievert.jolcraft.integration.jei.custom.hand_interaction;
 
-import net.minecraft.core.Holder;
-import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
-import net.minecraft.world.level.levelgen.structure.Structure;
 import net.sievert.jolcraft.integration.jei.util.recipe.ItemInputJeiTranslator;
 import net.sievert.jolcraft.integration.jei.util.recipe.ItemOutputJeiTranslator;
 import net.sievert.jolcraft.integration.jei.util.recipe.JeiItemOutcome;
@@ -193,60 +188,6 @@ public final class JeiHandInteractionHelper {
         }
 
         return List.copyOf(result);
-    }
-
-    private static @NotNull List<ItemStack> compassExamples(
-            @NotNull Registry<Structure> structures,
-            @NotNull DeepslateCompassStructureGroup group,
-            @NotNull ItemStack baseCompass,
-            @NotNull DeepslateCompassDialColor dialColor
-    ) {
-        Iterable<Holder<Structure>> taggedStructures =
-                structures.getTag(
-                                group.structureTag()
-                        )
-                        .orElse(null);
-
-        if (taggedStructures == null) {
-            return List.of();
-        }
-
-        List<ItemStack> result =
-                new ArrayList<>();
-
-        for (Holder<Structure> holder : taggedStructures) {
-            ResourceLocation structureId =
-                    holder.unwrapKey()
-                            .map(
-                                    ResourceKey::location
-                            )
-                            .orElse(null);
-
-            if (structureId == null) {
-                continue;
-            }
-
-            ItemStack compass =
-                    baseCompass.copyWithCount(1);
-
-            compass.set(
-                    JolCraftDataComponents.STRUCTURE_GROUP.get(),
-                    structureId.toString()
-            );
-
-            compass.set(
-                    JolCraftDataComponents.DEEPSLATE_COMPASS_DIAL_COLOR.get(),
-                    dialColor
-            );
-
-            result.add(
-                    compass
-            );
-        }
-
-        return List.copyOf(
-                result
-        );
     }
 
     private static @NotNull List<ItemStack> replaceDialExamples(
