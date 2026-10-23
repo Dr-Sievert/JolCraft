@@ -21,8 +21,13 @@ public final class GuildmasterInteractionHandler
         implements DwarfInteractions.ProfessionInteraction,
         DwarfInteractions.DwarfInteractionHooks {
 
+    /**
+     * Raises the guildmaster to the player's reputation tier. Runs after the
+     * gates, so a rejected interaction neither levels it up, rebuilds offers
+     * another player may be browsing, nor plays the acknowledgement.
+     */
     @Override
-    public void preCore(
+    public void postGates(
             DwarfInteractions.DwarfInteractionContext ctx
     ) {
         var dwarf = ctx.dwarf();

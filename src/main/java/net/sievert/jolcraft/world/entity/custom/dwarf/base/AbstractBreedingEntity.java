@@ -44,8 +44,6 @@ public class AbstractBreedingEntity extends AgeableMob {
     private static final String NBT_EYE = JolCraftDictionary.EYE;
     private static final String NBT_IN_LOVE = JolCraftStrings.underscored(JolCraftDictionary.IN, JolCraftDictionary.LOVE);
     private static final String NBT_LOVE_CAUSE = JolCraftStrings.underscored(JolCraftDictionary.LOVE, JolCraftDictionary.CAUSE);
-    private static final String NBT_AGE = JolCraftDictionary.AGE;
-    private static final String NBT_FORCED_AGE = JolCraftStrings.underscored(JolCraftDictionary.FORCED, JolCraftDictionary.AGE);
 
     protected int inLove;
 
@@ -91,8 +89,6 @@ public class AbstractBreedingEntity extends AgeableMob {
         if (this.loveCause != null) {
             compound.putUUID(NBT_LOVE_CAUSE, this.loveCause);
         }
-        compound.putInt(NBT_AGE, this.getAge());
-        compound.putInt(NBT_FORCED_AGE, this.forcedAge);
     }
 
     @Override
@@ -106,8 +102,8 @@ public class AbstractBreedingEntity extends AgeableMob {
 
         this.inLove = compound.getInt(NBT_IN_LOVE);
         this.loveCause = compound.hasUUID(NBT_LOVE_CAUSE) ? compound.getUUID(NBT_LOVE_CAUSE) : null;
-        this.setAge(compound.getInt(NBT_AGE));
-        this.forcedAge = compound.getInt(NBT_FORCED_AGE);
+        // Age and ForcedAge are AgeableMob's keys, read in super; a duplicate lowercase copy
+        // read without a contains() guard turned a summoned baby into an adult.
     }
 
     // ---------------------------------------------------------------------

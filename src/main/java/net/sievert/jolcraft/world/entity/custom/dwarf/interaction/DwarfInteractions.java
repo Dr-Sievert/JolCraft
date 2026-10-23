@@ -33,6 +33,9 @@ public final class DwarfInteractions {
     private static final List<CoreInteraction> CORE_PIPELINE =
             new ArrayList<>();
 
+    /** Core handlers up to and including the last gate; postGates runs once they have all passed. */
+    private static int gateCount;
+
     private DwarfInteractions() {}
 
     // -------------------------------------------------------------------------
@@ -70,6 +73,7 @@ public final class DwarfInteractions {
         registerCore(new LanguageGateInteractionHandler());
         registerCore(new ReputationGateInteractionHandler());
         registerCore(new BusyGateInteractionHandler());
+        gateCount = CORE_PIPELINE.size();
         registerCore(new BreedInteractionHandler());
         registerCore(new PayCoinInteractionHandler());
         registerCore(new SignContractInteractionHandler());
@@ -211,9 +215,9 @@ public final class DwarfInteractions {
             hooks.preCore(ctx);
         }
 
-        for (CoreInteraction handler : CORE_PIPELINE) {
+        for (int i = 0; i < CORE_PIPELINE.size(); i++) {
             DwarfInteractionOutcome outcome =
-                    handler.handle(ctx);
+                    CORE_PIPELINE.get(i).handle(ctx);
 
             if (!outcome.isPass()) {
                 return commit(
@@ -221,6 +225,11 @@ public final class DwarfInteractions {
                         inputSnapshot,
                         outcome
                 );
+            }
+
+            if (i + 1 == gateCount
+                    && professionHandler instanceof DwarfInteractionHooks hooks) {
+                hooks.postGates(ctx);
             }
         }
 
@@ -325,6 +334,15 @@ public final class DwarfInteractions {
     public interface DwarfInteractionHooks {
 
         default void preCore(
+                DwarfInteractionContext ctx
+        ) {}
+
+        /**
+         * Runs once the Ignore, Language, Reputation and Busy gates have all
+         * passed, before any item handler. Side effects that must not happen
+         * for a rejected interaction belong here rather than in preCore.
+         */
+        default void postGates(
                 DwarfInteractionContext ctx
         ) {}
 

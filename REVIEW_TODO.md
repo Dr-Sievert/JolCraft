@@ -240,12 +240,14 @@ Ordered by impact as judged in the synthesis.
   DwarfRevengeGoal.stop() calls stopAction unconditionally. After the goal's own player hit it sets lastHurtByMob to null, so on the next tick the goal stops and that call cuts the ATTACK animation it just started after about 1 of its 10 ticks. The same call also aborts and refunds any inspect transaction running at the time. The idle MOVE/LOOK hold only happens for non-player attackers the priority-2 DwarfAttackGoal cannot path to, because for any mob it can reach that goal takes over.  
   Fix: Restrict canUse and canContinueToUse to Player attackers (or return false for non-players). Drop the stopAction call in stop(), or only stop when the active action type is ATTACK.
 
-- [ ] **R42. Profession-typed dwarf entities created without finalizeSpawn keep profession NONE, so type and data disagree**  
+- [x] **R42. Profession-typed dwarf entities created without finalizeSpawn keep profession NONE, so type and data disagree**  
+  Done 2026-10-23: `AbstractDwarfEntity.readAdditionalSaveData` falls back to `setProfession(getSpawnProfession())` when the `profession` tag is absent, so `/summon` with NBT and structure entity data give the entity its type's profession, goals and attributes. No loadout is applied on that path (finalizeSpawn still does that for natural spawns).  
   `AbstractDwarfEntity.java:195` · logic · `src/main/java/net/sievert/jolcraft/world/entity/custom/dwarf/base/AbstractDwarfEntity.java`  
   A profession-typed dwarf created without finalizeSpawn and without a 'profession' NBT tag (for example, /summon with any NBT argument) keeps PROFESSION=NONE: it gets NONE goals and attributes and no loadout, but still renders with the type-specific renderer, and NONE is then saved permanently. This is a mismatch between type and profession, not between client and server.  
   Fix: In readAdditionalSaveData add an else branch: setProfession(getSpawnProfession()) when the tag is missing. Alternatively define the PROFESSION default from getSpawnProfession() and apply attributes and goals when the level is a ServerLevel.
 
-- [ ] **R43. Level-up fully rebuilds offers, resetting all uses and demand**  
+- [x] **R43. Level-up fully rebuilds offers, resetting all uses and demand**  
+  Done 2026-10-23: `AbstractTradingEntity.updateTradesForLevelUp` keeps every existing main, cumulative and global offer object (uses, demand), takes the newly unlocked main trades and the new level's exact-level picks from a fresh FULL selection (the ended level's exact-level picks rotate out, as FULL already did), and grows the cumulative and global pools by their per-level rolls through `DwarfTrades.getAdditionalCumulativeTradeRecipes` (new, mirrors one level's contribution of the cumulative picker) and the existing global helper instead of rerolling them. A dwarf whose offers were never generated (dev key before the first trade, or a profession whose level-up comes from an action) gets the plain FULL selection, as `getOffers()` would build lazily. Offers are emitted main, exact, cumulative, global; new pool picks are appended to their group unsorted until the next restock (cosmetic, accepted).  
   `AbstractTradingEntity.java:324` · logic · `src/main/java/net/sievert/jolcraft/world/entity/custom/dwarf/base/AbstractTradingEntity.java`  
   updateTradesForLevelUp calls rebuildTrades(FULL). It creates fresh offers for MAIN, exact-level and cumulative trades with uses=0 and rerolls the pools, and keeps only the GLOBAL offers.  
   Fix: On level-up, keep the existing non-global offers, copying their uses. Add only the offers whose recipe level equals the new level and the extra pool rolls. This matches the comment's intent for GLOBAL offers.
@@ -256,7 +258,8 @@ Ordered by impact as judged in the synthesis.
   DwarfInteractions.dispatch (line 129) returns SUCCESS for every client-side call. The client consumes the main-hand click and never sends an off-hand interact, so items held only in the off hand (coin, contract, bounty, crate and so on) are never processed by the server pipeline.  
   Fix: On the client, predict the result (for example, SUCCESS only when the held stack is relevant or the hand is empty and the dwarf can trade, otherwise PASS). Alternatively, return PASS from the Default and fallthrough path so the off hand is tried.
 
-- [ ] **R45. Guildmaster career level-up runs before any gate**  
+- [x] **R45. Guildmaster career level-up runs before any gate**  
+  Done 2026-10-23: new `DwarfInteractionHooks.postGates`, called by `dispatchHand` once the Ignore, Language, Reputation and Busy gates have passed (the gate count is recorded in `registerAll`), before any item handler. The guildmaster's level sync moved from `preCore` to `postGates`, so a rejected interaction no longer levels it up, rebuilds offers another player is browsing, or plays the acknowledgement; trading and tablet handling still see the synced level. `postCore` would not have worked, because the Trade handler commits before it.  
   `GuildmasterInteractionHandler.java:771` · logic · `src/main/java/net/sievert/jolcraft/world/entity/custom/dwarf/interaction/handler/profession/GuildmasterInteractionHandler.java`  
   GuildmasterInteractionHandler.preCore (lines 25-60) runs before the core gate pipeline (DwarfInteractions.java:153-157). When the player's reputation tier + 1 is above the guildmaster's merchant level, the guildmaster levels up, its trades are rebuilt and the 'yes' sound plays even when the Ignore, Language, Reputation or Busy/trading gate then rejects the interaction. Most of the harm is cosmetic, apart from offers being rebuilt while another player is trading.  
   Fix: Move the guildmaster level sync to postCore (after the gate handlers) or to the TradeInteractionHandler path. Alternatively, call it only when canTrade and the gates have passed.
@@ -289,7 +292,8 @@ Ordered by impact as judged in the synthesis.
 
 ### Persistence and sync
 
-- [ ] **R51. BreedingEntity reads its duplicate 'age' key with a default of 0, which turns babies into adults when the key is absent**  
+- [x] **R51. BreedingEntity reads its duplicate 'age' key with a default of 0, which turns babies into adults when the key is absent**  
+  Done 2026-10-23: the duplicate lowercase `age` and `forced_age` keys are gone from `AbstractBreedingEntity`; `AgeableMob`'s `Age` and `ForcedAge` are the only source. Older saves carried both with equal values, so nothing is lost on load.  
   `AbstractBreedingEntity.java:109` · persistence · `src/main/java/net/sievert/jolcraft/world/entity/custom/dwarf/base/AbstractBreedingEntity.java`  
   AbstractBreedingEntity.readAdditionalSaveData (lines 109-110) reads its own lowercase 'age'/'forced_age' keys without a contains() guard, after vanilla has loaded 'Age'/'ForcedAge'. As a result, NBT given through /summon, /data merge or external tools that sets only the vanilla keys is ignored or reset to 0, and a summoned baby loads as an adult.  
   Fix: Remove the duplicate age keys and rely on AgeableMob's, or guard with compound.contains(NBT_AGE) / contains(NBT_FORCED_AGE) before overriding.

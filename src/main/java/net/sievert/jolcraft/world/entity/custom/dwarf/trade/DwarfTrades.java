@@ -567,6 +567,69 @@ public final class DwarfTrades {
         );
     }
 
+    /**
+     * The cumulative-pool picks a level-up adds: this level's configured rolls,
+     * drawn from the unlocked cumulative recipes not already offered. Matches
+     * one level's contribution in pickCumulativeWeightedWithoutReplacement.
+     */
+    public static @NotNull List<RecipeHolder<DwarfTradeRecipe>>
+    getAdditionalCumulativeTradeRecipes(
+            Level level,
+            DwarfProfession profession,
+            DwarfMerchantData.Level merchantLevel,
+            RandomSource random,
+            @NotNull Set<ResourceLocation> excludedRecipeIds
+    ) {
+        if (!(level instanceof ServerLevel)
+                || merchantLevel == null) {
+            return List.of();
+        }
+
+        DwarfProfession resolvedProfession =
+                profession != null
+                        ? profession
+                        : DwarfProfession.NONE;
+
+        int rolls =
+                DwarfProfessionConfigManager.INSTANCE.get(resolvedProfession)
+                        .tradePools()
+                        .get(TradePoolType.CUMULATIVE)
+                        .map(pool -> pool.rolls().rollsFor(merchantLevel))
+                        .orElse(0);
+
+        if (rolls <= 0) {
+            return List.of();
+        }
+
+        RandomSource resolvedRandom =
+                random != null
+                        ? random
+                        : RandomSource.create();
+
+        List<RecipeHolder<DwarfTradeRecipe>> candidates =
+                new ArrayList<>();
+
+        for (RecipeHolder<DwarfTradeRecipe> holder : getAllTradeRecipes(level)) {
+            DwarfTradeRecipe recipe =
+                    holder.value();
+
+            if (recipe.profession() != resolvedProfession
+                    || groupOf(recipe) != TradeGroup.CUMULATIVE_POOL
+                    || !isUnlocked(recipe, merchantLevel)
+                    || excludedRecipeIds.contains(holder.id())) {
+                continue;
+            }
+
+            candidates.add(holder);
+        }
+
+        return pickWeightedWithoutReplacement(
+                candidates,
+                rolls,
+                resolvedRandom
+        );
+    }
+
     public static @NotNull List<RecipeHolder<DwarfTradeRecipe>>
     getGlobalTradeRecipes(
             Level level,

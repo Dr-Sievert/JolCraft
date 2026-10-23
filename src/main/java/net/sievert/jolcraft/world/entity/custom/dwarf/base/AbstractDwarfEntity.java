@@ -194,6 +194,10 @@ public class AbstractDwarfEntity extends AbstractTradingEntity implements Npc, D
 
         if (compound.contains(NBT_PROFESSION, 8)) {
             this.setProfession(DwarfProfession.byId(compound.getString(NBT_PROFESSION)));
+        } else {
+            // A typed dwarf created without finalizeSpawn (/summon with NBT, structure data)
+            // must not stay NONE: its type decides the profession, as it does on spawn.
+            this.setProfession(this.getSpawnProfession());
         }
 
         this.actionHelper.readAdditionalSaveData(
