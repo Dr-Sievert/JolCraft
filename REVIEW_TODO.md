@@ -187,7 +187,8 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
   The tool recipes and misc lockpick, glass_mug and compass-dial recipes register an explicit mirror-image pattern as a second recipe. ShapedRecipePattern matches mirrored layouts automatically, so each pair is two recipes with identical inputs and outputs.  
   Fix: Emit a single pattern per tool. Asymmetric patterns are mirror-matched by vanilla already.
 
-- [ ] **R80. Inconsistent miner task recipe ids (bounty_novice vs crate_*)**  
+- [x] **R80. Inconsistent miner task recipe ids (bounty_novice vs crate_*)**  
+  Done 2026-10-23: `DwarfMinerBountyTasks` has one `emitTier` with id = tier name, like the other three professions; the duplicate `emitBountyTier` is gone. The cartographer sound pair the four upper tiers already had is kept, so only the novice tier's second sound changes. Needs `runData`; the cache purges the old `bounty_novice` and `crate_*` files.  
   `DwarfMinerBountyTasks.java:219` · quality · `src/main/java/net/sievert/jolcraft/datagen/recipe/subprovider/bounty/task/DwarfMinerBountyTasks.java`  
   Miner task recipes get the ids bounty_novice and crate_<tier>, while every other profession uses plain <tier> ids. The cause is a duplicate emitBountyTier/emitTier pair that differs only in the id prefix and sound2. This is cosmetic: nothing looks the ids up, and the sounds have no shared convention across professions anyway.  
   Fix: Use a single emitTier that outputs id = tier name and one consistent sound pair, as the other three professions do.
@@ -223,19 +224,22 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
   Fix: Build the foldered key directly, without registering the intermediate one, and register only the final key.
   Also reported as: JolCraftLootTables registers phantom un-foldered ids and its all() set is wrong (`JolCraftLootTables.java:196`).
 
-- [ ] **R86. Recipe hook ids are not validated at load time**  
+- [x] **R86. Recipe hook ids are not validated at load time**  
+  Done 2026-10-23: `RecipeOutput.validate` (a default all four outputs reach) reports every hook id missing from `JolCraftRecipeHooks` (new `contains`). Every recipe codec funnels its outputs through `RecipeValidation.validateOutput`, so an unknown hook now fails the recipe at load and in datagen instead of logging on first use.  
   `JolCraftRecipeHooks.java:38` · quality · `src/main/java/net/sievert/jolcraft/world/recipe/base/output/hook/JolCraftRecipeHooks.java`  
   An unknown hook ResourceLocation in a recipe's hooks list passes codec and ValidationContext checks (ItemOutput.validate and RecipeOutput.validate never look at hooks), and only logs an error at execution, returning false.  
   Fix: In ItemOutput, EntityOutput, SoundOutput and EffectOutput validate(), call context.reportProblem for any hook id not in JolCraftRecipeHooks.HOOKS (expose a contains() method), and make the codecs fail with it.
 
-- [ ] **R87. DwarvenFortressStructure ignores its serialized start_height, so the generated config is misleading**  
+- [x] **R87. DwarvenFortressStructure ignores its serialized start_height, so the generated config is misleading**  
+  Done 2026-10-23: `spawnOrigin` samples `start_height` and adds it to the stone-column origin, so the field is live data; the generated absolute(0) means no shift and a constant provider consumes no RNG, so placement is unchanged. Documented at the datagen value.  
   `DwarvenFortressStructure.java:98` · quality · `src/main/java/net/sievert/jolcraft/world/worldgen/structure/custom/DwarvenFortressStructure.java`  
   startPos() is overridden to derive Y from the stone column, but the codec still requires a start_height field and the datagen writes absolute 0. The value is dead data.  
   Fix: Either make start_height optional in AbstractJigsawStructure.codec, or apply it as an offset in spawnOrigin. Document that it is unused.
 
 ### Found while fixing (added after the review)
 
-- [ ] **R88. corruption_effects.json flaps between datagen runs**  
+- [x] **R88. corruption_effects.json flaps between datagen runs**  
+  Done 2026-10-23: `JolCraftCodecs.STABLE_MOB_EFFECT_INSTANCE` wraps the vanilla codec and sorts `neoforge:cures` on encode; used by `EffectOutput`, `WeightedEffect` and the fermenting-container processor's `BrewEntry`, which covers the config, the cauldron recipes, the hand-interaction test recipe and the fortress barrel processor list. Residual: `loot_table/chest/supplies.json` carries brew effects through vanilla `PotionContents.CODEC` and can still flap; a generator-level sort belongs to the datagen overhaul (roadmap 3).  
   `CorruptionEffectsConfigProvider.java`, `CorruptionEffectsConfig.java:21` · build-ci · `src/main/java/net/sievert/jolcraft/datagen/config/subprovider/CorruptionEffectsConfigProvider.java`  
   The weighted effects are written through the full `MobEffectInstance` codec, which includes NeoForge's `cures` set (`milk`, `protected_by_totem`) stored in a hash set, so two `runData` runs produce different orderings of the same file. Harmless at runtime, but it defeats diffing generated output and will show up as noise in any datagen determinism check.  
   Fix: encode only what the config needs (effect id, duration, amplifier) in `WeightedEffect.CODEC`, or sort the cures before writing. Belongs to roadmap item 3 (datagen overhaul).  

@@ -5,6 +5,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.sievert.jolcraft.util.JolCraftCodecs;
 import net.minecraft.world.effect.MobEffects;
 import net.sievert.jolcraft.world.entity.effect.JolCraftEffects;
 
@@ -211,7 +212,7 @@ public record CorruptionEffectsConfig(
                                         .forGetter(
                                                 WeightedEffect::weight
                                         ),
-                                MobEffectInstance.CODEC
+                                JolCraftCodecs.STABLE_MOB_EFFECT_INSTANCE
                                         .fieldOf("effect")
                                         .forGetter(
                                                 WeightedEffect::effect

@@ -26,6 +26,12 @@ public final class JolCraftRecipeHooks {
 
     private JolCraftRecipeHooks() {}
 
+    public static boolean contains(
+            ResourceLocation id
+    ) {
+        return HOOKS.containsKey(id);
+    }
+
     public static boolean canApply(
             ResourceLocation id,
             LootContext context,

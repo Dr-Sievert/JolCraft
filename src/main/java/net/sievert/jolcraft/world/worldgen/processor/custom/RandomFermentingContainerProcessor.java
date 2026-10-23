@@ -8,6 +8,7 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.sievert.jolcraft.util.JolCraftCodecs;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.BarrelBlock;
@@ -288,7 +289,7 @@ public final class RandomFermentingContainerProcessor extends StructureProcessor
     ) {
 
         private static final Codec<List<MobEffectInstance>> EFFECTS_CODEC =
-                MobEffectInstance.CODEC.listOf().validate(
+                JolCraftCodecs.STABLE_MOB_EFFECT_INSTANCE.listOf().validate(
                         effects -> effects.isEmpty()
                                 ? DataResult.error(
                                 () -> "Brew entry requires at least one effect"

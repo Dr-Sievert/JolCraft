@@ -48,7 +48,7 @@ public record DwarfMinerBountyTasks(
             @NotNull JolCraftDataLookups lookups,
             @NotNull JolCraftDataTracking tracking
     ) {
-        emitBountyTier(
+        emitTier(
                 output,
                 tracking,
                 DwarfMerchantData.Level.NOVICE,
@@ -183,8 +183,7 @@ public record DwarfMinerBountyTasks(
         BountyTaskRecipeBuilder builder =
                 BountyTaskRecipeBuilder.create()
                         .id(
-                                "crate_"
-                                        + tier.name()
+                                tier.name()
                                         .toLowerCase(Locale.ROOT)
                         )
                         .bountyType(
@@ -196,39 +195,6 @@ public record DwarfMinerBountyTasks(
                         )
                         .sound2(
                                 SoundEvents.VILLAGER_WORK_CARTOGRAPHER
-                        );
-
-        objectives.accept(builder);
-
-        emit(
-                output,
-                tracking,
-                builder.buildValidated()
-        );
-    }
-
-    private void emitBountyTier(
-            @NotNull RecipeOutput output,
-            @NotNull JolCraftDataTracking tracking,
-            @NotNull DwarfMerchantData.Level tier,
-            @NotNull Consumer<BountyTaskRecipeBuilder> objectives
-    ) {
-        BountyTaskRecipeBuilder builder =
-                BountyTaskRecipeBuilder.create()
-                        .id(
-                                "bounty_"
-                                        + tier.name()
-                                        .toLowerCase(Locale.ROOT)
-                        )
-                        .bountyType(
-                                DwarfProfession.MINER
-                        )
-                        .tier(tier)
-                        .sound1(
-                                SoundEvents.VILLAGER_WORK_CARTOGRAPHER
-                        )
-                        .sound2(
-                                SoundEvents.VILLAGER_WORK_FISHERMAN
                         );
 
         objectives.accept(builder);

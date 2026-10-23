@@ -43,6 +43,7 @@ public final class JolCraftStructureProvider {
                         pools.getOrThrow(JolCraftDwarvenFortressPools.START_POOL),
                         Optional.empty(),
                         25,
+                        // start_height: Y shift of the stone-column origin, 0 = none
                         ConstantHeight.of(VerticalAnchor.absolute(0)),
                         Optional.empty(),
                         128,

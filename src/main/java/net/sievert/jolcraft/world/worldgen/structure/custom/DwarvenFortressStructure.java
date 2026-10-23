@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.WorldGenerationContext;
 import net.minecraft.world.level.levelgen.heightproviders.HeightProvider;
 import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.pools.DimensionPadding;
@@ -75,7 +76,7 @@ public class DwarvenFortressStructure extends AbstractJigsawStructure {
         return MIN_TERRAIN_COVER;
     }
 
-    private static BlockPos spawnOrigin(GenerationContext context) {
+    private BlockPos spawnOrigin(GenerationContext context) {
         ChunkPos chunkPos = context.chunkPos();
 
         int x = chunkPos.getMinBlockX();
@@ -101,9 +102,20 @@ public class DwarvenFortressStructure extends AbstractJigsawStructure {
             y--;
         }
 
+        // start_height is not a world Y for this structure: the sampled value shifts the
+        // terrain-derived origin, so the generated absolute(0) means no shift. Only absolute
+        // anchors are meaningful here.
+        int offset = this.startHeight.sample(
+                context.random(),
+                new WorldGenerationContext(
+                        context.chunkGenerator(),
+                        context.heightAccessor()
+                )
+        );
+
         return new BlockPos(
                 x,
-                y - START_STRUCTURE_HEIGHT - GENERATION_PADDING_Y,
+                y - START_STRUCTURE_HEIGHT - GENERATION_PADDING_Y + offset,
                 z
         );
     }

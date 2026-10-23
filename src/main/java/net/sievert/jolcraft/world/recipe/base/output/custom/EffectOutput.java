@@ -4,6 +4,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.sievert.jolcraft.util.JolCraftCodecs;
 import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.sievert.jolcraft.data.language.JolCraftDictionary;
@@ -22,7 +23,7 @@ public record EffectOutput(
 
     public static final MapCodec<EffectOutput> CODEC =
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    MobEffectInstance.CODEC
+                    JolCraftCodecs.STABLE_MOB_EFFECT_INSTANCE
                             .fieldOf(JolCraftDictionary.EFFECT)
                             .forGetter(EffectOutput::effect),
 
