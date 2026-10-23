@@ -74,22 +74,26 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
   For every non-empty barrel holding finished brew that can still age, tickServer calls getCurrentBrew(), which copies the stored FluidStack and applies addAgeInPlace on the copy. It does this every tick just to test canAgeFurther, then discards the copy.  
   Fix: Do the cheap gate first: if (level.getGameTime() % AMBIENT_SOUND_INTERVAL != 0L) return; and compute getCurrentBrew()/applyElapsedAge at that interval, or compute the remaining ticks until the next age threshold once and store it.
 
-- [ ] **R60. Full discovered-structure set is re-synced to the client on every addition but nothing client-side reads it**  
+- [x] **R60. Full discovered-structure set is re-synced to the client on every addition but nothing client-side reads it**  
+  Done 2026-10-23: `.sync(...)` removed from the `DISCOVERED_STRUCTURES` registration; every reader goes through `DiscoveredStructuresAttachmentHelper`, whose API takes `ServerPlayer` only. The attachment class keeps its stream codec (it still extends `JolCraftSyncedAttachment`) for a future client reader, which should then register a size-capped, owner-only sync.  
   `JolCraftAttachments.java:62` · performance · `src/main/java/net/sievert/jolcraft/world/entity/attachment/JolCraftAttachments.java`  
   DISCOVERED_STRUCTURES (JolCraftAttachments.java:71, not :62) is registered with the one-argument .sync(codec). On every discovery, login and tracking start, NeoForge sends the whole uncapped GlobalPos list to the owner and to every player tracking the owner. No client code reads it. That wastes bandwidth and leaks a player's discovered structure coordinates to nearby clients. Remove .sync(...), or if a client reader is planned, use sync((holder, to) -> holder == to, codec) with a size-capped list.  
   Fix: Remove `.sync(...)` for DISCOVERED_STRUCTURES if the client never reads it, or add a size-limited list codec if a client reader is planned.
 
-- [ ] **R61. Offer cost serializes the item's full default component map**  
+- [x] **R61. Offer cost serializes the item's full default component map**  
+  Done 2026-10-23: `DwarfTrades.createItemCost` builds the predicate from `PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, representative.getComponentsPatch())`, so only the representative's own patch (brew content, pouch amount, tablet data) is stored and sent; the display stack is unchanged because defaults come from the prototype, and matching never used the predicate (`DwarfItemCost.test` checks item, count and ingredient).  
   `DwarfTrades.java:214` · performance · `src/main/java/net/sievert/jolcraft/world/entity/custom/dwarf/trade/DwarfTrades.java`  
   createItemCost builds the DataComponentPredicate with allOf(representative.getComponents()). That map includes every prototype default component, not only the recipe's required components.  
   Fix: Pass only the patch: DataComponentPredicate.allOf(DataComponentMap.builder() ...) built from representative.getComponentsPatch() additions. Or use DataComponentPredicate.EMPTY when the ingredient already enforces components.
 
-- [ ] **R62. Full recipe-manager scan and holder re-wrap on every offer refresh**  
+- [x] **R62. Full recipe-manager scan and holder re-wrap on every offer refresh**  
+  Done 2026-10-23: `DwarfTrades.getAllTradeRecipes` returns `recipeManager.getAllRecipesFor(DWARF_TRADE_TYPE)`, the type index, with one copy and no holder re-wrap; `getRecipeHolders` is gone. The three selectors still call it once each per refresh, which is now a map lookup.  
   `DwarfTrades.java:1042` · performance · `src/main/java/net/sievert/jolcraft/world/entity/custom/dwarf/trade/DwarfTrades.java`  
   getAllTradeRecipes iterates RecipeManager.getRecipes() (all recipes) and type-filters instead of using the type-indexed getAllRecipesFor(type). Only matching DwarfTradeRecipes are re-wrapped and copied. It runs 1-2 times per dwarf per restock interval (default 6000 ticks), which is a minor, avoidable cost and not a tick-spike risk.  
   Fix: Use recipeManager.byType(type) / getAllRecipesFor(type), which is indexed by type, and cast. Drop the RecipeHolder re-wrap and the List.copyOf. Pass the list through restock() and rebuild instead of re-fetching it.
 
-- [ ] **R64. Corruption brewing recipe rebuilds the full output and rolls RNG on every brewing-stand tick**  
+- [x] **R64. Corruption brewing recipe rebuilds the full output and rolls RNG on every brewing-stand tick**  
+  Won't fix 2026-10-23 (accepted hot-path cost, as the finding itself allows): `IBrewingRecipe` has only `getOutput`, and NeoForge's `hasOutput` probe calls it, so the roll and stack build cannot be skipped for the per-tick `isBrewable` check without a result cache keyed on the slot stacks; that cache would fix the corruption effect at insertion time and carry stale-state and thread-safety risks for a saving of a few small allocations per active stand per tick. The cheap gates (`isInput` with `hasEligibleEffect`, `isIngredient`) already run first. Revisit only if profiling shows brewing stands matter.  
   `JolCraftCorruptionBrewingRecipe.java:85` · performance · `src/main/java/net/sievert/jolcraft/world/recipe/custom/vanilla/JolCraftCorruptionBrewingRecipe.java`  
   BrewingStandBlockEntity.serverTick calls isBrewable on every tick, which goes through hasMix and hasOutput to getOutput. JolCraftCorruptionBrewingRecipe.getOutput then does a full weighted roll and builds a discarded output stack. Because isBrewable stops at the first matching slot, this is usually about one build per stand per tick, not one per bottle slot.  
   Fix: This is a hot-path cost, not a correctness bug. Either accept it for now, or cache a cheap pre-check (hasEligibleEffect and the input checks) so the full roll only happens when the brew actually completes. A separate pure-predicate path would be needed, because IBrewingRecipe has no such hook.

@@ -68,7 +68,8 @@ public final class JolCraftAttachments {
             ATTACHMENT_TYPES.register(JolCraftAttachmentIds.DISCOVERED_STRUCTURES, () ->
                     AttachmentType.builder(() -> new DiscoveredStructuresAttachment())
                             .serialize(DiscoveredStructuresAttachment.CODEC)
-                            .sync(DiscoveredStructuresAttachment.STREAM_CODEC)
+                            // Not synced: only server code reads it, and syncing sent the whole
+                            // GlobalPos list to the owner and every tracking player per discovery.
                             .copyOnDeath()
                             .build()
             );

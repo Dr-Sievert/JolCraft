@@ -1,12 +1,13 @@
 package net.sievert.jolcraft.world.entity.custom.dwarf.trade;
 
+import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPredicate;
+import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
@@ -208,11 +209,20 @@ public final class DwarfTrades {
                 @NotNull TradeCost cost,
                 @NotNull ItemStack representative
         ) {
+            /*
+             * Only the representative's own component patch goes into the cost:
+             * getComponents() would also list every prototype default, which each
+             * offer then serialised and sent. The patch still gives the display
+             * stack its brew, pouch or tablet data; matching uses the ingredient.
+             */
             return new DwarfItemCost(
                     representative.getItem().builtInRegistryHolder(),
                     representative.getCount(),
                     DataComponentPredicate.allOf(
-                            representative.getComponents()
+                            PatchedDataComponentMap.fromPatch(
+                                    DataComponentMap.EMPTY,
+                                    representative.getComponentsPatch()
+                            )
                     ),
                     cost.ingredient()
             );
@@ -1102,6 +1112,7 @@ public final class DwarfTrades {
         );
     }
 
+    /** The recipe manager's type index: one copy of the holders, no re-wrapping. */
     private static @NotNull List<RecipeHolder<DwarfTradeRecipe>>
     getAllTradeRecipes(
             Level level
@@ -1110,45 +1121,10 @@ public final class DwarfTrades {
             return List.of();
         }
 
-        var type =
-                JolCraftRecipes
-                        .DWARF_TRADE_TYPE
-                        .get();
-
-        Collection<RecipeHolder<?>> all =
-                serverLevel.getServer()
-                        .getRecipeManager()
-                        .getRecipes();
-
-        List<RecipeHolder<DwarfTradeRecipe>> result = getRecipeHolders(all, type);
-
-        return List.copyOf(
-                result
-        );
-    }
-
-    private static @NotNull List<RecipeHolder<DwarfTradeRecipe>> getRecipeHolders(Collection<RecipeHolder<?>> all, RecipeType<DwarfTradeRecipe> type) {
-        List<RecipeHolder<DwarfTradeRecipe>> result =
-                new ArrayList<>();
-
-        for (RecipeHolder<?> holder : all) {
-            if (holder.value()
-                    .getType() != type) {
-                continue;
-            }
-
-            if (!(holder.value()
-                    instanceof DwarfTradeRecipe trade)) {
-                continue;
-            }
-
-            result.add(
-                    new RecipeHolder<>(
-                            holder.id(),
-                            trade
-                    )
-            );
-        }
-        return result;
+        return serverLevel.getServer()
+                .getRecipeManager()
+                .getAllRecipesFor(
+                        JolCraftRecipes.DWARF_TRADE_TYPE.get()
+                );
     }
 }
