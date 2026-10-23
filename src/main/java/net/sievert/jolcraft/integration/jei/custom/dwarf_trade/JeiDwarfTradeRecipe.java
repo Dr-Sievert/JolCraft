@@ -1,16 +1,9 @@
 package net.sievert.jolcraft.integration.jei.custom.dwarf_trade;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.storage.loot.LootContext;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
@@ -21,7 +14,6 @@ import net.sievert.jolcraft.integration.jei.util.recipe.RewardCrateJeiResolver.R
 import net.sievert.jolcraft.util.JolCraftStrings;
 import net.sievert.jolcraft.world.entity.custom.dwarf.profession.DwarfProfession;
 import net.sievert.jolcraft.world.entity.custom.dwarf.trade.DwarfMerchantData;
-import net.sievert.jolcraft.world.recipe.base.context.JolCraftRecipeContexts;
 import net.sievert.jolcraft.world.recipe.custom.dwarf_trade.DwarfTradeRecipe;
 import net.sievert.jolcraft.world.recipe.custom.dwarf_trade.DwarfTradeRecipe.TradeCost;
 import org.jetbrains.annotations.NotNull;
@@ -42,12 +34,6 @@ public record JeiDwarfTradeRecipe(
         @NotNull AmountRange inputAmountA,
         @Nullable AmountRange inputAmountB
 ) {
-
-    private static final LootContextParamSet PREVIEW_CONTEXT_PARAMS =
-            new LootContextParamSet.Builder()
-                    .required(LootContextParams.THIS_ENTITY)
-                    .required(LootContextParams.ORIGIN)
-                    .build();
 
     public JeiDwarfTradeRecipe {
         Objects.requireNonNull(
@@ -143,9 +129,6 @@ public record JeiDwarfTradeRecipe(
                 )
         );
 
-        LootContext context =
-                resolveJeiLootContext();
-
         List<ItemStack> inputAExamples =
                 materializeInputs(
                         recipe.costA()
@@ -160,8 +143,7 @@ public record JeiDwarfTradeRecipe(
         AmountRange inputAmountA =
                 amountRange(
                         recipe.costA()
-                                .count(),
-                        context
+                                .count()
                 );
 
         TradeCost costB =
@@ -190,8 +172,7 @@ public record JeiDwarfTradeRecipe(
 
             inputAmountB =
                     amountRange(
-                            costB.count(),
-                            context
+                            costB.count()
                     );
         }
 
@@ -425,101 +406,59 @@ public record JeiDwarfTradeRecipe(
         return false;
     }
 
+    /*
+     * Amounts come from the number providers alone: constant and uniform
+     * providers give an exact value or a range, anything else is unknown. JEI
+     * runs on the client thread, so no loot context is built here. The old
+     * single-player shortcut read the integrated server's player and showed a
+     * fixed-seed sample as if it were exact, while a dedicated server showed
+     * unknown for the same recipe.
+     */
     private static @NotNull AmountRange amountRange(
-            @NotNull NumberProvider provider,
-            @Nullable LootContext context
+            @NotNull NumberProvider provider
     ) {
         if (provider instanceof ConstantValue(float value)) {
-            return AmountRange.fixed(
-                    Mth.floor(
-                            value
-                    )
-            );
+            return AmountRange.fixed(Mth.floor(value));
         }
 
         //noinspection DeconstructionCanBeUsed
         if (provider instanceof UniformGenerator uniform) {
-            Integer min =
-                    providerMinimum(
-                            uniform.min(),
-                            context
-                    );
+            Integer min = providerMinimum(uniform.min());
+            Integer max = providerMaximum(uniform.max());
 
-            Integer max =
-                    providerMaximum(
-                            uniform.max(),
-                            context
-                    );
-
-            if (min == null
-                    || max == null) {
+            if (min == null || max == null) {
                 return AmountRange.unknown();
             }
 
-            return AmountRange.range(
-                    min,
-                    max
-            );
-        }
-
-        if (context != null) {
-            return AmountRange.fixed(
-                    provider.getInt(
-                            context
-                    )
-            );
+            return AmountRange.range(min, max);
         }
 
         return AmountRange.unknown();
     }
 
     private static @Nullable Integer providerMinimum(
-            @NotNull NumberProvider provider,
-            @Nullable LootContext context
+            @NotNull NumberProvider provider
     ) {
         if (provider instanceof ConstantValue(float value)) {
-            return Mth.floor(
-                    value
-            );
+            return Mth.floor(value);
         }
 
         if (provider instanceof UniformGenerator uniform) {
-            return providerMinimum(
-                    uniform.min(),
-                    context
-            );
-        }
-
-        if (context != null) {
-            return provider.getInt(
-                    context
-            );
+            return providerMinimum(uniform.min());
         }
 
         return null;
     }
 
     private static @Nullable Integer providerMaximum(
-            @NotNull NumberProvider provider,
-            @Nullable LootContext context
+            @NotNull NumberProvider provider
     ) {
         if (provider instanceof ConstantValue(float value)) {
-            return Mth.floor(
-                    value
-            );
+            return Mth.floor(value);
         }
 
         if (provider instanceof UniformGenerator uniform) {
-            return providerMaximum(
-                    uniform.max(),
-                    context
-            );
-        }
-
-        if (context != null) {
-            return provider.getInt(
-                    context
-            );
+            return providerMaximum(uniform.max());
         }
 
         return null;
@@ -566,46 +505,5 @@ public record JeiDwarfTradeRecipe(
         }
 
         return copies;
-    }
-
-    private static @Nullable LootContext resolveJeiLootContext() {
-        Minecraft minecraft =
-                Minecraft.getInstance();
-
-        if (minecraft.player == null
-                || minecraft.getSingleplayerServer() == null) {
-            return null;
-        }
-
-        ServerPlayer serverPlayer =
-                minecraft.getSingleplayerServer()
-                        .getPlayerList()
-                        .getPlayer(
-                                minecraft.player.getUUID()
-                        );
-
-        if (serverPlayer == null) {
-            return null;
-        }
-
-        ServerLevel serverLevel =
-                serverPlayer.serverLevel();
-
-        return JolCraftRecipeContexts.create(
-                serverLevel,
-                RandomSource.create(
-                        0x4A4F4C4352414654L
-                ),
-                PREVIEW_CONTEXT_PARAMS,
-                builder -> builder
-                        .withParameter(
-                                LootContextParams.THIS_ENTITY,
-                                serverPlayer
-                        )
-                        .withParameter(
-                                LootContextParams.ORIGIN,
-                                serverPlayer.position()
-                        )
-        );
     }
 }

@@ -26,12 +26,14 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
   The mixin raises the randomTick brightness to 9 on VERDANT soil. Vanilla CropBlock.canSurvive requires getRawBrightness >= 8, and the mixin does not touch that.  
   Fix: If dark farming on verdant soil is intended, also wrap the getRawBrightness call in CropBlock.hasSufficientLight (or override canSurvive for verdant). If not, drop the bypass and keep only the growth multiplier.
 
-- [ ] **R33. Lockpick break shrinks the slot stack without notifying the slot, leaving hasLockpickInserted stale**  
+- [x] **R33. Lockpick break shrinks the slot stack without notifying the slot, leaving hasLockpickInserted stale**  
+  Done 2026-10-23: both break branches of `StrongboxBlockEntity.handleLockButtonPress` check the slot after `shrink(1)`; when the last pick broke they call `setHasLockpickInserted(false)` (which runs `resetLockSession`) and return instead of rerolling, so the next inserted pick starts a fresh layout and timer.  
   `StrongboxBlockEntity.java:399` · logic · `src/main/java/net/sievert/jolcraft/world/block/entity/custom/StrongboxBlockEntity.java`  
   When the last lockpick breaks, shrink(1) bypasses JolCraftSlot.setChanged, so hasLockpickInserted stays true. The buttons keep rerolling with an empty slot, and inserting the next pick skips the fresh reroll and timer reset. Progress is already zeroed and presses with an empty slot are rejected, so the effect is only cosmetic or timing.  
   Fix: After shrinking, set hasLockpickInserted = !lockpickSlot.isEmpty() and call resetLockSession() when it becomes false. Alternatively, have the menu call slot.setChanged() after the break.
 
-- [ ] **R34. currentInteractingPlayerId is set in createMenu and never cleared for StrongboxMenu, so a later lock session shows 'busy'**  
+- [x] **R34. currentInteractingPlayerId is set in createMenu and never cleared for StrongboxMenu, so a later lock session shows 'busy'**  
+  Done 2026-10-23: `createMenu` sets the interacting id only on the `LockMenu` branch. The unlocked menu's opener is already tracked and cleared by the openers counter that the R15 fix wired (`StrongboxMenu` calls `startOpen`/`stopOpen`), so the two paths no longer both write the id.  
   `StrongboxBlockEntity.java:722` · logic · `src/main/java/net/sievert/jolcraft/world/block/entity/custom/StrongboxBlockEntity.java`  
   createMenu (StrongboxBlockEntity.java:722) stores the opener's UUID even for the unlocked StrongboxMenu, and nothing clears it when that menu closes. If the box is later re-locked with the playtest-only DEV_KEY, other players get TOOLTIP_STRONGBOX_BUSY until the previous opener logs out. Normal survival play cannot re-lock an existing box. The finder's second consequence (ticking with the stale player's LOCKPICKING) does not happen, because a lock session also needs an open LockMenu with a lockpick inserted. Fix: set the id only in the LockMenu branch of createMenu.  
   Fix: Clear the id in a StrongboxMenu.removed() override (clearCurrentInteractingPlayer). Better, set the id only for the LockMenu branch of createMenu.
@@ -58,14 +60,16 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
 
 ### Thread safety
 
-- [ ] **R55. JEI trade recipe creation reads the integrated server's ServerPlayer and ServerLevel from the client thread, and the result differs between singleplayer and multiplayer**  
+- [x] **R55. JEI trade recipe creation reads the integrated server's ServerPlayer and ServerLevel from the client thread, and the result differs between singleplayer and multiplayer**  
+  Done 2026-10-23: `JeiDwarfTradeRecipe` no longer builds a loot context. `amountRange` reads constant and uniform providers directly (exact value or range) and reports anything else as unknown, identically in single player and on a server; `resolveJeiLootContext`, the preview context params and the server imports are gone. All shipped trade costs are constant or uniform, so JEI output is unchanged for them.  
   `JeiDwarfTradeRecipe.java:571` · concurrency · `src/main/java/net/sievert/jolcraft/integration/jei/custom/dwarf_trade/JeiDwarfTradeRecipe.java`  
   The code path is real, but neither the claimed impact nor the medium severity holds up. resolveJeiLootContext (JeiDwarfTradeRecipe.java:571-610) is called for every trade recipe (line 147) and reads the integrated server's PlayerList and ServerPlayer from the client thread. However, only providers that are neither ConstantValue nor UniformGenerator ever use the context (lines 465-470, 493, 519). Every shipped trade cost is constant or uniform with constant bounds (374 uniform providers and nothing else in the generated dwarf_trade recipes). So the difference between singleplayer and a server only appears with third-party data packs. When it does, singleplayer shows a single fixed-seed sample as if it were an exact count, and a server shows "unknown". The cross-thread read is a single HashMap lookup by UUID. Its risk is negligible.  
   Fix: Do not build a loot context in JEI. Show a range for ConstantValue and UniformGenerator only, and "varies" for other providers, the same way on both sides. Remove the singleplayer-server access.
 
 ### Performance
 
-- [ ] **R59. Aging barrel copies the FluidStack (with data components) and recomputes age every tick**  
+- [x] **R59. Aging barrel copies the FluidStack (with data components) and recomputes age every tick**  
+  Done 2026-10-23: `FermentingBarrelBlockEntity.tickServer` gates the `getCurrentBrew()` copy and the finished-aging commit behind the existing `AMBIENT_SOUND_INTERVAL` (200 ticks). Readers compute the current age from the timer and drains and fills commit it first, so the stored value lagging by up to ten seconds at the final threshold changes nothing the player sees.  
   `FermentingBarrelBlockEntity.java:289` · performance · `src/main/java/net/sievert/jolcraft/world/block/entity/custom/brewing/FermentingBarrelBlockEntity.java`  
   For every non-empty barrel holding finished brew that can still age, tickServer calls getCurrentBrew(), which copies the stored FluidStack and applies addAgeInPlace on the copy. It does this every tick just to test canAgeFurther, then discards the copy.  
   Fix: Do the cheap gate first: if (level.getGameTime() % AMBIENT_SOUND_INTERVAL != 0L) return; and compute getCurrentBrew()/applyElapsedAge at that interval, or compute the remaining ticks until the next age threshold once and store it.

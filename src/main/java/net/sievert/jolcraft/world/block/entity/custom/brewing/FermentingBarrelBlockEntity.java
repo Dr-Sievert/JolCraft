@@ -297,6 +297,16 @@ public final class FermentingBarrelBlockEntity extends BlockEntity
                 level.getGameTime()
         );
 
+        /*
+         * getCurrentBrew copies the brew with its components and recomputes its
+         * age. Aging takes minutes, so checking whether it has finished once per
+         * AMBIENT_SOUND_INTERVAL is enough: readers compute the current age from
+         * the timer anyway, and drains and fills commit it first.
+         */
+        if (level.getGameTime() % AMBIENT_SOUND_INTERVAL != 0L) {
+            return;
+        }
+
         FluidStack currentBrew = getCurrentBrew();
 
         if (!DwarvenBrewFluidHelper.canAgeFurther(currentBrew)) {
@@ -305,8 +315,7 @@ public final class FermentingBarrelBlockEntity extends BlockEntity
             return;
         }
 
-        if (level.getGameTime() % AMBIENT_SOUND_INTERVAL != 0L
-                || level.random.nextInt(3) != 0) {
+        if (level.random.nextInt(3) != 0) {
             return;
         }
 

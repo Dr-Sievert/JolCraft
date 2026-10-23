@@ -407,6 +407,13 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
                     this.getBlockPos()
             );
 
+            if (lockpickSlot.isEmpty()) {
+                // shrink() bypasses the slot's change hook: end the session now, so the
+                // next pick starts a fresh layout instead of inheriting this one.
+                setHasLockpickInserted(false);
+                return true;
+            }
+
             forceImmediateReroll();
             return true;
         }
@@ -469,6 +476,12 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
                     this.level,
                     this.getBlockPos()
             );
+
+            if (lockpickSlot.isEmpty()) {
+                // Same as above: the last pick broke, close the session.
+                setHasLockpickInserted(false);
+                return true;
+            }
         }
 
         forceImmediateReroll();
@@ -719,10 +732,12 @@ public class StrongboxBlockEntity extends RandomizableContainerBlockEntity imple
             int id,
             Inventory inv
     ) {
-        this.currentInteractingPlayerId =
-                inv.player.getUUID();
-
         if (this.isLocked()) {
+            // createMenu records the id only for a lock session; LockMenu.removed clears it.
+            // The unlocked menu's opener is written and cleared by the openers-counter overrides.
+            this.currentInteractingPlayerId =
+                    inv.player.getUUID();
+
             return new LockMenu(
                     id,
                     inv,
