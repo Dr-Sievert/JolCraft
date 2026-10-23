@@ -106,7 +106,7 @@ public class DwarfMerchantScreen extends AbstractContainerScreen<DwarfMerchantMe
             JolCraftTextures.mod(JolCraftTextures.container(JolCraftRecipeIds.DWARF_TRADE));
 
     private static final Component TRADES_LABEL = Component.translatable(JolCraftLanguageKeys.MERCHANT_TRADES);
-    private static final Component DEPRECATED_TOOLTIP = Component.translatable(JolCraftLanguageKeys.MERCHANT_DEPRECATED);
+    private static final Component RESTOCK_TOOLTIP = Component.translatable(JolCraftLanguageKeys.TOOLTIP_DWARF_RESTOCK);
 
     private int shopItem;
     private final TradeOfferButton[] tradeOfferButtons = new TradeOfferButton[7];
@@ -300,7 +300,7 @@ public class DwarfMerchantScreen extends AbstractContainerScreen<DwarfMerchantMe
                 }
 
                 if (selectedOffer.isOutOfStock() && this.isHovering(186, 35, 22, 21, mouseX, mouseY) && this.menu.canRestock()) {
-                    graphics.renderTooltip(this.font, DEPRECATED_TOOLTIP, mouseX, mouseY);
+                    graphics.renderTooltip(this.font, RESTOCK_TOOLTIP, mouseX, mouseY);
                 }
             }
 

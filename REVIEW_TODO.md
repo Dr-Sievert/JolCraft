@@ -185,7 +185,8 @@ Ordered by impact as judged in the synthesis.
   Lighting a hearth is gated by isOwner, but the LIT branch lets any player with a water bucket (or any creative player) call deactivate(), which clears the owner and the owner's active hearth.  
   Fix: Require owner == null || isOwner(player) (or creative) before deactivating, or show the TOOLTIP_HEARTH_OWNER message to non-owners.
 
-- [ ] **R32. Lapidary bench accepts any item into output and tool slots via hoppers**  
+- [x] **R32. Lapidary bench accepts any item into output and tool slots via hoppers**  
+  Done 2026-10-23: `LapidaryBenchBlockEntity.canPlaceItem` rejects the output slot, requires `ARTISAN_HAMMERS` or `CHISELS` for the tool slot and leaves the input slot open, matching the menu's own slot rules. Hoppers reach the bench through the vanilla `Container` path (it has no item-handler capability), and the bench's own result insertion does not consult `canPlaceItem`, so results still land in the output slot.  
   `LapidaryBenchBlockEntity.java:43` · logic · `src/main/java/net/sievert/jolcraft/world/block/entity/custom/LapidaryBenchBlockEntity.java`  
   LapidaryBenchBlockEntity has no canPlaceItem override, so hoppers can put any item into the tool and output slots. Nothing jams: junk in the output slot just sends results to the player inventory (or drops them), and a junk tool matches no recipe.  
   Fix: Override canPlaceItem: return false for SLOT_OUTPUT, require the ARTISAN_HAMMERS or CHISELS tag for SLOT_TOOL, and allow any item for SLOT_INPUT (or restrict it to GEODES/GEMS_UNCUT).
@@ -266,7 +267,8 @@ Ordered by impact as judged in the synthesis.
   GuildmasterInteractionHandler.preCore (lines 25-60) runs before the core gate pipeline (DwarfInteractions.java:153-157). When the player's reputation tier + 1 is above the guildmaster's merchant level, the guildmaster levels up, its trades are rebuilt and the 'yes' sound plays even when the Ignore, Language, Reputation or Busy/trading gate then rejects the interaction. Most of the harm is cosmetic, apart from offers being rebuilt while another player is trading.  
   Fix: Move the guildmaster level sync to postCore (after the gate handlers) or to the TradeInteractionHandler path. Alternatively, call it only when canTrade and the gates have passed.
 
-- [ ] **R46. canRestock() is never overridden, so the screen's restock hint can never show**  
+- [x] **R46. canRestock() is never overridden, so the screen's restock hint can never show**  
+  Done 2026-10-23: `AbstractTradingEntity.canRestock()` returns true, as `Villager` does (the flag means "this merchant restocks at all"; every dwarf profession restocks on its configured interval). The hint used vanilla's `merchant.deprecated` key, whose English text is about villagers, so the screen now shows the new `TOOLTIP_DWARF_RESTOCK` ("Dwarves restock their trades over time.", in `DwarfLangSubProvider`); the unused `MERCHANT_DEPRECATED` key is gone. Needs `runData` for the text to appear locally.  
   `DwarfMerchant.java:44` · logic · `src/main/java/net/sievert/jolcraft/world/entity/custom/dwarf/trade/DwarfMerchant.java`  
   AbstractTradingEntity never overrides the interface default, so every offers packet carries canRestock=false.  
   Fix: Override canRestock() in AbstractTradingEntity with a real condition, for example shouldRestock() or any offer being out of stock. Or remove the flag and the dead tooltip branch.
@@ -282,7 +284,8 @@ Ordered by impact as judged in the synthesis.
   The profession string codecs in DwarfEndorsementTrigger and DwarfTradeTrigger never reject an unknown profession id. DwarfProfession.byId falls back to NONE, so the null check is dead code. A misspelled id in a datapack advancement silently becomes NONE: the endorsement criterion can then never fire, and the trade criterion matches only NONE. Bundled datagen advancements always pass valid enum constants, so only hand-written or third-party datapacks are affected.  
   Fix: Use `JolCraftEnumHelper.byStringIdNullable(DwarfProfession.class, id, null)`, or reject `p == DwarfProfession.NONE`, in both trigger codecs (the same pattern is at DwarfTradeTrigger.java:62-66). JolCraftTriggerCodecs.strictStringMapped is already unused for this.
 
-- [ ] **R49. Tooltip component built and discarded; line never shown (RewardCrateItem, SalvageItem)**  
+- [x] **R49. Tooltip component built and discarded; line never shown (RewardCrateItem, SalvageItem)**  
+  Done 2026-10-23: both components are now added to the tooltip list.  
   `RewardCrateItem.java:181`, `RewardCrateItem.java:161` · logic · `src/main/java/net/sievert/jolcraft/world/item/custom/crate/RewardCrateItem.java`  
   appendHoverText creates Component.translatable(...).withStyle(GRAY) but never adds it to the tooltip list. TOOLTIP_REWARD_CRATE and TOOLTIP_SALVAGEABLE are therefore never displayed.  
   Fix: Wrap each in tooltip.add(...) in both RewardCrateItem (line 161) and SalvageItem (line 27).
@@ -315,7 +318,8 @@ Ordered by impact as judged in the synthesis.
 
 ### Registration
 
-- [ ] **R54. Dwarven brew bucket is not in any creative tab**  
+- [x] **R54. Dwarven brew bucket is not in any creative tab**  
+  Done 2026-10-23: `DWARVEN_BREW_BUCKET` is listed after the fresh brew mug in the JolCraft tab; the item carries its default brew fluid component, so the plain stack is a full bucket of brew. Drop the line if the omission was intentional.  
   `JolCraftCreativeModeTabs.java:98` · registration · `src/main/java/net/sievert/jolcraft/world/item/creative/JolCraftCreativeModeTabs.java`  
   DWARVEN_BREW_BUCKET is missing from the JolCraft creative tab: the brew section at JolCraftCreativeModeTabs.java:268-274 adds only the glass mug and the fresh brew mug. The bucket can still be obtained by filling a bucket from a brew cauldron or fluid.  
   Fix: Add output.accept(JolCraftItems.DWARVEN_BREW_BUCKET) next to the brew mug entry, if the omission is unintentional.

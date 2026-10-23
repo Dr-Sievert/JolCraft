@@ -287,10 +287,11 @@ public final class JolCraftLanguageKeys extends AbstractLanguageKeys {
 
     public static final String MERCHANT_TITLE = dot(JolCraftDictionary.MERCHANT, JolCraftDictionary.TITLE);
     public static final String MERCHANT_TRADES = dot(JolCraftDictionary.MERCHANT, pl(JolCraftDictionary.TRADE));
-    public static final String MERCHANT_DEPRECATED = dot(JolCraftDictionary.MERCHANT, JolCraftDictionary.DEPRECATED);
-
     public static final String TOOLTIP_DWARF_LOCKED =
             tooltip(JolCraftDwarfIds.DWARF, JolCraftDictionary.LOCKED);
+
+    public static final String TOOLTIP_DWARF_RESTOCK =
+            tooltip(JolCraftDwarfIds.DWARF, JolCraftDictionary.RESTOCK);
 
     public static final String TOOLTIP_DWARF_BUSY =
             tooltip(JolCraftDwarfIds.DWARF, JolCraftDictionary.BUSY);

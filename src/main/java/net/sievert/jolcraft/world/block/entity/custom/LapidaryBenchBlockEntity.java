@@ -504,6 +504,21 @@ public class LapidaryBenchBlockEntity extends BaseContainerBlockEntity {
         );
     }
 
+    /**
+     * Hoppers insert through this; the menu's slots have their own rules.
+     * Results only ever reach the output slot from the bench itself, and the
+     * tool slot takes the tools the recipes use. The input slot takes anything.
+     */
+    @Override
+    public boolean canPlaceItem(int slot, ItemStack stack) {
+        return switch (slot) {
+            case SLOT_OUTPUT -> false;
+            case SLOT_TOOL -> stack.is(JolCraftTags.Items.ARTISAN_HAMMERS)
+                    || stack.is(JolCraftTags.Items.CHISELS);
+            default -> super.canPlaceItem(slot, stack);
+        };
+    }
+
     @Override
     public int getContainerSize() {
         return SLOT_COUNT;

@@ -24,7 +24,7 @@ public class SalvageItem extends Item {
     @OnlyIn(Dist.CLIENT)
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        Component.translatable(JolCraftLanguageKeys.TOOLTIP_SALVAGEABLE).withStyle(ChatFormatting.GRAY);
+        tooltip.add(Component.translatable(JolCraftLanguageKeys.TOOLTIP_SALVAGEABLE).withStyle(ChatFormatting.GRAY));
         super.appendHoverText(stack, context, tooltip, flag);
     }
 }

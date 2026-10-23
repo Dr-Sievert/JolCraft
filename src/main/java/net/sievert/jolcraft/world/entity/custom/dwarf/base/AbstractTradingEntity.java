@@ -462,6 +462,16 @@ public class AbstractTradingEntity extends AbstractBreedingEntity implements Dwa
         }
     }
 
+    /**
+     * Vanilla's "this merchant restocks at all" flag (Villager: true, wandering
+     * trader: false). The trade screen shows its out-of-stock hint only when it
+     * is set, and every dwarf profession restocks on its configured interval.
+     */
+    @Override
+    public boolean canRestock() {
+        return true;
+    }
+
     public boolean shouldRestock() {
         if (!(this.level() instanceof ServerLevel serverLevel)) {
             return false;

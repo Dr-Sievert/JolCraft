@@ -158,7 +158,10 @@ public class RewardCrateItem extends Item {
             return;
         }
 
-        Component.translatable(JolCraftLanguageKeys.TOOLTIP_REWARD_CRATE).withStyle(ChatFormatting.GRAY);
+        tooltip.add(
+                Component.translatable(JolCraftLanguageKeys.TOOLTIP_REWARD_CRATE)
+                        .withStyle(ChatFormatting.GRAY)
+        );
 
         super.appendHoverText(
                 stack,

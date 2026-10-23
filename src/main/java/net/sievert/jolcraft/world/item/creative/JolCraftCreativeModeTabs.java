@@ -273,6 +273,8 @@ public final class JolCraftCreativeModeTabs {
                                 )
                         );
 
+                        output.accept(JolCraftItems.DWARVEN_BREW_BUCKET);
+
                         output.accept(JolCraftBlocks.TUFF_VITRIOL_ORE);
                         output.accept(JolCraftItems.VITRIOL);
                         output.accept(JolCraftBlocks.VITRIOL_BLOCK);

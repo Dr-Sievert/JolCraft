@@ -97,6 +97,7 @@ public final class DwarfLangSubProvider implements LanguageSubProvider {
 
         putManual(translations, JolCraftLanguageKeys.TOOLTIP_DWARF_LOCKED, "You do not understand each other.");
         putManual(translations, JolCraftLanguageKeys.TOOLTIP_DWARF_BUSY, "This dwarf is busy.");
+        putManual(translations, JolCraftLanguageKeys.TOOLTIP_DWARF_RESTOCK, "Dwarves restock their trades over time.");
         putManual(translations, JolCraftLanguageKeys.TOOLTIP_DWARF_NOT_PAID, "You have not paid this dwarf yet.");
         putManual(translations, JolCraftLanguageKeys.TOOLTIP_DWARF_CANNOT_PROMOTE, "This dwarf cannot be promoted.");
         putManual(translations, JolCraftLanguageKeys.TOOLTIP_DWARF_CANNOT_SIGN, "This dwarf cannot sign contracts.");
