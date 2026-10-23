@@ -8,6 +8,7 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.ValidationContext;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.datagen.base.JolCraftDataDomain;
 import net.sievert.jolcraft.datagen.base.JolCraftMainDataProvider;
 import net.sievert.jolcraft.datagen.loot.table.subprovider.*;
@@ -57,6 +58,41 @@ public final class JolCraftMainLootTableProvider
             @NotNull ValidationContext context,
             ProblemReporter.@NotNull Collector problems
     ) {
-        // External vanilla loot tables are resolved when datapacks load.
+        // Vanilla's pass checks parameter sets and nested references against the generated
+        // registry. Tables outside this mod (the vanilla fishing tables in the crate loot) are
+        // not in it and resolve when datapacks load, so only their "unknown table" reports are
+        // dropped; everything else still fails the run.
+        super.validate(
+                registry,
+                new ValidationContext(
+                        new ExternalTableFilter(problems),
+                        LootContextParamSets.ALL_PARAMS,
+                        context.resolver()
+                ),
+                problems
+        );
+    }
+
+    private record ExternalTableFilter(
+            ProblemReporter delegate
+    ) implements ProblemReporter {
+
+        /** Message prefix used by {@code NestedLootTable.validate} for an unresolved reference. */
+        private static final String UNKNOWN_TABLE = "Unknown loot table called ";
+
+        @Override
+        public @NotNull ProblemReporter forChild(@NotNull String name) {
+            return new ExternalTableFilter(delegate.forChild(name));
+        }
+
+        @Override
+        public void report(@NotNull String message) {
+            if (message.startsWith(UNKNOWN_TABLE)
+                    && !message.startsWith(UNKNOWN_TABLE + JolCraft.MOD_ID + ":")) {
+                return;
+            }
+
+            delegate.report(message);
+        }
     }
 }

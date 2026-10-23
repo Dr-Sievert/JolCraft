@@ -32,7 +32,19 @@ import java.util.concurrent.CompletableFuture;
 )
 public final class JolCraftDataGenerator {
 
+    /**
+     * System property that makes a local {@code runData} also emit the dev-only test data
+     * (the dev_key hand interaction). Set through the Gradle property of the same name:
+     * {@code ./gradlew runData -Pjolcraft.datagen.dev=true}. CI never sets it, so release
+     * data does not carry the test recipe.
+     */
+    public static final String DEV_DATA_PROPERTY = "jolcraft.datagen.dev";
+
     private JolCraftDataGenerator() {}
+
+    public static boolean includeDevData() {
+        return Boolean.getBoolean(DEV_DATA_PROPERTY);
+    }
 
     @SubscribeEvent
     public static void gatherData(

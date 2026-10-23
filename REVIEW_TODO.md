@@ -132,22 +132,26 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
 
 ### Build, CI and tests
 
-- [ ] **R70. Gametest classes are loaded in runClient/runServer, but their mixin config is not registered there**  
+- [x] **R70. Gametest classes are loaded in runClient/runServer, but their mixin config is not registered there**  
+  Done 2026-10-23: the gametest source set is its own dev-only mod `jolcraft_gametest` (second `mods` entry in `build.gradle`; `src/gametest/resources/META-INF/neoforge.mods.toml` declares the mixin config). ModDevGradle loads every declared mod in every run, so the interactive runs get the gametest mixins too. Verified with `runGameTestServer`: the mod file and its mixin config are found and the test passes.  
   `build.gradle:71` · build-ci · `build.gradle`  
   In runClient, client2 and runServer the gametest source set is loaded and tests are registered, but the gametest mixin config is left out because inclusion depends on the task name. Running ExperimentalTests there (the only caller of JolCraftTestHelper.of) fails with a ClassCastException that is recorded as a test failure, not a crash, and packet recording does nothing. The other tests are unaffected.  
   Fix: Make the gametest mixin config unconditional for the gametest source set, for example by putting it in a gametest-only mods.toml or by listing it in a gametest resource. Or stop using the gametest source set for the interactive runs.
 
-- [ ] **R71. Gametest mixin config is gated on task names and can leak into a shipped jar**  
+- [x] **R71. Gametest mixin config is gated on task names and can leak into a shipped jar**  
+  Done 2026-10-23: the task-name gate and the `gametest_mixins` template placeholder are removed; the shared `mods.toml` never mentions the gametest config, and the jar is built from the main source set only, so nothing gametest-related can ship.  
   `build.gradle:274` · build-ci · `build.gradle`  
   Whether the gametest mixin config goes into the shared mods.toml depends on a substring match against requested task names. So any single Gradle invocation that runs a task with "gametest" in its name and also builds the jar produces a mod jar whose metadata references a missing jolcraft.gametest.mixins.json. CI is not affected because it runs `build` on its own.  
   Fix: Do not put the gametest mixin config in the shared mods.toml. Use a separate gametest-only generated mods.toml, or make 'jar' fail (or filter the [[mixins]] block) when includeGametestMixins is true.
 
-- [ ] **R72. Loot-table validation is disabled for the whole mod**  
+- [x] **R72. Loot-table validation is disabled for the whole mod**  
+  Done 2026-10-23: `JolCraftMainLootTableProvider.validate` runs vanilla's pass through a `ProblemReporter` that drops only the "unknown table" reports for tables outside the `jolcraft` namespace (the vanilla fishing tables in the crate loot). Parameter-set and nested JolCraft reference problems now fail `runData`, which passes on the current tables.  
   `JolCraftMainLootTableProvider.java:53` · build-ci · `src/main/java/net/sievert/jolcraft/datagen/loot/table/JolCraftMainLootTableProvider.java`  
   JolCraftMainLootTableProvider.validate (lines 54-61) is a no-op, which turns off all vanilla datagen loot-table validation. That covers missing nested JolCraft-to-JolCraft references and param-set mismatches, not just the vanilla-reference false positives the comment means to skip.  
   Fix: Call super.validate and filter or ignore only the vanilla-reference problems, or validate against the set of generated JolCraft keys.
 
-- [ ] **R73. Dev-only test hand_interaction recipe is generated into the shipped data**  
+- [x] **R73. Dev-only test hand_interaction recipe is generated into the shipped data**  
+  Done 2026-10-23: `TestHandInteractions` is emitted only when the `jolcraft.datagen.dev` system property is true; the `data` run sets it from the Gradle property of the same name (`./gradlew runData -Pjolcraft.datagen.dev=true`, documented in CLAUDE.md), so CI datagen and the shipped data no longer carry the dev_key recipe. The datagen cache purged the stale file.  
   `TestHandInteractions.java:73` · build-ci · `src/main/java/net/sievert/jolcraft/datagen/recipe/subprovider/hand/TestHandInteractions.java`  
   The dev test hand_interaction recipe (dev_key + dev_key -> diamond, emerald, cow, regeneration) is always generated into the shipped data and appears in recipe viewers. dev_key can only be obtained through the creative tab or /give, so it gives survival players no real exploit.  
   Fix: Gate the sub-provider behind a datagen flag or system property so release datagen does not emit it, or move it to a gametest-only data path.

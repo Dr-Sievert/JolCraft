@@ -99,6 +99,8 @@ neoForge {
 
         data {
             data()
+            // -Pjolcraft.datagen.dev=true also emits the dev-only test data (the dev_key recipe)
+            systemProperty 'jolcraft.datagen.dev', providers.gradleProperty('jolcraft.datagen.dev').getOrElse('false')
             programArguments.addAll '--mod', project.mod_id, '--all',
                     '--output', file('src/generated/resources/').getAbsolutePath(),
                     '--existing', file('src/main/resources/').getAbsolutePath()
@@ -113,6 +115,11 @@ neoForge {
     mods {
         "${mod_id}" {
             sourceSet(sourceSets.main)
+        }
+
+        // Dev-only mod carrying the game tests and their mixin config (declared in
+        // src/gametest/resources/META-INF/neoforge.mods.toml). Every run loads it; the jar never does.
+        "${mod_id}_gametest" {
             sourceSet(sourceSets.gametest)
         }
     }
@@ -271,10 +278,6 @@ dependencies {
 // Generated Mod Metadata
 // ============================================================
 
-def includeGametestMixins = gradle.startParameter.taskNames.any {
-    it.toLowerCase().contains("gametest")
-}
-
 def integrationDependenciesToml = enabledIntegrations.collect { integrationName ->
     """
 [[dependencies.${mod_id}]]
@@ -302,10 +305,7 @@ def generateModMetadata = tasks.register(
             mod_version              : mod_version,
             mod_authors              : mod_authors,
             mod_description          : mod_description,
-            integration_dependencies: integrationDependenciesToml,
-            gametest_mixins          : includeGametestMixins
-                    ? '[[mixins]]\nconfig = "' + mod_id + '.gametest.mixins.json"'
-                    : ''
+            integration_dependencies: integrationDependenciesToml
     ]
 
     inputs.properties replaceProperties

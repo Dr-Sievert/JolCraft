@@ -29,5 +29,3 @@ ${integration_dependencies}
 
 [[mixins]]
 config="${mod_id}.mixins.json"
-
-${gametest_mixins}

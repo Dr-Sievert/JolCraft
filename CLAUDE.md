@@ -7,6 +7,7 @@ Minecraft mod for **NeoForge 1.21.1** (`neo_version` 21.1.243), Java 21, Parchme
 ```bash
 ./gradlew compileJava compileGametestJava   # fast correctness check (a few minutes)
 ./gradlew runData                           # regenerate src/generated/resources (REQUIRED before build)
+./gradlew runData -Pjolcraft.datagen.dev=true  # runData plus the dev-only test data (dev_key recipe)
 ./gradlew runGameTestServer                 # headless game tests (what CI runs)
 ./gradlew runClient                         # dev client; runClient2 starts a second player "Dev2"
 ./gradlew build                             # jar + verifyModJar (fails if generated resources are missing)
@@ -43,7 +44,7 @@ Client-only code lives in packages or classes named `client` (`world/gui/client`
 
 ## Tests
 
-- Game tests are a separate source set, `src/gametest/java`, with their own mixin config `src/gametest/resources/jolcraft.gametest.mixins.json` (included in `mods.toml` only when a task name contains `gametest`). Test classes are listed in `TEST_HOLDERS` in `gametest/JolCraftGameTests.java`; a test that is not in that array does not run.
+- Game tests are a separate source set, `src/gametest/java`, with their own mixin config `src/gametest/resources/jolcraft.gametest.mixins.json`, registered by the dev-only mod `jolcraft_gametest` (`src/gametest/resources/META-INF/neoforge.mods.toml`), which every run loads and the jar never contains. Test classes are listed in `TEST_HOLDERS` in `gametest/JolCraftGameTests.java`; a test that is not in that array does not run.
 - `src/test` is empty; JUnit is wired in `build.gradle` but unused.
 - `ExperimentalTests` is a scratch holder. Do not put real regressions there.
 
