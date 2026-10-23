@@ -280,8 +280,7 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
             ItemLike rod,
             ItemLike outItem
     ) {
-        String baseId = itemName(outItem);
-
+        // One pattern per tool: an asymmetric shaped recipe already matches its mirror image.
         VanillaRecipeBuilder.shaped(
                         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, outItem)
                 )
@@ -291,18 +290,7 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .define('B', head)
                 .define('X', rod)
                 .unlockedByHas(head)
-                .save(out, FOLDER, baseId + "_left");
-
-        VanillaRecipeBuilder.shaped(
-                        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, outItem)
-                )
-                .pattern("BB")
-                .pattern("XB")
-                .pattern("X ")
-                .define('B', head)
-                .define('X', rod)
-                .unlockedByHas(head)
-                .save(out, FOLDER, baseId + "_right");
+                .save(out, FOLDER, outItem);
     }
 
     private static void hoe(
@@ -311,8 +299,6 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
             ItemLike rod,
             ItemLike outItem
     ) {
-        String baseId = itemName(outItem);
-
         VanillaRecipeBuilder.shaped(
                         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, outItem)
                 )
@@ -322,18 +308,7 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .define('B', head)
                 .define('X', rod)
                 .unlockedByHas(head)
-                .save(out, FOLDER, baseId + "_left");
-
-        VanillaRecipeBuilder.shaped(
-                        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, outItem)
-                )
-                .pattern("BB")
-                .pattern("X ")
-                .pattern("X ")
-                .define('B', head)
-                .define('X', rod)
-                .unlockedByHas(head)
-                .save(out, FOLDER, baseId + "_right");
+                .save(out, FOLDER, outItem);
     }
 
     private static void warhammer(
@@ -342,8 +317,6 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
             ItemLike rod,
             ItemLike outItem
     ) {
-        String baseId = itemName(outItem);
-
         VanillaRecipeBuilder.shaped(
                         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, outItem)
                 )
@@ -353,18 +326,7 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .define('B', head)
                 .define('X', rod)
                 .unlockedByHas(head)
-                .save(out, FOLDER, baseId + "_left");
-
-        VanillaRecipeBuilder.shaped(
-                        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, outItem)
-                )
-                .pattern("BB")
-                .pattern("BB")
-                .pattern("X ")
-                .define('B', head)
-                .define('X', rod)
-                .unlockedByHas(head)
-                .save(out, FOLDER, baseId + "_right");
+                .save(out, FOLDER, outItem);
     }
 
     private static void artisanHammer(
@@ -411,8 +373,6 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
             ItemLike rod,
             ItemLike outItem
     ) {
-        String baseId = itemName(outItem);
-
         VanillaRecipeBuilder.shaped(
                         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, outItem)
                 )
@@ -421,17 +381,7 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .define('B', head)
                 .define('X', rod)
                 .unlockedByHas(unlock)
-                .save(out, FOLDER, baseId + "_right");
-
-        VanillaRecipeBuilder.shaped(
-                        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, outItem)
-                )
-                .pattern("B ")
-                .pattern(" X")
-                .define('B', head)
-                .define('X', rod)
-                .unlockedByHas(unlock)
-                .save(out, FOLDER, baseId + "_left");
+                .save(out, FOLDER, outItem);
     }
 
     private static void pestle(
@@ -450,8 +400,6 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
             ItemLike rod,
             ItemLike outItem
     ) {
-        String baseId = itemName(outItem);
-
         VanillaRecipeBuilder.shaped(
                         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, outItem)
                 )
@@ -460,17 +408,7 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .define('B', head)
                 .define('X', rod)
                 .unlockedByHas(unlock)
-                .save(out, FOLDER, baseId + "_right");
-
-        VanillaRecipeBuilder.shaped(
-                        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, outItem)
-                )
-                .pattern(" X")
-                .pattern("B ")
-                .define('B', head)
-                .define('X', rod)
-                .unlockedByHas(unlock)
-                .save(out, FOLDER, baseId + "_left");
+                .save(out, FOLDER, outItem);
     }
 
     private static void spanner(
@@ -489,8 +427,6 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
             ItemLike rod,
             ItemLike outItem
     ) {
-        String baseId = itemName(outItem);
-
         VanillaRecipeBuilder.shaped(
                         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, outItem)
                 )
@@ -500,21 +436,6 @@ public record ToolRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .define('B', head)
                 .define('X', rod)
                 .unlockedByHas(unlock)
-                .save(out, FOLDER, baseId + "_right");
-
-        VanillaRecipeBuilder.shaped(
-                        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, outItem)
-                )
-                .pattern(" B")
-                .pattern("BB")
-                .pattern("X ")
-                .define('B', head)
-                .define('X', rod)
-                .unlockedByHas(unlock)
-                .save(out, FOLDER, baseId + "_left");
-    }
-
-    private static @NotNull String itemName(ItemLike item) {
-        return item.asItem().builtInRegistryHolder().key().location().getPath();
+                .save(out, FOLDER, outItem);
     }
 }

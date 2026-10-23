@@ -322,6 +322,11 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
+// Ship the MIT text with the mod so redistributors have it.
+tasks.named('jar', Jar) {
+    from('LICENSE')
+}
+
 test {
     useJUnitPlatform()
     maxHeapSize = "8G"

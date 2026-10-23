@@ -178,17 +178,7 @@ public record MiscRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .pattern(" B")
                 .define('B', Items.GLASS)
                 .unlockedByHas(Items.GLASS)
-                .save(output, folder(), JolCraftItems.GLASS_MUG.getId().getPath() + "_right");
-
-        VanillaRecipeBuilder.shaped(
-                        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, JolCraftItems.GLASS_MUG.get(), 3)
-                )
-                .pattern("B ")
-                .pattern("BB")
-                .pattern("B ")
-                .define('B', Items.GLASS)
-                .unlockedByHas(Items.GLASS)
-                .save(output, folder(), JolCraftItems.GLASS_MUG.getId().getPath() + "_left");
+                .save(output, folder(), JolCraftItems.GLASS_MUG.get());
 
         VanillaRecipeBuilder.shapeless(
                         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, JolCraftItems.QUILL_EMPTY.get())
@@ -245,17 +235,7 @@ public record MiscRecipesSubProvider(JolCraftDataProvider<RecipeOutput> parent) 
                 .pattern("B  ")
                 .define('B', Items.IRON_NUGGET)
                 .unlockedByHas(Items.IRON_NUGGET)
-                .save(output, folder(), JolCraftItems.LOCKPICK.getId().getPath() + "_right");
-
-        VanillaRecipeBuilder.shaped(
-                        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, JolCraftItems.LOCKPICK.get())
-                )
-                .pattern("B  ")
-                .pattern(" B ")
-                .pattern("  B")
-                .define('B', Items.IRON_NUGGET)
-                .unlockedByHas(Items.IRON_NUGGET)
-                .save(output, folder(), JolCraftItems.LOCKPICK.getId().getPath() + "_left");
+                .save(output, folder(), JolCraftItems.LOCKPICK.get());
 
         VanillaRecipeBuilder.Storage.nineBlock(
                 lookups.items(),

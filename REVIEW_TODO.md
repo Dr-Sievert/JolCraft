@@ -158,12 +158,14 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
 
 ### Code quality and dead code
 
-- [ ] **R74. No LICENSE or README although the mod declares MIT**  
+- [x] **R74. No LICENSE or README although the mod declares MIT**  
+  Done 2026-10-23: `LICENSE` (MIT, "Copyright (c) 2025-2026 Dr.Sievert", adjust the holder or years if wanted) and a short `README.md` (requirements, runData-first build, dev runs, CI) are added, and the `jar` task now puts `LICENSE` at the jar root. Verified with `build`.  
   `gradle.properties:20` · quality · `gradle.properties`  
   The mod declares MIT through mod_license (gradle.properties:20, copied into neoforge.mods.toml:3), but the repo and jar include no LICENSE file with the MIT text and copyright notice, and there is no README. Redistributors have no license text to include, but the terms are not unenforceable.  
   Fix: Add a LICENSE file with the MIT text and a short README covering build steps (runData first).
 
-- [ ] **R75. Two game tests are fully commented out and the Experimental test is a scratch test that stays registered**  
+- [x] **R75. Two game tests are fully commented out and the Experimental test is a scratch test that stays registered**  
+  Done 2026-10-23: the two commented-out tests were already gone from the repo. `ExperimentalTests` stays registered on purpose, since vanilla's `GameTestServer.create` refuses an empty test list and CI runs it; its body now has no stdout prints, disconnects the fake player and stops packet recording in a `finally`, and asserts that the reconnect sent recorded packets (a smoke test for the test-only mixin). Verified with `runGameTestServer`.  
   `ExperimentalTests.java:14` · quality · `src/gametest/java/gametest/tests/ExperimentalTests.java`  
   ChestLootGameTest and OreDensityOverworldTest are entirely commented out and are not in TEST_HOLDERS. ExperimentalTests is a registered scratch test ('Does whatever you want!') that prints to stdout and only asserts player presence.  
   Fix: Delete or revive the commented-out tests. Remove ExperimentalTests from TEST_HOLDERS, or disconnect the reconnected player in a finally block.
@@ -186,7 +188,8 @@ Working order: bugs first, then the 1.0 content, then balance. Content and balan
   result(ItemLike,min,max) builds a LootPool local that is never used, and shadows the `pool` field. Several setters leave stale naming metadata when called twice.  
   Fix: Delete the unused local. Reset the name and coin flags at the start of every costA, costB and result setter, or compute them lazily at build time.
 
-- [ ] **R79. Every _left/_right shaped recipe pair is a duplicate, because vanilla shaped recipes already match mirrored patterns**  
+- [x] **R79. Every _left/_right shaped recipe pair is a duplicate, because vanilla shaped recipes already match mirrored patterns**  
+  Done 2026-10-23: the 30 pairs (tool axe/hoe/warhammer/chisel/pestle/spanner per material, glass_mug, lockpick, deepslate_compass_dial) are one recipe each, saved under the item's own id; the unused `itemName` helper is gone. `runData` regenerated the 30 files and purged the 60 old ones with their recipe advancements.  
   `ToolRecipesSubProvider.java:292` · quality · `src/main/java/net/sievert/jolcraft/datagen/recipe/subprovider/ToolRecipesSubProvider.java`  
   The tool recipes and misc lockpick, glass_mug and compass-dial recipes register an explicit mirror-image pattern as a second recipe. ShapedRecipePattern matches mirrored layouts automatically, so each pair is two recipes with identical inputs and outputs.  
   Fix: Emit a single pattern per tool. Asymmetric patterns are mirror-matched by vanilla already.

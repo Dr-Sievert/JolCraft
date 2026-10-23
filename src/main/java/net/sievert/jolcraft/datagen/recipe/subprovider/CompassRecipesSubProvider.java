@@ -135,26 +135,7 @@ public record CompassRecipesSubProvider(
                 .save(
                         output,
                         folder(),
-                        JolCraftItems.DEEPSLATE_COMPASS_DIAL.getId().getPath()
-                                + "_right"
-                );
-
-        VanillaRecipeBuilder.shaped(
-                        ShapedRecipeBuilder.shaped(
-                                RecipeCategory.MISC,
-                                JolCraftItems.DEEPSLATE_COMPASS_DIAL.get()
-                        )
-                )
-                .pattern("X ")
-                .pattern(" B")
-                .define('B', JolCraftItems.DEEPSLATE_PLATE.get())
-                .define('X', Items.REDSTONE)
-                .unlockedByHas(JolCraftItems.DEEPSLATE_PLATE.get())
-                .save(
-                        output,
-                        folder(),
-                        JolCraftItems.DEEPSLATE_COMPASS_DIAL.getId().getPath()
-                                + "_left"
+                        JolCraftItems.DEEPSLATE_COMPASS_DIAL.get()
                 );
 
         ComponentPreservingShapelessRecipeBuilder.create(
