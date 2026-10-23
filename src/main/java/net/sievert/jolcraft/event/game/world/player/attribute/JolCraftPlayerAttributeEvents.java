@@ -6,7 +6,7 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerXpEvent;
-import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
 import java.util.UUID;
 
@@ -42,7 +42,7 @@ public final class JolCraftPlayerAttributeEvents {
         JolCraftPlayerAttributeEventsHelper.clearChestLootTracking(event);
     }
 
-    public static void onBlockBreak(BlockEvent.BreakEvent event) {
+    public static void onBlockDrops(BlockDropsEvent event) {
         JolCraftPlayerAttributeEventsHelper.applyCropLootIncrease(event);
     }
 

@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.Block;
@@ -37,6 +38,18 @@ public final class BrewingBlockConversionEventsHelper {
     public static void tryHandle(PlayerInteractEvent.RightClickBlock event) {
         if (!(event.getLevel() instanceof ServerLevel level)
                 || event.getHand() != InteractionHand.MAIN_HAND) {
+            return;
+        }
+
+        /*
+         * The gates vanilla applies before a block's useItemOn: spectators do not
+         * use blocks, another handler may have denied block use, and sneaking with
+         * an item in hand skips the block (the recipe input is always in hand here).
+         */
+        Player player = event.getEntity();
+        if (player.isSpectator()
+                || event.getUseBlock().isFalse()
+                || (event.getUseBlock().isDefault() && player.isSecondaryUseActive())) {
             return;
         }
 

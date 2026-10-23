@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -23,6 +24,11 @@ public final class JolCraftPlantingEventsHelper {
     public static void tryHandle(PlayerInteractEvent.RightClickBlock event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
         if (!event.getItemStack().is(Items.ROTTEN_FLESH)) return;
+
+        // The gates vanilla applies before an item is used on a block: no spectators,
+        // no item use another handler denied, and adventure mode needs can_place_on.
+        Player player = event.getEntity();
+        if (player.isSpectator() || event.getUseItem().isFalse()) return;
 
         BlockPos pos = event.getPos();
         BlockState state = level.getBlockState(pos);
@@ -43,10 +49,16 @@ public final class JolCraftPlantingEventsHelper {
         }
 
         BlockPos cropPos = pos.above();
+        BlockState crop = JolCraftBlocks.FESTERLING_CROP.get().defaultBlockState();
+
+        if (!player.mayUseItemAt(cropPos, event.getFace(), event.getItemStack())
+                || !crop.canSurvive(level, cropPos)) {
+            return;
+        }
 
         level.setBlock(
                 cropPos,
-                JolCraftBlocks.FESTERLING_CROP.get().defaultBlockState(),
+                crop,
                 3
         );
 

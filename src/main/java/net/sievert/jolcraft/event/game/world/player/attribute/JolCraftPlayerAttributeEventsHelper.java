@@ -9,6 +9,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
@@ -38,12 +39,13 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerXpEvent;
-import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 import net.sievert.jolcraft.data.language.JolCraftDictionary;
 import net.sievert.jolcraft.util.log.JolCraftLogTags;
 import net.sievert.jolcraft.util.log.JolCraftLogs;
 import net.sievert.jolcraft.world.entity.JolCraftAttributes;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -261,35 +263,42 @@ public final class JolCraftPlayerAttributeEventsHelper {
         CHEST_LOOT_TO_REROLL.remove(player.getUUID());
     }
 
+    /**
+     * Runs on BlockDropsEvent: the block is gone and its real drops are known, so
+     * a cancelled or failed break can no longer pop bonus items. Each bonus is
+     * added to the event's own drop list and spawns with the drop it duplicates.
+     */
     @SuppressWarnings("deprecation")
-    public static void applyCropLootIncrease(BlockEvent.BreakEvent event) {
-        if (!(event.getLevel() instanceof ServerLevel level)) return;
+    public static void applyCropLootIncrease(BlockDropsEvent event) {
+        if (!(event.getBreaker() instanceof Player player) || player.isCreative()) return;
 
-        Player player = event.getPlayer();
-        if(player.isCreative()) return;
-
+        ServerLevel level = event.getLevel();
         BlockPos pos = event.getPos();
-        BlockState state = level.getBlockState(pos);
+        BlockState state = event.getState();
 
         double chance = Mth.clamp(player.getAttributeValue(JolCraftAttributes.CROP_LOOT_INCREASE), 0.0D, 1.0D);
         if (chance <= 0.0D) return;
 
         if (!isEligibleHarvestBlock(state)) return;
 
-        List<ItemStack> drops = Block.getDrops(state, level, pos, null, player, player.getMainHandItem());
-
         int extraCount = 0;
         Set<ResourceLocation> extraItems = new HashSet<>();
+        List<ItemEntity> bonus = new ArrayList<>();
 
-        for (ItemStack stack : drops) {
+        for (ItemEntity drop : event.getDrops()) {
+            ItemStack stack = drop.getItem();
             if (!isEligibleCropDrop(stack)) continue;
 
             if (level.random.nextDouble() < chance) {
-                Block.popResource(level, pos, stack.copyWithCount(1));
+                ItemEntity extra = new ItemEntity(level, drop.getX(), drop.getY(), drop.getZ(), stack.copyWithCount(1));
+                extra.setDefaultPickUpDelay();
+                bonus.add(extra);
                 extraCount++;
                 stack.getItem().builtInRegistryHolder().unwrapKey().ifPresent(key -> extraItems.add(key.location()));
             }
         }
+
+        event.getDrops().addAll(bonus);
 
         if (extraCount > 0) {
             JolCraftLogs.debug(

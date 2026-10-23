@@ -12,7 +12,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerXpEvent;
-import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.event.game.world.item.JolCraftCompassEvents;
@@ -109,8 +109,8 @@ public final class JolCraftPlayerEvents {
     }
 
     @SubscribeEvent
-    public static void onBlockBreak(BlockEvent.BreakEvent event) {
-        JolCraftPlayerAttributeEvents.onBlockBreak(event);
+    public static void onBlockDrops(BlockDropsEvent event) {
+        JolCraftPlayerAttributeEvents.onBlockDrops(event);
     }
 
     @SubscribeEvent

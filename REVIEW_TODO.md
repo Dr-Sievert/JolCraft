@@ -145,12 +145,14 @@ Ordered by impact as judged in the synthesis.
   Both processors draw their first nextFloat from settings.getRandom(current.pos()), which is seeded only by position. The two rolls are perfectly correlated, not independent.  
   Fix: Merge the two into one weighted processor that rolls once (rare, then common, then none), or mix a per-instance salt into the seed (for example RandomSource.create(settings.getRandom(pos).nextLong() ^ salt)).
 
-- [ ] **R25. Crop loot bonus pops extra drops during BlockEvent.BreakEvent before the break is confirmed**  
+- [x] **R25. Crop loot bonus pops extra drops during BlockEvent.BreakEvent before the break is confirmed**  
+  Done 2026-10-23: the bonus moved from `BlockEvent.BreakEvent` to `BlockDropsEvent` (`JolCraftPlayerEvents.onBlockDrops`). It fires after the block is gone with the real drop list, filters `getBreaker()` to players, rolls once per actual crop drop and adds the extra `ItemEntity` to the event's own drop list, so a cancelled or failed break pops nothing and a later cancel of the drops event also removes the bonus.  
   `JolCraftPlayerAttributeEventsHelper.java:288` · logic · `src/main/java/net/sievert/jolcraft/event/game/world/player/attribute/JolCraftPlayerAttributeEventsHelper.java`  
   applyCropLootIncrease spawns bonus item entities from the cancellable BreakEvent. It re-rolls Block.getDrops and does not wait for the break to succeed.  
   Fix: Run at EventPriority.LOWEST and re-check !event.isCanceled(), or hook the actual drops (a loot modifier or BlockDropsEvent) instead of BreakEvent.
 
-- [ ] **R26. Festerling planting handler places a block without permission or interaction checks**  
+- [x] **R26. Festerling planting handler places a block without permission or interaction checks**  
+  Done 2026-10-23: `JolCraftPlantingEventsHelper.tryHandle` returns for spectators and when `getUseItem()` is FALSE, and before placing requires `player.mayUseItemAt(cropPos, face, stack)` (adventure-mode can_place_on) and `canSurvive` of the crop state.  
   `JolCraftPlantingEventsHelper.java:47` · logic · `src/main/java/net/sievert/jolcraft/event/game/world/player/util/JolCraftPlantingEventsHelper.java`  
   The festerling planting handler places the crop without checking spectator mode, adventure mode (mayBuild/canPlaceOn) or the event's useItem=DENY. Spectators and adventure-mode players can therefore plant festerlings, and a protection mod that only denies item use is bypassed. Vanilla spawn protection on the clicked block is already enforced upstream, and protection mods that cancel the event stop it from reaching this handler.  
   Fix: Gate on event.getEntity().mayUseItemAt(cropPos, event.getFace(), event.getItemStack()) and !player.isSpectator(), and validate with canSurvive before placing.
@@ -161,7 +163,8 @@ Ordered by impact as judged in the synthesis.
   main and off are the live stacks. After the actions shrink one to empty, ItemStack.getItem() returns Items.AIR for an empty stack, so addCooldown targets AIR instead of the real item.  
   Fix: Capture Item mainItem = main.getItem() and Item offItem = off.getItem() before applying the actions, and use those for the cooldowns.
 
-- [ ] **R28. Block conversion ignores event.getUseBlock()/mayBuild and swaps blocks for players who cannot build**  
+- [x] **R28. Block conversion ignores event.getUseBlock()/mayBuild and swaps blocks for players who cannot build**  
+  Done 2026-10-23: `BrewingBlockConversionEventsHelper.tryHandle` mirrors the vanilla `useItemOn` preamble: returns for spectators, when `getUseBlock()` is FALSE, and when it is DEFAULT while the player sneaks with an item in hand. No `mayBuild` gate, as the finding itself notes vanilla block use ignores it (adventure players can still fill a cauldron).  
   `BrewingBlockConversionEventsHelper.java:37` · logic · `src/main/java/net/sievert/jolcraft/event/game/world/recipe/brewing/BrewingBlockConversionEventsHelper.java`  
   tryHandle converts vanilla water cauldrons and barrels and moves their contents even when another handler has set useBlock to DENY, when the player is sneaking with an item in hand, or when the player is a spectator. In all three cases vanilla would skip the block's useItemOn. The adventure-mode/mayBuild part is not a real difference, because vanilla block use ignores mayBuild.  
   Fix: Return early when event.getUseBlock() == TriState.FALSE or event.getEntity().mayBuild() is false. Also return when the player is crouching with a non-empty hand (event.getEntity().isSecondaryUseActive()).
@@ -176,7 +179,8 @@ Ordered by impact as judged in the synthesis.
   The mixin raises the randomTick brightness to 9 on VERDANT soil. Vanilla CropBlock.canSurvive requires getRawBrightness >= 8, and the mixin does not touch that.  
   Fix: If dark farming on verdant soil is intended, also wrap the getRawBrightness call in CropBlock.hasSufficientLight (or override canSurvive for verdant). If not, drop the bypass and keep only the growth multiplier.
 
-- [ ] **R31. Any player can extinguish another player's lit hearth with a water bucket (no owner check)**  
+- [x] **R31. Any player can extinguish another player's lit hearth with a water bucket (no owner check)**  
+  Done 2026-10-23: the LIT branch of `HearthBlockEntity.handleUse` shows `TOOLTIP_HEARTH_OWNER` and returns SUCCESS (so the bucket is not emptied) for a non-owner who is not in creative mode; the owner and creative players can still put it out.  
   `HearthBlockEntity.java:67` · logic · `src/main/java/net/sievert/jolcraft/world/block/entity/custom/HearthBlockEntity.java`  
   Lighting a hearth is gated by isOwner, but the LIT branch lets any player with a water bucket (or any creative player) call deactivate(), which clears the owner and the owner's active hearth.  
   Fix: Require owner == null || isOwner(player) (or creative) before deactivating, or show the TOOLTIP_HEARTH_OWNER message to non-owners.
@@ -531,5 +535,5 @@ The author's own planned work, in the author's order. Review items that touch th
 - Dwarf transactions as refund-safe units: resolve before consuming, store player UUIDs, move resetPaid() to success (R39, R40, R38). Done 2026-10-23.
 - One fail-soft policy for data-driven config and recipe validation (R6, R86, R48, R17).
 - Obtainability and economy pass (balance, after the 1.0 content): Muffhorn spawn, Blacksmith/Smelter/Arcanist/Priest progression, Artisan vs Merchant price overlap, bounty arbitrage (R2, R23, R22).
-- Event-handler preamble: isCanceled, getUseBlock/getUseItem, mayUseItemAt, spectator and sneak checks for every RightClickBlock and BreakEvent handler (R25, R26, R28, R31).
+- Event-handler preamble: isCanceled, getUseBlock/getUseItem, mayUseItemAt, spectator and sneak checks for every RightClickBlock and BreakEvent handler (R25, R26, R28, R31). Done 2026-10-23.
 - Per-tick early-outs: skip getPersistentData/getData unless the entity has the relevant effect or attachment (R57, R58, R63). Done 2026-10-23.

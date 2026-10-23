@@ -61,6 +61,15 @@ public class HearthBlockEntity extends BlockEntity implements TickingBlockEntity
             @NotNull InteractionHand hand
     ) {
         if (state.getValue(HearthBlock.LIT)) {
+            // Only the owner (or a creative player) may put out a lit hearth.
+            if (this.owner != null && !isOwner(player) && !player.isCreative()) {
+                player.displayClientMessage(
+                        Component.translatable(JolCraftLanguageKeys.TOOLTIP_HEARTH_OWNER)
+                                .withStyle(ChatFormatting.RED),
+                        true
+                );
+                return ItemInteractionResult.SUCCESS;
+            }
             if (player.isCreative()){
                 deactivate();
             }
