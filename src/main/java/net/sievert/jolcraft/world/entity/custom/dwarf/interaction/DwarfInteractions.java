@@ -6,11 +6,13 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.common.CommonHooks;
 import net.sievert.jolcraft.world.entity.custom.dwarf.action.DwarfActionType;
 import net.sievert.jolcraft.world.entity.custom.dwarf.base.AbstractDwarfEntity;
 import net.sievert.jolcraft.world.entity.custom.dwarf.interaction.handler.core.*;
 import net.sievert.jolcraft.world.entity.custom.dwarf.interaction.handler.profession.*;
 import net.sievert.jolcraft.world.entity.custom.dwarf.profession.DwarfProfession;
+import net.sievert.jolcraft.world.sound.util.PlaySound;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
@@ -130,6 +132,61 @@ public final class DwarfInteractions {
             return InteractionResult.SUCCESS;
         }
 
+        InteractionResult result = dispatchHand(ctx);
+
+        /*
+         * The client answers SUCCESS for the main hand above, so vanilla never
+         * sends the off-hand interact. When the main hand did not consume the
+         * action, run the off hand here as the client would have asked for it,
+         * after the per-hand EntityInteract event vanilla fires first. A
+         * main-hand refusal (FAIL) stands unless the off hand succeeds.
+         */
+        if (!result.consumesAction()
+                && ctx.hand() == InteractionHand.MAIN_HAND) {
+            ItemStack offhand = ctx.player().getOffhandItem();
+
+            if (!offhand.isEmpty()
+                    && CommonHooks.onInteractEntity(
+                            ctx.player(),
+                            ctx.dwarf(),
+                            InteractionHand.OFF_HAND
+                    ) == null) {
+                InteractionResult offhandResult = dispatchHand(
+                        new DwarfInteractionContext(
+                                ctx.dwarf(),
+                                ctx.player(),
+                                InteractionHand.OFF_HAND,
+                                offhand,
+                                ctx.level(),
+                                false
+                        )
+                );
+
+                if (offhandResult.consumesAction()
+                        || result == InteractionResult.PASS) {
+                    result = offhandResult;
+                }
+            }
+        }
+
+        /*
+         * Nothing in either hand was recognised: one refusal grunt, played here
+         * rather than by each hand's pass so an unrecognised two-handed click
+         * grunts once. A hand whose item was recognised and refused has already
+         * grunted for itself, as vanilla's per-hand interacts would.
+         */
+        if (result == InteractionResult.PASS) {
+            PlaySound.dwarfNo(ctx.dwarf());
+
+            return InteractionResult.FAIL;
+        }
+
+        return result;
+    }
+
+    private static InteractionResult dispatchHand(
+            DwarfInteractionContext ctx
+    ) {
         /*
          * Preserve the interacted item before any handler or action can mutate
          * the player's actual stack.
@@ -187,7 +244,8 @@ public final class DwarfInteractions {
             hooks.postProfession(ctx);
         }
 
-        return InteractionResult.FAIL;
+        // Nothing recognised this hand's item; dispatch() decides what that means.
+        return InteractionResult.PASS;
     }
 
     /**

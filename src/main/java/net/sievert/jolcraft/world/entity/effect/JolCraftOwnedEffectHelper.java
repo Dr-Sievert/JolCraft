@@ -6,6 +6,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.sievert.jolcraft.mixin.MobEffectInstanceAccessor;
 
 import javax.annotation.Nullable;
@@ -129,12 +130,32 @@ public final class JolCraftOwnedEffectHelper {
                 && effect.getAmplifier() == amplifier;
     }
 
+    /**
+     * Where the ownership flags live. For players that is the PlayerPersisted
+     * compound, the only part of persistent data ServerPlayer.restoreFrom copies
+     * to the clone (End-credits return, death), so owned infinite effects stay
+     * owned across it. Other living entities keep the flags at the root.
+     */
+    private static CompoundTag ownershipData(LivingEntity entity) {
+        CompoundTag data = entity.getPersistentData();
+
+        if (!(entity instanceof Player)) {
+            return data;
+        }
+
+        if (!data.contains(Player.PERSISTED_NBT_TAG, Tag.TAG_COMPOUND)) {
+            data.put(Player.PERSISTED_NBT_TAG, new CompoundTag());
+        }
+
+        return data.getCompound(Player.PERSISTED_NBT_TAG);
+    }
+
     private static boolean isOwned(
             LivingEntity entity,
             String root,
             String id
     ) {
-        CompoundTag data = entity.getPersistentData();
+        CompoundTag data = ownershipData(entity);
 
         if (!data.contains(root, Tag.TAG_COMPOUND)) {
             return false;
@@ -148,7 +169,7 @@ public final class JolCraftOwnedEffectHelper {
             String root,
             String id
     ) {
-        CompoundTag data = entity.getPersistentData();
+        CompoundTag data = ownershipData(entity);
 
         if (!data.contains(root, Tag.TAG_COMPOUND)) {
             data.put(root, new CompoundTag());
@@ -162,7 +183,7 @@ public final class JolCraftOwnedEffectHelper {
             String root,
             String id
     ) {
-        CompoundTag data = entity.getPersistentData();
+        CompoundTag data = ownershipData(entity);
 
         if (!data.contains(root, Tag.TAG_COMPOUND)) {
             data.remove(root);

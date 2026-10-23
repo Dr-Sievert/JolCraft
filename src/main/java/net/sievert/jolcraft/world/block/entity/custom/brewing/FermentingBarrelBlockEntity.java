@@ -60,6 +60,7 @@ public final class FermentingBarrelBlockEntity extends BlockEntity
 
     private boolean restoreVanillaBarrelOnLoad;
     private boolean loadedStateNeedsSave;
+    private boolean loadWorkPending;
 
     private final FermentingBarrelAging aging =
             new FermentingBarrelAging();
@@ -265,9 +266,19 @@ public final class FermentingBarrelBlockEntity extends BlockEntity
      */
     @Override
     public void tickServer() {
-        if (level == null
-                || level.isClientSide
-                || brewTank.isEmpty()) {
+        if (level == null || level.isClientSide) {
+            return;
+        }
+
+        if (loadWorkPending) {
+            loadWorkPending = false;
+
+            if (completeLoad()) {
+                return;
+            }
+        }
+
+        if (brewTank.isEmpty()) {
             return;
         }
 
@@ -599,7 +610,10 @@ public final class FermentingBarrelBlockEntity extends BlockEntity
     // =====================================================================
 
     /**
-     * Starts aging after level attachment or restores an invalid empty barrel.
+     * Starts aging after level attachment. Restoring an invalid empty barrel
+     * is deferred to the first server tick: during chunk load this runs before
+     * the block entity is in the chunk, so replacing the block here would put
+     * this stale block entity in place of the new vanilla barrel's.
      */
     @Override
     public void setLevel(Level level) {
@@ -609,11 +623,29 @@ public final class FermentingBarrelBlockEntity extends BlockEntity
             return;
         }
 
+        loadWorkPending = true;
+
+        if (restoreVanillaBarrelOnLoad && brewTank.isEmpty()) {
+            return;
+        }
+
+        aging.ensureTimerStarted(
+                brewTank.getFluid(),
+                level.getGameTime()
+        );
+    }
+
+    /**
+     * Restores an invalid empty barrel or saves a sanitized loaded state.
+     *
+     * @return whether the block was replaced
+     */
+    private boolean completeLoad() {
         if (restoreVanillaBarrelOnLoad && brewTank.isEmpty()) {
             restoreVanillaBarrelOnLoad = false;
             restoreVanillaBarrelIfEmpty();
 
-            return;
+            return true;
         }
 
         if (loadedStateNeedsSave) {
@@ -621,10 +653,7 @@ public final class FermentingBarrelBlockEntity extends BlockEntity
             setChanged();
         }
 
-        aging.ensureTimerStarted(
-                brewTank.getFluid(),
-                level.getGameTime()
-        );
+        return false;
     }
 
     @Override

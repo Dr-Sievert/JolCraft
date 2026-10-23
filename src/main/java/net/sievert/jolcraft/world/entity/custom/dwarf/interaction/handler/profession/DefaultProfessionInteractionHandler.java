@@ -3,7 +3,6 @@ package net.sievert.jolcraft.world.entity.custom.dwarf.interaction.handler.profe
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.sievert.jolcraft.world.entity.custom.dwarf.interaction.DwarfInteractionOutcome;
 import net.sievert.jolcraft.world.entity.custom.dwarf.interaction.DwarfInteractions;
-import net.sievert.jolcraft.world.sound.util.PlaySound;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -12,12 +11,14 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public final class DefaultProfessionInteractionHandler
         implements DwarfInteractions.ProfessionInteraction {
 
+    /**
+     * Nothing profession-specific to offer. Pass, so the dispatcher can try the
+     * off hand and play the single refusal grunt when neither hand is recognised.
+     */
     @Override
     public DwarfInteractionOutcome handle(
             DwarfInteractions.DwarfInteractionContext ctx
     ) {
-        PlaySound.dwarfNo(ctx.dwarf());
-
-        return DwarfInteractionOutcome.failed();
+        return DwarfInteractionOutcome.pass();
     }
 }

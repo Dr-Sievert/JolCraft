@@ -91,6 +91,7 @@ public final class FermentingCauldronBlockEntity extends BlockEntity
 
     private boolean restoreVanillaCauldronOnLoad;
     private boolean loadedStateNeedsSave;
+    private boolean loadWorkPending;
 
     private final FermentingCauldronProcess process =
             new FermentingCauldronProcess();
@@ -443,6 +444,14 @@ public final class FermentingCauldronBlockEntity extends BlockEntity
     public void tickServer() {
         if (level == null || level.isClientSide) {
             return;
+        }
+
+        if (loadWorkPending) {
+            loadWorkPending = false;
+
+            if (completeLoad()) {
+                return;
+            }
         }
 
         commitBrewCreatedStat();
@@ -901,23 +910,31 @@ public final class FermentingCauldronBlockEntity extends BlockEntity
     // =====================================================================
 
     /**
-     * Restores invalid empty cauldrons and completes brews that finished while unloaded.
+     * Defers the loaded-state work to the first server tick. During chunk load
+     * this runs before the block entity is in the chunk, so replacing the block
+     * here would leave this stale block entity over the vanilla cauldron.
      */
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
 
-        if (level.isClientSide) {
-            return;
-        }
+        loadWorkPending = !level.isClientSide;
+    }
 
+    /**
+     * Restores an invalid empty cauldron or saves a sanitized loaded state. A
+     * brew that finished while unloaded completes in the rest of the same tick.
+     *
+     * @return whether the block was replaced
+     */
+    private boolean completeLoad() {
         if (restoreVanillaCauldronOnLoad
                 && brewTank.isEmpty()
                 && !process.hasUnfinishedState()) {
             restoreVanillaCauldronOnLoad = false;
             restoreVanillaCauldron();
 
-            return;
+            return true;
         }
 
         if (loadedStateNeedsSave) {
@@ -925,11 +942,7 @@ public final class FermentingCauldronBlockEntity extends BlockEntity
             setChanged();
         }
 
-        commitBrewCreatedStat();
-
-        if (process.isBrewing() && process.isComplete(level)) {
-            completeBrew();
-        }
+        return false;
     }
 
     @Override

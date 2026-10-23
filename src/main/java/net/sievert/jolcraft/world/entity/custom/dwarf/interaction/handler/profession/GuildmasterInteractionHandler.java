@@ -68,9 +68,8 @@ public final class GuildmasterInteractionHandler
         var stack = ctx.stack();
 
         if (!stack.is(JolCraftTags.Items.REPUTATION_TABLETS)) {
-            PlaySound.dwarfNo(dwarf);
-
-            return DwarfInteractionOutcome.failed();
+            // Unrecognised item: the dispatcher grunts once after trying the off hand.
+            return DwarfInteractionOutcome.pass();
         }
 
         int maxTier =

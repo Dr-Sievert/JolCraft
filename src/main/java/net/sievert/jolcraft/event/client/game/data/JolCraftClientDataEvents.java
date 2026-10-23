@@ -1,5 +1,7 @@
 package net.sievert.jolcraft.event.client.game.data;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.Connection;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -28,6 +30,18 @@ public final class JolCraftClientDataEvents {
         }
 
         RewardLootTableClientCache.clear();
-        ClientboundConfigSyncPacket.clear();
+
+        // When this client hosts the world, the config managers are the integrated server's own
+        // singletons, and that server is still ticking and saving on its thread right now:
+        // Minecraft.disconnect fires this event before it waits for the server to shut down.
+        // Only a client that was connected to another server holds stale synced copies.
+        Connection connection = event.getConnection();
+        boolean hosting = connection != null
+                ? connection.isMemoryConnection()
+                : Minecraft.getInstance().isLocalServer();
+
+        if (!hosting) {
+            ClientboundConfigSyncPacket.clear();
+        }
     }
 }
