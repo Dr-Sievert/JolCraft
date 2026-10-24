@@ -12,12 +12,13 @@ import net.sievert.jolcraft.module.primitive.config.client.ConfigScreen;
 import net.sievert.jolcraft.module.primitive.log.ModLog;
 import net.sievert.jolcraft.module.primitive.language.Language;
 import net.sievert.jolcraft.module.primitive.language.ModLanguage;
+import net.sievert.jolcraft.module.primitive.network.ModNetwork;
 import net.sievert.jolcraft.module.primitive.registration.ModRegistration;
 import net.sievert.jolcraft.util.text.Dictionary;
 
 /**
  * The composition root. Builds every primitive, composite and system by hand, registers each folder's content,
- * adds the listeners and payload handlers, and on the client calls each module's client bootstrap.
+ * registers the primitives, adds the listeners, and on the client calls each module's client bootstrap.
  * No static field holds a module and nothing below this class depends on it; see design/module-map.md.
  */
 @Mod(JolCraft.MOD_ID)
@@ -30,15 +31,17 @@ public final class JolCraft {
         ModRegistration registration = new ModRegistration();
         Language language = new ModLanguage();
         ModConfig config = new ModConfig();
+        ModNetwork network = new ModNetwork();
 
-        // Modules are built here, taking log, language, config and registration through their constructors.
+        // Modules are built here, taking log, language, config, network and registration through their constructors.
 
         registration.register(modBus);
         config.register(container);
+        network.register(modBus, container.getModInfo().getVersion().toString());
         if (config.declared() > 0 && FMLEnvironment.getDist().isClient()) {
             ConfigScreen.register(container);
         }
-        log.info("JolCraft {} loading with {} registries of its own and {} settings", container.getModInfo().getVersion(),
-                registration.declared(), config.declared());
+        log.info("JolCraft {} loading with {} registries of its own, {} settings and {} payloads", container.getModInfo().getVersion(),
+                registration.declared(), config.declared(), network.declared());
     }
 }

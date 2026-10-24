@@ -62,14 +62,16 @@ These are **declarations**, not modules, and the tier rules do not see them as m
 
 Behaviour is a module and is an instance. Event handling is instance methods on modules, registered by
 the composition root (`bus.addListener(system::onX)`); there are no `@EventBusSubscriber` classes.
-Payload handlers are module methods the root registers at `RegisterPayloadHandlersEvent`.
+Payloads are declared into the `network` primitive while a module is built, serverbound ones with the module's
+handler; the root registers the network once, and a module's client bootstrap gives each clientbound payload its
+handler through the primitive's client half.
 
 **Systems drive actors; actors never drive systems.** A system gives an entity its behaviour when the entity
 joins a server level (`EntityJoinLevelEvent`): it adds goals built with the system's own dependencies through
 their constructors, and it handles the interaction and tick events of that entity kind. The entity stays thin.
 A block entity or a block runs its own mechanics from data in its tick and announces what happened. Menus are
 opened by our code, so the server-side constructor takes the system it needs and the `MenuType` builds the
-client copy without it, as vanilla's merchant menu does. Commands, payload handlers, capability providers and
+client copy without it, as vanilla's merchant menu does. Commands, capability providers and
 reload listeners are lambdas the root registers, capturing the systems directly. Anything that is really data
 (profession tables, trade tables, corruption rules) is a datapack registry or a data map, readable on both sides
 through `level.registryAccess()` and synced by the game; per-world mutable state is `SavedData` or an
@@ -78,7 +80,7 @@ attachment, so no system holds world state and nothing resets between worlds.
 ## Composition root
 
 `JolCraft`'s constructor builds every primitive, composite and system, registers each folder's `Content`,
-adds the listeners and payload handlers, and, when `FMLEnvironment.dist` is the client, calls each
+adds the listeners, registers the primitives, and, when `FMLEnvironment.dist` is the client, calls each
 module's client bootstrap. No static field holds a module and no static method outside the root returns one,
 so nothing reaches a module through a locator; a module gets what it needs through its constructor.
 

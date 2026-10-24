@@ -19,6 +19,7 @@ public final class Dictionary {
     public static final String LANGUAGE = "language";
     public static final String LOG = "log";
     public static final String MINECRAFT = "minecraft";
+    public static final String NETWORK = "network";
     public static final String REGISTRATION = "registration";
     public static final String SCENE = "scene";
 
