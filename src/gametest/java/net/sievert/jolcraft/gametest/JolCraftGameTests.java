@@ -7,7 +7,7 @@ import net.neoforged.fml.common.Mod;
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.gametest.scene.SceneRegistry;
 import net.sievert.jolcraft.module.primitive.log.Log;
-import net.sievert.jolcraft.module.primitive.log.ServerLog;
+import net.sievert.jolcraft.module.primitive.log.ModLog;
 import net.sievert.jolcraft.util.text.Dictionary;
 
 /**
@@ -22,7 +22,7 @@ public final class JolCraftGameTests {
     public static final String MOD_ID = JolCraft.MOD_ID + "_" + Dictionary.GAMETEST;
 
     public JolCraftGameTests(IEventBus modBus) {
-        Log log = new ServerLog(LogUtils.getLogger()).tagged(Dictionary.GAMETEST);
+        Log log = new ModLog(LogUtils.getLogger()).tagged(Dictionary.GAMETEST);
         new SceneRegistry(MOD_ID, log).register(modBus);
     }
 }

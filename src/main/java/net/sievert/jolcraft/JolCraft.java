@@ -6,7 +6,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 
 import net.sievert.jolcraft.module.primitive.log.Log;
-import net.sievert.jolcraft.module.primitive.log.ServerLog;
+import net.sievert.jolcraft.module.primitive.log.ModLog;
 import net.sievert.jolcraft.util.text.Dictionary;
 
 /**
@@ -20,7 +20,7 @@ public final class JolCraft {
     public static final String MOD_ID = Dictionary.JOLCRAFT;
 
     public JolCraft(IEventBus modBus, ModContainer container) {
-        Log log = new ServerLog(LogUtils.getLogger()).tagged(Dictionary.JOLCRAFT);
+        Log log = new ModLog(LogUtils.getLogger()).tagged(Dictionary.JOLCRAFT);
         log.info("JolCraft {} loading", container.getModInfo().getVersion());
     }
 }

@@ -11,17 +11,17 @@ import net.sievert.jolcraft.util.text.ModString;
 
 /** {@link Log} over an SLF4J logger; each tagged log is a new immutable view with one more tag. */
 @Implementation
-public final class ServerLog implements Log {
+public final class ModLog implements Log {
 
     private final Logger logger;
     private final List<String> tags;
     private final String prefix;
 
-    public ServerLog(Logger logger) {
+    public ModLog(Logger logger) {
         this(logger, List.of());
     }
 
-    private ServerLog(Logger logger, List<String> tags) {
+    private ModLog(Logger logger, List<String> tags) {
         this.logger = logger;
         this.tags = tags;
         this.prefix = tags.isEmpty() ? "" : tags.stream().map(ModString::tag).collect(Collectors.joining(" ")) + " ";
@@ -29,7 +29,7 @@ public final class ServerLog implements Log {
 
     @Override
     public Log tagged(String tag) {
-        return new ServerLog(logger, Stream.concat(tags.stream(), Stream.of(tag)).toList());
+        return new ModLog(logger, Stream.concat(tags.stream(), Stream.of(tag)).toList());
     }
 
     @Override

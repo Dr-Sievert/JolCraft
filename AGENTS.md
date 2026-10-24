@@ -45,8 +45,8 @@ Each run's `loadedMods` in `build.gradle` names exactly the mods it loads. The d
 
 ## Layout
 
-- `JolCraft.java` — the composition root: builds every module by hand in its constructor, registers content, listeners and payload handlers. Builds the mod's `ServerLog`; the two dev mods are composition roots of their own and build theirs.
-- `module/` — `Module` and the tier annotations `@Primitive`, `@Composite`, `@SystemTier`; a module's `id()` is read from its annotation. `module/primitive/<id>/`, `module/composite/<primitive>/`, `module/system/<feature>/`, each with an optional `client/` sub-package. Only `module/primitive/log` (`Log`, `ServerLog`) exists so far.
+- `JolCraft.java` — the composition root: builds every module by hand in its constructor, registers content, listeners and payload handlers. Builds the mod's `ModLog`; the two dev mods are composition roots of their own and build theirs.
+- `module/` — `Module` and the tier annotations `@Primitive`, `@Composite`, `@ModSystem`; a module's `id()` is read from its annotation. `module/primitive/<id>/`, `module/composite/<primitive>/`, `module/system/<feature>/`, each with an optional `client/` sub-package. Only `module/primitive/log` (`Log`, `ModLog`) exists so far.
 - `stereotype/` — `@Implementation`, `@Value`, `@Handle`, `@Contract`, `@Helper`, `@Event`, `@Bridge`, `@Internal`, and the mod-only `@Content` (registry declarations) and `@Actor` (classes the game creates; they read data and post events, never reach a module).
 - `util/text/` — `Dictionary` (every word used in an id, key or path) and `ModString` (joins them). `util` depends on the JDK alone.
 - `src/test/java/.../ArchitectureTest.java` — the ten rules of the module map over ArchUnit, reading the compiled class directories (`jolcraft.main.classes`, `jolcraft.gametest.classes`, `jolcraft.datagen.classes`, set by the test task through a tracked `CommandLineArgumentProvider`, so a change in any of them re-runs the test). The test first asserts that its import holds the mod; after that a rule whose selection is still empty is allowed to be vacuous.

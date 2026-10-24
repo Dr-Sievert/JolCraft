@@ -48,7 +48,7 @@ Decision line of an item says where the fix differs from the proposal.
 
 - [x] **S7. Nothing proves the architecture test imported anything.** With the property absent (IDE JUnit runner) or pointing at an empty
   directory, the fallback can import zero classes and every rule passes vacuously; `allowEmptyShould` hides it. Fix: assert `CLASSES`
-  contains `JolCraft`, `Log` and `ServerLog`; fail, do not fall back, when the property is set but resolves to nothing. Decision:
+  contains `JolCraft`, `Log` and `ModLog`; fail, do not fall back, when the property is set but resolves to nothing. Decision:
 
 - [x] **S8. `@Content` rejects NeoForge's own holder types.** The check matches simple names starting with `DeferredRegister` or
   `DeferredHolder`; `DeferredItem`, `DeferredBlock`, `DeferredRegister.Items` fail. Fix: `isAssignableTo` the two base classes by
@@ -84,7 +84,7 @@ Decision line of an item says where the fix differs from the proposal.
   public `RecipeProvider` subclass that opens them and is passed to `recipes(...)`; open the needed loot helpers in `Loot.Blocks` the
   same way. Decision:
 
-- [x] **S16. The docs overstate the root.** CLAUDE.md says `JolCraft` "holds the only `ServerLog`"; the dev mods construct two more, and
+- [x] **S16. The docs overstate the root.** CLAUDE.md says `JolCraft` "holds the only `ModLog`"; the dev mods construct two more, and
   the `@Implementation` "used only by the root" rule is checked over main only. Fix: the map names the dev-mod entry classes as
   composition roots of their own and says ArchitectureTest checks main (plus rule 10); reword CLAUDE.md. Decision:
 
@@ -145,11 +145,11 @@ Decision line of an item says where the fix differs from the proposal.
   when the scene runs; `maxTicks = 0` or `requiredSuccesses > attempts` pass unchecked. Fix: validate visibility, constructor, id
   collision and the numeric ranges at discovery, naming the method. Decision:
 
-- [x] **S33. The map calls the Log primitive "JDK only, over SLF4J".** The interface is JDK-only; `ServerLog` uses SLF4J. Fix: say so. Decision:
+- [x] **S33. The map calls the Log primitive "JDK only, over SLF4J".** The interface is JDK-only; `ModLog` uses SLF4J. Fix: say so. Decision:
 
 ## Refuted by the second pass, for the record
 
-Rule 3 and 4 only seeing `@Primitive` types (the map says declarations are not modules); `ServerLog` putting the tag prefix into the
+Rule 3 and 4 only seeing `@Primitive` types (the map says declarations are not modules); `ModLog` putting the tag prefix into the
 format string (tags are Dictionary words); the sound walk being bypassed by other `add` overloads (they are protected and `Sounds` is
 final); a 26.3 upgrade note (maintenance, not a defect); plural provider names (the naming rule covers module types); javadoc lines
 over 150 columns (no such rule is written in this repository); stale hook-seam history in the map (it records a decision); the

@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface SystemTier {
+public @interface ModSystem {
 
     /** The module's id: one {@code Dictionary} word, unique across all tiers. */
     String value();

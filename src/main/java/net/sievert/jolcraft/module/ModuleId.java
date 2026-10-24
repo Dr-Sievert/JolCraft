@@ -58,7 +58,7 @@ final class ModuleId {
         for (Annotation annotation : type.getDeclaredAnnotations()) {
             if (annotation instanceof Primitive primitive) return primitive.value();
             if (annotation instanceof Composite composite) return composite.value();
-            if (annotation instanceof SystemTier system) return system.value();
+            if (annotation instanceof ModSystem system) return system.value();
         }
         return null;
     }

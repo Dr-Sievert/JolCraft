@@ -29,7 +29,7 @@ a module that has client code keeps it in its own `client` sub-package.
 ```
 net.sievert.jolcraft
   JolCraft                          composition root: the @Mod class, wires every module in its constructor
-  module/                           Module, @Primitive, @Composite, @SystemTier
+  module/                           Module, @Primitive, @Composite, @ModSystem
   stereotype/                       the stereotype annotations (below)
   util/                             below every tier, JDK only; util/text holds Dictionary and ModString
   module/primitive/<id>/            one primitive per folder, id = folder name: log, registry, config,
@@ -129,13 +129,13 @@ messages are outside it.
 ## Naming
 
 A package and a module type are one singular, neutral noun: `trade` and `Trade`, not trading; `log`, not logging.
-A type takes the `Mod` prefix only when its noun is a JDK or Minecraft type every implementation needs
-(`ModString`), never a plural to dodge the clash. A primitive's or a system's id is its folder name, a composite's is its own word; a primitive's
-implementation is `Server` plus the noun (`ServerLog`), the one the mod runs with.
+A type never takes a plural to dodge a clash with a JDK or Minecraft name. A primitive's or a system's id is its folder name, a composite's is its own word. The `Mod` prefix marks
+JolCraft's own concrete version of an abstract noun: a primitive's implementation is `Mod` plus its noun (`ModLog`),
+the top tier's annotation is `ModSystem`, and a helper over a JDK noun is `ModString`.
 
 ## Logging
 
-A `Log` primitive, whose interface is JDK-only and whose `ServerLog` implements it over SLF4J, is handed to
+A `Log` primitive, whose interface is JDK-only and whose `ModLog` implements it over SLF4J, is handed to
 every module, which tags it with itself and logs through
 it, `[TRADE] [OFFER] message`. No module takes a raw logger. Every system and composite logs at three levels:
 info for what the player or the server owner should know happened, warn or error for every problem, debug for

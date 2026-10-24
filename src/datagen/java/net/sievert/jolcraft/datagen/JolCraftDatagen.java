@@ -27,7 +27,7 @@ import net.sievert.jolcraft.datagen.provider.Recipes;
 import net.sievert.jolcraft.datagen.provider.Sounds;
 import net.sievert.jolcraft.datagen.provider.Translations;
 import net.sievert.jolcraft.module.primitive.log.Log;
-import net.sievert.jolcraft.module.primitive.log.ServerLog;
+import net.sievert.jolcraft.module.primitive.log.ModLog;
 import net.sievert.jolcraft.util.text.Dictionary;
 
 /**
@@ -45,7 +45,7 @@ public final class JolCraftDatagen {
     private final Log log;
 
     public JolCraftDatagen(IEventBus modBus) {
-        this.log = new ServerLog(LogUtils.getLogger()).tagged(Dictionary.DATAGEN);
+        this.log = new ModLog(LogUtils.getLogger()).tagged(Dictionary.DATAGEN);
         modBus.addListener(this::gather);
     }
 

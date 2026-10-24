@@ -42,9 +42,9 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import net.sievert.jolcraft.module.Composite;
 import net.sievert.jolcraft.module.Module;
 import net.sievert.jolcraft.module.Primitive;
-import net.sievert.jolcraft.module.SystemTier;
+import net.sievert.jolcraft.module.ModSystem;
 import net.sievert.jolcraft.module.primitive.log.Log;
-import net.sievert.jolcraft.module.primitive.log.ServerLog;
+import net.sievert.jolcraft.module.primitive.log.ModLog;
 import net.sievert.jolcraft.stereotype.Actor;
 import net.sievert.jolcraft.stereotype.Bridge;
 import net.sievert.jolcraft.stereotype.Content;
@@ -94,7 +94,7 @@ class ArchitectureTest {
     private static final String DEFERRED_HOLDER = "net.neoforged.neoforge.registries.DeferredHolder";
     private static final String EVENT_BUS = "net.neoforged.bus.api.IEventBus";
 
-    private static final List<Class<?>> TIERS = List.of(Primitive.class, Composite.class, SystemTier.class);
+    private static final List<Class<?>> TIERS = List.of(Primitive.class, Composite.class, ModSystem.class);
     private static final List<Class<?>> STEREOTYPES = List.of(Implementation.class, Value.class, Handle.class, Contract.class,
             Helper.class, Event.class, Bridge.class, Internal.class, Content.class, Actor.class);
 
@@ -106,7 +106,7 @@ class ArchitectureTest {
     /** Every other rule iterates the imported set, so an empty or wrong import must fail here rather than pass everything. */
     @Test
     void theImportHoldsTheMod() {
-        for (Class<?> expected : List.of(JolCraft.class, Log.class, ServerLog.class, Dictionary.class)) {
+        for (Class<?> expected : List.of(JolCraft.class, Log.class, ModLog.class, Dictionary.class)) {
             Assertions.assertTrue(CLASSES.contain(expected.getName()), "the imported classes should hold " + expected.getName());
         }
     }
@@ -170,7 +170,7 @@ class ArchitectureTest {
             if (tierOf(from) == null || !dependency.to().isAnnotatedWith(Primitive.class)) {
                 continue;
             }
-            Set<String> allowed = from.isAnnotatedWith(Composite.class) || from.isAnnotatedWith(SystemTier.class)
+            Set<String> allowed = from.isAnnotatedWith(Composite.class) || from.isAnnotatedWith(ModSystem.class)
                     ? constructorPrimitives(from)
                     : takenByFolder.getOrDefault(placeOf(from), Set.of());
             if (!allowed.contains(dependency.to().getName())) {
@@ -233,10 +233,10 @@ class ArchitectureTest {
                 .as("a @Composite type implements Module under " + COMPOSITE)
                 .allowEmptyShould(true)
                 .check(CLASSES);
-        classes().that().areAnnotatedWith(SystemTier.class)
+        classes().that().areAnnotatedWith(ModSystem.class)
                 .should().resideInAPackage(SYSTEM + "..")
                 .andShould().beAssignableTo(Module.class)
-                .as("a @SystemTier type implements Module under " + SYSTEM)
+                .as("a @ModSystem type implements Module under " + SYSTEM)
                 .allowEmptyShould(true)
                 .check(CLASSES);
     }
@@ -286,8 +286,8 @@ class ArchitectureTest {
             if (module.isAnnotatedWith(Composite.class)) {
                 String place = placeBelow(COMPOSITE, module);
                 Assertions.assertTrue(primitiveFolders.contains(place), module.getName() + " should sit in a primitive's folder, not in " + place);
-            } else if (module.isAnnotatedWith(SystemTier.class)) {
-                Assertions.assertEquals(module.getAnnotationOfType(SystemTier.class).value(), placeBelow(SYSTEM, module),
+            } else if (module.isAnnotatedWith(ModSystem.class)) {
+                Assertions.assertEquals(module.getAnnotationOfType(ModSystem.class).value(), placeBelow(SYSTEM, module),
                         module.getName() + " should sit in the system folder named by its id");
             }
         }
@@ -653,7 +653,7 @@ class ArchitectureTest {
 
     private static List<JavaClass> modulesAbovePrimitives() {
         return CLASSES.stream()
-                .filter(type -> type.isAnnotatedWith(Composite.class) || type.isAnnotatedWith(SystemTier.class))
+                .filter(type -> type.isAnnotatedWith(Composite.class) || type.isAnnotatedWith(ModSystem.class))
                 .toList();
     }
 
@@ -757,7 +757,7 @@ class ArchitectureTest {
     private static String tierId(JavaClass type) {
         if (type.isAnnotatedWith(Primitive.class)) return type.getAnnotationOfType(Primitive.class).value();
         if (type.isAnnotatedWith(Composite.class)) return type.getAnnotationOfType(Composite.class).value();
-        if (type.isAnnotatedWith(SystemTier.class)) return type.getAnnotationOfType(SystemTier.class).value();
+        if (type.isAnnotatedWith(ModSystem.class)) return type.getAnnotationOfType(ModSystem.class).value();
         return null;
     }
 }
