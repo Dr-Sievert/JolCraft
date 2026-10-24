@@ -3,8 +3,9 @@
 A Minecraft mod for **NeoForge 26.1.2**: dwarven professions, trading, reputation,
 brewing, bounties, structures and effects.
 
-The mod is being rewritten from the ground up for 26.1.2. The previous 1.21.1 code is
-kept in `old/` for reference only; nothing in it is built.
+The mod is being rewritten from the ground up for 26.1.2 on the module model described in
+`design/module-map.md`. The previous 1.21.1 code is kept in `old/` for reference only; nothing
+in it is built.
 
 ## Requirements
 
@@ -18,13 +19,14 @@ kept in `old/` for reference only; nothing in it is built.
 generator before packaging:
 
 ```bash
-./gradlew runData        # regenerate src/generated/resources
-./gradlew build          # jar in build/libs/
+./gradlew runData        # regenerate src/generated/resources; fails on incomplete data
+./gradlew build          # unit tests + jar in build/libs/
 ```
 
 ## Development
 
 ```bash
+./gradlew test                      # JUnit: the architecture test and unit tests
 ./gradlew runClient                 # dev client (runClient2 starts a second player "Dev2")
 ./gradlew runServer                 # dev server
 ./gradlew runGameTestServer         # headless game tests, the same step CI runs
@@ -33,10 +35,12 @@ generator before packaging:
 Each run has its own folder under `run/`: the client uses `run/`, the second client
 `run/client2`, the game tests `run/gametest` and datagen `run/data`.
 
-Resources under `src/generated/resources` are produced by datagen providers; change the
-provider and rerun `runData` instead of editing the JSON. Hand-authored assets live in
-`src/main/resources`. Game tests live in `src/gametest` and load as the dev-only mod
-`jolcraft_gametest`, which never ships in the jar.
+Resources under `src/generated/resources` are produced by the datagen mod in `src/datagen`
+(dev-only, `jolcraft_datagen`): one contributor per module and data kind, and a completeness
+check that fails the run for anything a registered item, block, entity or sound still lacks.
+Change the contributor and rerun `runData` instead of editing the JSON. Hand-authored assets
+live in `src/main/resources`. Game tests are `@Scene` methods in `src/gametest`, loaded as the
+dev-only mod `jolcraft_gametest`; neither dev mod ships in the jar.
 
 Optional mod integrations (JEI, Jade) are declared in `integrations.properties`: the
 artifacts for the dev environment and the optional dependency in the mod metadata.

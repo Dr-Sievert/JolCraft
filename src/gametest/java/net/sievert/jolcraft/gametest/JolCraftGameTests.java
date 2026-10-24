@@ -1,0 +1,28 @@
+package net.sievert.jolcraft.gametest;
+
+import com.mojang.logging.LogUtils;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+
+import net.sievert.jolcraft.JolCraft;
+import net.sievert.jolcraft.gametest.scene.SceneRegistry;
+import net.sievert.jolcraft.module.primitive.log.Log;
+import net.sievert.jolcraft.module.primitive.log.ServerLog;
+import net.sievert.jolcraft.util.text.Dictionary;
+
+/**
+ * Dev-only mod carrying the game tests (src/gametest/resources/META-INF/neoforge.mods.toml). The client,
+ * server and game-test runs load it; the jar never does. A test is a method annotated {@link net.sievert.jolcraft.gametest.scene.Scene} on any
+ * class of this source set, found through NeoForge's class-scan data and registered by {@link SceneRegistry}:
+ * no JSON and no central list. runGameTestServer runs every registered scene and exits non-zero on failure.
+ */
+@Mod(JolCraftGameTests.MOD_ID)
+public final class JolCraftGameTests {
+
+    public static final String MOD_ID = JolCraft.MOD_ID + "_" + Dictionary.GAMETEST;
+
+    public JolCraftGameTests(IEventBus modBus) {
+        Log log = new ServerLog(LogUtils.getLogger()).tagged(Dictionary.GAMETEST);
+        new SceneRegistry(MOD_ID, log).register(modBus);
+    }
+}

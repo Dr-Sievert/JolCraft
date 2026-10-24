@@ -37,33 +37,62 @@ java {
     toolchain.languageVersion = JavaLanguageVersion.of(25)
 }
 
-// Game tests live in their own source set and load as the dev-only mod jolcraft_gametest
-// (src/gametest/resources/META-INF/neoforge.mods.toml). Every run loads it; the jar never does.
+// Two dev-only mods beside the main source set, neither ever in the jar: the game tests
+// (jolcraft_gametest, loaded by the client, server and game-test runs) and the data generators
+// (jolcraft_datagen, loaded by runData). Each is a source set compiled against main and given the
+// modding dependencies by ModDevGradle below; see design/module-map.md.
 sourceSets {
     gametest {
-        compileClasspath += sourceSets.main.output + configurations.runtimeClasspath
-        runtimeClasspath += output + compileClasspath
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+
+    datagen {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
     }
 }
 
 configurations {
     gametestImplementation.extendsFrom implementation
-    gametestRuntimeOnly.extendsFrom runtimeOnly
+    // The optional integrations' jars reach the dev runs through localRuntime, but never the compile scope.
+    gametestRuntimeOnly.extendsFrom runtimeOnly, localRuntime
+    datagenImplementation.extendsFrom implementation
+    datagenRuntimeOnly.extendsFrom runtimeOnly, localRuntime
     runtimeClasspath.extendsFrom localRuntime
 }
 
 neoForge {
     version = project.neo_version
 
+    addModdingDependenciesTo(sourceSets.gametest)
+    addModdingDependenciesTo(sourceSets.datagen)
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+
+        "${mod_id}_gametest" {
+            sourceSet(sourceSets.gametest)
+        }
+
+        "${mod_id}_datagen" {
+            sourceSet(sourceSets.datagen)
+        }
+    }
+
     runs {
         client {
             client()
             sourceSet = sourceSets.gametest
+            loadedMods = [mods."${mod_id}", mods."${mod_id}_gametest"]
         }
 
         client2 {
             client()
             sourceSet = sourceSets.gametest
+            loadedMods = [mods."${mod_id}", mods."${mod_id}_gametest"]
             programArguments.addAll '--username', 'Dev2'
             gameDirectory = file('run/client2')
         }
@@ -71,19 +100,25 @@ neoForge {
         server {
             server()
             sourceSet = sourceSets.gametest
+            loadedMods = [mods."${mod_id}", mods."${mod_id}_gametest"]
             programArgument '--nogui'
         }
 
         gameTestServer {
             type = "gameTestServer"
             sourceSet = sourceSets.gametest
+            loadedMods = [mods."${mod_id}", mods."${mod_id}_gametest"]
             gameDirectory = file('run/gametest')
         }
 
         data {
             clientData()
+            sourceSet = sourceSets.datagen
+            loadedMods = [mods."${mod_id}", mods."${mod_id}_datagen"]
             gameDirectory = file('run/data')
-            programArguments.addAll '--mod', project.mod_id, '--all',
+            // Both mods: the generators live in jolcraft_datagen, the output is jolcraft's.
+            // --flat: with two mods on --mod, NeoForge would nest each mod's output in its own folder.
+            programArguments.addAll '--mod', "${project.mod_id},${project.mod_id}_datagen", '--all', '--flat',
                     '--output', file('src/generated/resources/').getAbsolutePath(),
                     '--existing', file('src/main/resources/').getAbsolutePath()
         }
@@ -96,21 +131,19 @@ neoForge {
         }
     }
 
-    mods {
-        "${mod_id}" {
-            sourceSet(sourceSets.main)
-        }
-
-        "${mod_id}_gametest" {
-            sourceSet(sourceSets.gametest)
-        }
+    // JUnit tests in src/test run with FML bootstrapped, so tests may touch game classes
+    // without a world. The architecture test needs none of that but rides along.
+    unitTest {
+        enable()
+        testedMod = mods."${mod_id}"
+        loadedMods = [mods."${mod_id}"]
     }
 }
 
 // Datagen output. Gitignored; runData regenerates it.
 sourceSets.main.resources {
     srcDir 'src/generated/resources'
-    exclude '.cache/**'
+    exclude '**/.cache/**'
 }
 
 // ============================================================
@@ -120,45 +153,60 @@ sourceSets.main.resources {
 // the named Gradle configurations (compileOnly APIs, localRuntime jars for the dev runs) and
 // an optional [[dependencies]] entry to neoforge.mods.toml (${integration_dependencies}).
 
+def integrationFile = file('integrations.properties')
 def integrationProperties = new Properties()
-file('integrations.properties').withInputStream { integrationProperties.load(it) }
+integrationFile.withInputStream { integrationProperties.load(it) }
 
-// name -> [enabled, modId, versionRange, side, artifacts: [[configuration, dependency], ...]]
-def integrations = integrationProperties.stringPropertyNames()
-        .collect { it.substring(0, it.indexOf('.')) }
-        .unique().sort()
-        .collectEntries { name ->
-            def prop = { String key ->
-                def value = integrationProperties.getProperty("${name}.${key}")
-                if (!value?.trim()) {
-                    throw new GradleException("integrations.properties: missing '${name}.${key}'")
-                }
-                value.trim()
-            }
-            def enabled = prop('enabled')
-            if (!(enabled in ['true', 'false'])) {
-                throw new GradleException("integrations.properties: '${name}.enabled' must be true or false")
-            }
-            def artifactNames = integrationProperties.stringPropertyNames()
-                    .findAll { it.startsWith("${name}.artifact.") && it.endsWith('.dependency') }
-                    .collect { it.tokenize('.')[2] }
-                    .sort()
-            [(name): [
-                    enabled     : enabled.toBoolean(),
-                    modId       : prop('modId'),
-                    versionRange: prop('versionRange'),
-                    side        : prop('side'),
-                    artifacts   : artifactNames.collect {
-                        [configuration: prop("artifact.${it}.configuration"), dependency: prop("artifact.${it}.dependency")]
-                    }
-            ]]
+// Every key must have one of these two shapes; anything else is a typo and fails the build.
+def integrationKey = ~/^([a-z][a-z0-9]*)\.(enabled|modId|versionRange|side)$/
+def artifactKey = ~/^([a-z][a-z0-9]*)\.artifact\.([A-Za-z][A-Za-z0-9]*)\.(configuration|dependency)$/
+
+// name -> [enabled, modId, versionRange, side, artifacts: artifact -> [configuration, dependency]]
+def integrations = new TreeMap()
+integrationProperties.stringPropertyNames().sort().each { key ->
+    def value = integrationProperties.getProperty(key).trim()
+    def field = key =~ integrationKey
+    def artifact = key =~ artifactKey
+    if (field.matches()) {
+        integrations.computeIfAbsent(field.group(1), { [artifacts: new TreeMap()] })[field.group(2)] = value
+    } else if (artifact.matches()) {
+        integrations.computeIfAbsent(artifact.group(1), { [artifacts: new TreeMap()] })
+                .artifacts.computeIfAbsent(artifact.group(2), { [:] })[artifact.group(3)] = value
+    } else {
+        throw new GradleException("${integrationFile.name}: unknown key '${key}'; allowed are <name>.enabled, " +
+                "<name>.modId, <name>.versionRange, <name>.side and <name>.artifact.<artifact>.configuration|dependency")
+    }
+}
+
+integrations.each { name, integration ->
+    ['enabled', 'modId', 'versionRange', 'side'].each { field ->
+        if (!integration[field]) {
+            throw new GradleException("${integrationFile.name}: missing '${name}.${field}'")
         }
+    }
+    if (!(integration.enabled in ['true', 'false'])) {
+        throw new GradleException("${integrationFile.name}: '${name}.enabled' must be true or false")
+    }
+    if (!(integration.side in ['CLIENT', 'SERVER', 'BOTH'])) {
+        throw new GradleException("${integrationFile.name}: '${name}.side' must be CLIENT, SERVER or BOTH")
+    }
+    if (integration.artifacts.isEmpty()) {
+        throw new GradleException("${integrationFile.name}: '${name}' declares no artifacts")
+    }
+    integration.artifacts.each { artifactName, artifact ->
+        ['configuration', 'dependency'].each { field ->
+            if (!artifact[field]) {
+                throw new GradleException("${integrationFile.name}: missing '${name}.artifact.${artifactName}.${field}'")
+            }
+        }
+    }
+}
 
-def enabledIntegrations = integrations.values().findAll { it.enabled }
+def enabledIntegrations = integrations.values().findAll { it.enabled == 'true' }
 
 dependencies {
     enabledIntegrations.each { integration ->
-        integration.artifacts.each { add(it.configuration, it.dependency) }
+        integration.artifacts.values().each { add(it.configuration, it.dependency) }
     }
 }
 
@@ -172,6 +220,79 @@ ordering="NONE"
 side="${integration.side}"
 """
 }.join('')
+
+// ============================================================
+// Tests
+// ============================================================
+
+dependencies {
+    testImplementation platform("org.junit:junit-bom:${junit_version}")
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation("com.tngtech.archunit:archunit:${archunit_version}") {
+        // Minecraft pins its own SLF4J strictly; ArchUnit's newer request would conflict.
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+}
+
+// The class directories the architecture test reads. Declared as inputs, not passed as path
+// strings, so a change in any of them re-runs the test and the build cache keys on their content.
+abstract class ArchitectureClassDirectories implements CommandLineArgumentProvider {
+    @InputFiles
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract ConfigurableFileCollection getMainClasses()
+
+    @InputFiles
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract ConfigurableFileCollection getGametestClasses()
+
+    @InputFiles
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract ConfigurableFileCollection getDatagenClasses()
+
+    @Override
+    Iterable<String> asArguments() {
+        return ["-Djolcraft.main.classes=${mainClasses.asPath}",
+                "-Djolcraft.gametest.classes=${gametestClasses.asPath}",
+                "-Djolcraft.datagen.classes=${datagenClasses.asPath}"]
+    }
+}
+
+test {
+    useJUnitPlatform()
+    // Same as the game runs: no real terminal, so the console appender stays quiet.
+    systemProperty 'terminal.jline', 'false'
+    // FML's JUnit launcher attaches its instrumentation agent at runtime; the JDK warns unless that is allowed explicitly.
+    jvmArgs '-XX:+EnableDynamicAgentLoading'
+    dependsOn 'compileGametestJava', 'compileDatagenJava'
+    def classDirectories = objects.newInstance(ArchitectureClassDirectories)
+    classDirectories.mainClasses.from(sourceSets.main.output.classesDirs)
+    classDirectories.gametestClasses.from(sourceSets.gametest.output.classesDirs)
+    classDirectories.datagenClasses.from(sourceSets.datagen.output.classesDirs)
+    jvmArgumentProviders.add(classDirectories)
+}
+
+// runData's output is gitignored. A build, client or game-test run without it would ship or show
+// nothing, so each fails with the fix in its message instead.
+def verifyGeneratedResources = tasks.register('verifyGeneratedResources') {
+    description = 'Fails unless runData has produced src/generated/resources.'
+    def cache = layout.projectDirectory.dir('src/generated/resources/.cache').asFile
+    outputs.upToDateWhen { false }
+    doLast {
+        if (!cache.isDirectory()) {
+            throw new GradleException("src/generated/resources is missing. Run './gradlew runData' first.")
+        }
+    }
+}
+
+// A broken test mod or datagen mod fails the build, not only the run that loads it.
+tasks.named('check') {
+    dependsOn 'compileGametestJava', 'compileDatagenJava', verifyGeneratedResources
+}
+
+tasks.matching { it.name in ['runClient', 'runClient2', 'runServer', 'runGameTestServer'] }.configureEach {
+    dependsOn verifyGeneratedResources
+}
 
 // Expands src/main/templates (neoforge.mods.toml) with the properties above.
 def generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

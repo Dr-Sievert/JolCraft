@@ -1,0 +1,16 @@
+# Dev-only mod that generates the mod's data. runData loads it beside the mod (mods block and data
+# run in build.gradle); the jar is built from the main source set only, so this never ships.
+license="MIT"
+
+[[mods]]
+modId="jolcraft_datagen"
+version="0.1"
+displayName="JolCraft Datagen"
+description='''Data generators for JolCraft. runData only.'''
+
+[[dependencies.jolcraft_datagen]]
+modId="jolcraft"
+type="required"
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"
