@@ -156,7 +156,7 @@ the detail someone chasing a problem needs.
 small contributor per module and kind (`TradeRecipes`, `TradeLang`, `TradeModels`), found by the scan like scenes,
 in folders that mirror the module tree. Datagen walks the registries and demands completeness: every registered
 thing has what its kind requires (an item a model and a name, a block a blockstate, a model, a loot table and a
-name, a sound a definition, a config setting and its sections a label on the config screen, and so on) and `runData` fails on anything missing; a hand-made block state, item definition or loot table is
+name, a sound a definition and the English of its subtitle (every sound of the mod shows one; a sound meant to show none, music say, has no place yet and would need an exemption added then), a config setting and its sections a label on the config screen, and so on) and `runData` fails on anything missing; a hand-made block state, item definition or loot table is
 exempted explicitly, by name and per registry in `Handmade`, and every exemption is checked against its file and
 its registry entry when datagen runs; names and sound definitions have no exemption, those files are generated whole. Validation, the exemption list and the common helpers live once in the datagen core; a
 contributor only supplies content, with vanilla's builders available for the rare case. Keys live in main next to

@@ -11,6 +11,7 @@ import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.attachment.IAttachmentHolder;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import net.sievert.jolcraft.stereotype.Handle;
@@ -155,7 +156,7 @@ public sealed interface AttachmentKey<T> {
         }
 
         @Override
-        public String toString() {
+        public @NotNull String toString() {
             return id.toString();
         }
     }

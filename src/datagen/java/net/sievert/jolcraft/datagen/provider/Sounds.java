@@ -1,6 +1,8 @@
 package net.sievert.jolcraft.datagen.provider;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -15,13 +17,19 @@ import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.datagen.Completeness;
 import net.sievert.jolcraft.datagen.contribute.SoundContributor;
 import net.sievert.jolcraft.module.primitive.log.Log;
+import net.sievert.jolcraft.module.primitive.sound.SoundKey;
 
-/** sounds.json from every module's contributor, then the walk: every sound event of the mod has a definition. No exemption: the file is generated whole. */
+/**
+ * sounds.json from every module's contributor, then the walk: every sound event of the mod has a definition. No exemption: the
+ * file is generated whole. Every definition carries the subtitle of its sound, whichever way it is added; the English of the
+ * subtitle is the module's language contributor's, and {@code Translations} demands it.
+ */
 public final class Sounds extends SoundDefinitionsProvider {
 
     private final List<SoundContributor> contributors;
     private final Log log;
     private final Set<Identifier> defined = new HashSet<>();
+    private final Set<SoundDefinition> definitions = Collections.newSetFromMap(new IdentityHashMap<>());
 
     public Sounds(PackOutput output, List<SoundContributor> contributors, Log log) {
         super(output, JolCraft.MOD_ID);
@@ -40,11 +48,20 @@ public final class Sounds extends SoundDefinitionsProvider {
         log.info("{} sound definitions, every sound event defined", defined.size());
     }
 
-    /** A sound event's definition; the one way contributors define sounds, so the walk sees every definition. */
+    /** A sound event's definition, given its subtitle; both ways of adding end here, so the walk sees every definition and every one is subtitled. */
     @Override
     public void add(SoundEvent soundEvent, SoundDefinition definition) {
-        defined.add(BuiltInRegistries.SOUND_EVENT.getKey(soundEvent));
-        super.add(soundEvent, definition);
+        Identifier id = BuiltInRegistries.SOUND_EVENT.getKey(soundEvent);
+        if (!definitions.add(definition)) {
+            throw new IllegalStateException(id + " was given a definition already used for another sound; every sound needs a definition of its own");
+        }
+        defined.add(id);
+        super.add(soundEvent, definition.subtitle(SoundKey.subtitle(id)));
+    }
+
+    /** A key's definition. */
+    public void add(SoundKey key, SoundDefinition definition) {
+        add(key.event(), definition);
     }
 
     public static SoundDefinition define() {

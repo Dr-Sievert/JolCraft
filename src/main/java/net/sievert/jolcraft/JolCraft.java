@@ -16,6 +16,7 @@ import net.sievert.jolcraft.module.primitive.language.Language;
 import net.sievert.jolcraft.module.primitive.language.ModLanguage;
 import net.sievert.jolcraft.module.primitive.network.ModNetwork;
 import net.sievert.jolcraft.module.primitive.registration.ModRegistration;
+import net.sievert.jolcraft.module.primitive.sound.ModSound;
 import net.sievert.jolcraft.util.text.Dictionary;
 
 /**
@@ -33,20 +34,22 @@ public final class JolCraft {
         ModRegistration registration = new ModRegistration();
         ModAttachment attachment = new ModAttachment();
         ModData data = new ModData();
+        ModSound sound = new ModSound();
         Language language = new ModLanguage();
         ModConfig config = new ModConfig();
         ModNetwork network = new ModNetwork();
 
-        // Modules are built here, taking log, language, config, network, attachment, data and registration through their constructors.
+        // Modules are built here, taking log, language, config, network, attachment, data, sound and registration through their constructors.
 
         registration.register(modBus);
         attachment.register(modBus);
+        sound.register(modBus);
         config.register(container);
         network.register(modBus, container.getModInfo().getVersion().toString());
         if (config.declared() > 0 && FMLEnvironment.getDist().isClient()) {
             ConfigScreen.register(container);
         }
-        log.info("JolCraft {} loading with {} registries of its own, {} attachments, {} saved data, {} settings and {} payloads",
-                container.getModInfo().getVersion(), registration.declared(), attachment.declared(), data.declared(), config.declared(), network.declared());
+        log.info("JolCraft {} loading with {} registries of its own, {} attachments, {} saved data, {} sounds, {} settings and {} payloads",
+                container.getModInfo().getVersion(), registration.declared(), attachment.declared(), data.declared(), sound.declared(), config.declared(), network.declared());
     }
 }

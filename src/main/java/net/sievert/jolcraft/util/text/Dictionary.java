@@ -24,6 +24,8 @@ public final class Dictionary {
     public static final String NETWORK = "network";
     public static final String REGISTRATION = "registration";
     public static final String SCENE = "scene";
+    public static final String SOUND = "sound";
+    public static final String SUBTITLES = "subtitles";
 
     private Dictionary() {
     }

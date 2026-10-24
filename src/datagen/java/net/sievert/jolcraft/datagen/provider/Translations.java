@@ -33,12 +33,13 @@ import net.sievert.jolcraft.datagen.contribute.LanguageContributor;
 import net.sievert.jolcraft.module.primitive.config.ConfigKey;
 import net.sievert.jolcraft.module.primitive.language.LanguageKey;
 import net.sievert.jolcraft.module.primitive.log.Log;
+import net.sievert.jolcraft.module.primitive.sound.SoundKey;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * The English language file from every module's contributor, then the completeness walks: every item, block,
  * entity type, mob effect, attribute and creative tab of the mod has a name, and every setting and section of the
- * mod's config files has a label for the config screen, or the run fails naming the ones that do not. A registry
+ * mod's config files has a label for the config screen, every sound event a subtitle, or the run fails naming the ones that do not. A registry
  * the mod starts registering into is added to the walk when that happens. The screen's frame, its title and
  * one button and title per file, is written here.
  */
@@ -79,7 +80,11 @@ public final class Translations extends LanguageProvider {
             }
         }
         Completeness.require("config labels", unlabelled);
-        log.info("{} translations, every registered thing named, every setting labelled", keys.size());
+        Completeness.require("subtitles", Completeness.ours(BuiltInRegistries.SOUND_EVENT)
+                .map(holder -> SoundKey.subtitle(Completeness.id(holder)))
+                .filter(subtitle -> !keys.contains(subtitle))
+                .toList());
+        log.info("{} translations, every registered thing named, every setting labelled, every sound subtitled", keys.size());
     }
 
     private <T> void requireNamed(Registry<T> registry, java.util.function.Function<T, String> key, List<Identifier> missing) {
@@ -141,6 +146,11 @@ public final class Translations extends LanguageProvider {
     /** The English text of one of the mod's own keys. */
     public void add(LanguageKey key, String text) {
         add(key.key(), text);
+    }
+
+    /** The subtitle of a sound. */
+    public void add(SoundKey key, String subtitle) {
+        add(key.subtitle(), subtitle);
     }
 
     /** The label of a setting on the config screen; its comment is the tooltip. */
