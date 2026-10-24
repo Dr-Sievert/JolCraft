@@ -12,6 +12,7 @@ public final class Dictionary {
     public static final String C = "c";
     public static final String CONFIG = "config";
     public static final String CONFIGURATION = "configuration";
+    public static final String DATA = "data";
     public static final String DATAGEN = "datagen";
     public static final String DEFAULT = "default";
     public static final String EMPTY = "empty";

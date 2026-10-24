@@ -10,6 +10,7 @@ import net.sievert.jolcraft.module.primitive.attachment.ModAttachment;
 import net.sievert.jolcraft.module.primitive.log.Log;
 import net.sievert.jolcraft.module.primitive.config.ModConfig;
 import net.sievert.jolcraft.module.primitive.config.client.ConfigScreen;
+import net.sievert.jolcraft.module.primitive.data.ModData;
 import net.sievert.jolcraft.module.primitive.log.ModLog;
 import net.sievert.jolcraft.module.primitive.language.Language;
 import net.sievert.jolcraft.module.primitive.language.ModLanguage;
@@ -31,11 +32,12 @@ public final class JolCraft {
         Log log = new ModLog(LogUtils.getLogger()).tagged(Dictionary.JOLCRAFT);
         ModRegistration registration = new ModRegistration();
         ModAttachment attachment = new ModAttachment();
+        ModData data = new ModData();
         Language language = new ModLanguage();
         ModConfig config = new ModConfig();
         ModNetwork network = new ModNetwork();
 
-        // Modules are built here, taking log, language, config, network, attachment and registration through their constructors.
+        // Modules are built here, taking log, language, config, network, attachment, data and registration through their constructors.
 
         registration.register(modBus);
         attachment.register(modBus);
@@ -44,7 +46,7 @@ public final class JolCraft {
         if (config.declared() > 0 && FMLEnvironment.getDist().isClient()) {
             ConfigScreen.register(container);
         }
-        log.info("JolCraft {} loading with {} registries of its own, {} attachments, {} settings and {} payloads", container.getModInfo().getVersion(),
-                registration.declared(), attachment.declared(), config.declared(), network.declared());
+        log.info("JolCraft {} loading with {} registries of its own, {} attachments, {} saved data, {} settings and {} payloads",
+                container.getModInfo().getVersion(), registration.declared(), attachment.declared(), data.declared(), config.declared(), network.declared());
     }
 }
