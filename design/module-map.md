@@ -45,13 +45,13 @@ A composite or a system that spans several files keeps them in its folder; a fol
 
 ## What is a module and what is not
 
-NeoForge wants some things static: registry holders, payload types, codecs, attachment types, mixins.
+NeoForge wants some things static: registry holders, payload types, codecs, attachment keys, mixins.
 These are **declarations**, not modules, and the tier rules do not see them as modules:
 
 - **Content** (`@Content`): a module folder's registry declarations. A final class with a private
   constructor whose public static final fields are `DeferredRegister`s and `DeferredHolder`s, plus one
   `register(IEventBus)`. It may depend on vanilla, NeoForge and its own folder's values, never on a module.
-- **Values** (`@Value`): records, enums, closed sets, codecs, payload records, attachment types.
+- **Values** (`@Value`): records, enums, closed sets, codecs, payload records, attachment values.
 - **Events** (`@Event`): JolCraft's own `Event` subclasses on the NeoForge bus, the way the mod's parts talk
   to each other without holding each other: an actor or a mixin announces, a system listens. An event that
   needs an answer carries a result or a cancel flag, as NeoForge's own events do.

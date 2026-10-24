@@ -7,6 +7,7 @@ package net.sievert.jolcraft.util.text;
  */
 public final class Dictionary {
 
+    public static final String ATTACHMENT = "attachment";
     /** The namespace of the tags mods share. */
     public static final String C = "c";
     public static final String CONFIG = "config";

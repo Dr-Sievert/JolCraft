@@ -6,6 +6,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 
+import net.sievert.jolcraft.module.primitive.attachment.ModAttachment;
 import net.sievert.jolcraft.module.primitive.log.Log;
 import net.sievert.jolcraft.module.primitive.config.ModConfig;
 import net.sievert.jolcraft.module.primitive.config.client.ConfigScreen;
@@ -29,19 +30,21 @@ public final class JolCraft {
     public JolCraft(IEventBus modBus, ModContainer container) {
         Log log = new ModLog(LogUtils.getLogger()).tagged(Dictionary.JOLCRAFT);
         ModRegistration registration = new ModRegistration();
+        ModAttachment attachment = new ModAttachment();
         Language language = new ModLanguage();
         ModConfig config = new ModConfig();
         ModNetwork network = new ModNetwork();
 
-        // Modules are built here, taking log, language, config, network and registration through their constructors.
+        // Modules are built here, taking log, language, config, network, attachment and registration through their constructors.
 
         registration.register(modBus);
+        attachment.register(modBus);
         config.register(container);
         network.register(modBus, container.getModInfo().getVersion().toString());
         if (config.declared() > 0 && FMLEnvironment.getDist().isClient()) {
             ConfigScreen.register(container);
         }
-        log.info("JolCraft {} loading with {} registries of its own, {} settings and {} payloads", container.getModInfo().getVersion(),
-                registration.declared(), config.declared(), network.declared());
+        log.info("JolCraft {} loading with {} registries of its own, {} attachments, {} settings and {} payloads", container.getModInfo().getVersion(),
+                registration.declared(), attachment.declared(), config.declared(), network.declared());
     }
 }

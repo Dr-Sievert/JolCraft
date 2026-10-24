@@ -6,9 +6,11 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 
 import net.sievert.jolcraft.JolCraft;
+import net.sievert.jolcraft.gametest.module.primitive.attachment.TestAttachments;
 import net.sievert.jolcraft.gametest.module.primitive.network.TestPayloads;
 import net.sievert.jolcraft.gametest.module.primitive.network.client.TestPayloadsClient;
 import net.sievert.jolcraft.gametest.scene.SceneRegistry;
+import net.sievert.jolcraft.module.primitive.attachment.ModAttachment;
 import net.sievert.jolcraft.module.primitive.log.Log;
 import net.sievert.jolcraft.module.primitive.log.ModLog;
 import net.sievert.jolcraft.module.primitive.network.ModNetwork;
@@ -28,6 +30,9 @@ public final class JolCraftGameTests {
     public JolCraftGameTests(IEventBus modBus) {
         Log log = new ModLog(LogUtils.getLogger()).tagged(Dictionary.GAMETEST);
         new SceneRegistry(MOD_ID, log).register(modBus);
+        ModAttachment attachment = new ModAttachment();
+        TestAttachments.declare(attachment);
+        attachment.register(modBus);
         ModNetwork network = new ModNetwork();
         TestPayloads.declare(network);
         network.register(modBus, Dictionary.GAMETEST);
