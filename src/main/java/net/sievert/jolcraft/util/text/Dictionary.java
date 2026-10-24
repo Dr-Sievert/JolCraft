@@ -7,6 +7,8 @@ package net.sievert.jolcraft.util.text;
  */
 public final class Dictionary {
 
+    /** The namespace of the tags mods share. */
+    public static final String C = "c";
     public static final String DATAGEN = "datagen";
     public static final String DEFAULT = "default";
     public static final String EMPTY = "empty";
@@ -14,6 +16,7 @@ public final class Dictionary {
     public static final String JOLCRAFT = "jolcraft";
     public static final String LOG = "log";
     public static final String MINECRAFT = "minecraft";
+    public static final String REGISTRATION = "registration";
     public static final String SCENE = "scene";
 
     private Dictionary() {

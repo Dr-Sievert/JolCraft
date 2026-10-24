@@ -32,7 +32,7 @@ net.sievert.jolcraft
   module/                           Module, @Primitive, @Composite, @ModSystem
   stereotype/                       the stereotype annotations (below)
   util/                             below every tier, JDK only; util/text holds Dictionary and ModString
-  module/primitive/<id>/            one primitive per folder, id = folder name: log, registry, config,
+  module/primitive/<id>/            one primitive per folder, id = folder name: log, registration, config,
                                     network, language, sound, attachment, ...
   module/primitive/<id>/client/     its client-only part, if any
   module/composite/<primitive>/     composites, in the folder of the primitive they are organised under
