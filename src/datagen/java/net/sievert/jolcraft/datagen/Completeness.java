@@ -26,10 +26,10 @@ public final class Completeness {
     }
 
     /** Fails the data run, naming every missing thing, unless nothing is missing. */
-    public static void require(String what, List<Identifier> missing) {
+    public static void require(String what, List<?> missing) {
         if (!missing.isEmpty()) {
             throw new IllegalStateException(missing.size() + " missing " + what + ": " + missing
-                    + ". Add it in a contributor, or exempt a hand-made one in Handmade.");
+                    + ". Add it in a contributor.");
         }
     }
 
