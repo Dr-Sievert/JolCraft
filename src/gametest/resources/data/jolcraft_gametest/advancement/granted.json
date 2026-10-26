@@ -1,0 +1,13 @@
+{
+  "criteria": {
+    "never": {
+      "trigger": "minecraft:impossible"
+    },
+    "never_either": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 7
+  }
+}

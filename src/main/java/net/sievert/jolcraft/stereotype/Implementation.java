@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Public, implements its folder's primitive, extends no game type, and is depended on by nothing but the composition root.
+ * Public, implements its folder's primitive, extends no other class, and is depended on by nothing but the composition root.
  * Checked by the architecture test; see design/module-map.md, "Stereotypes".
  */
 @Documented

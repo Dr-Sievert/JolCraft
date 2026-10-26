@@ -26,6 +26,7 @@ import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforgespi.language.ModFileScanData;
+import org.jetbrains.annotations.NotNull;
 
 import net.sievert.jolcraft.module.primitive.log.Log;
 import net.sievert.jolcraft.util.text.Dictionary;
@@ -38,7 +39,7 @@ import net.sievert.jolcraft.util.text.Dictionary;
  */
 public final class SceneRegistry {
 
-    private record Entry(Identifier id, Method method, Scene scene, DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> function) {
+    private record Entry(Identifier id, Method method, Scene scene, DeferredHolder<Consumer<GameTestHelper>, @NotNull Consumer<GameTestHelper>> function) {
     }
 
     private static final String PACKAGE_ROOT = SceneRegistry.class.getPackageName().replaceAll("\\.scene$", "");
@@ -64,7 +65,7 @@ public final class SceneRegistry {
                 throw new IllegalStateException("scenes " + describe(other) + " and " + describe(method) + " share the id " + path);
             }
             Identifier id = Identifier.fromNamespaceAndPath(namespace, path);
-            var function = functions.register(path, () -> helper -> run(method, id, helper));
+            var function = functions.register(path, () -> helper -> run(method, id, scene.isolated(), helper));
             entries.add(new Entry(id, method, scene, function));
         }
         if (entries.isEmpty()) {
@@ -126,9 +127,8 @@ public final class SceneRegistry {
             }
         }
         Scene scene = method.getAnnotation(Scene.class);
-        if (scene.maxTicks() < 1 || scene.setupTicks() < 0 || scene.attempts() < 1 || scene.requiredSuccesses() < 1
-                || scene.requiredSuccesses() > scene.attempts()) {
-            throw new IllegalStateException(where + ": maxTicks and attempts must be at least 1, setupTicks at least 0, and requiredSuccesses between 1 and attempts");
+        if (scene.maxTicks() < 1 || scene.setupTicks() < 0) {
+            throw new IllegalStateException(where + ": maxTicks must be at least 1 and setupTicks at least 0");
         }
         if (Identifier.tryParse(scene.structure()) == null) {
             throw new IllegalStateException(where + ": structure \"" + scene.structure() + "\" is not a valid identifier");
@@ -143,15 +143,14 @@ public final class SceneRegistry {
                     ? event.registerEnvironment(entry.id())
                     : shared;
             TestData<Holder<TestEnvironmentDefinition<?>>> data = new TestData<>(environment, Identifier.parse(scene.structure()),
-                    scene.maxTicks(), scene.setupTicks(), scene.required(), Rotation.NONE, false, scene.attempts(),
-                    scene.requiredSuccesses(), scene.skyAccess(), 0);
+                    scene.maxTicks(), scene.setupTicks(), scene.required(), Rotation.NONE, false, 1, 1, scene.skyAccess(), 0); // one attempt: the game-test server judges the first attempt only, so retries would misreport
             event.registerTest(entry.id(), new FunctionGameTestInstance(entry.function().getKey(), data));
         }
     }
 
     /** Runs one scene. Anything thrown becomes a test failure with its message; an Error would otherwise take the server down. */
-    private void run(Method method, Identifier id, GameTestHelper helper) {
-        TestScene scene = new TestScene(helper, log, id.getPath());
+    private void run(Method method, Identifier id, boolean isolated, GameTestHelper helper) {
+        TestScene scene = new TestScene(helper, log, id.getPath(), isolated);
         try {
             Object target = Modifier.isStatic(method.getModifiers()) ? null : method.getDeclaringClass().getConstructor().newInstance();
             method.invoke(target, scene);

@@ -154,3 +154,126 @@ format string (tags are Dictionary words); the sound walk being bypassed by othe
 final); a 26.3 upgrade note (maintenance, not a defect); plural provider names (the naming rule covers module types); javadoc lines
 over 150 columns (no such rule is written in this repository); stale hook-seam history in the map (it records a decision); the
 integrations header (already says what the reviewer asked for).
+
+
+## 2026-10-24 overnight: whole-tree review, open items
+
+Found by the last review of the night and left open on purpose; each is a decision or a day of its own.
+
+- [ ] **W1.** Custom and datapack registries and the config file kinds have never been registered in a running game by the game-test mod; the first data-driven feature is the proof, or the game-test root declares one of each.
+- [ ] **W2.** Every `Mod*` checks a key's namespace only against `minecraft`; giving each the namespace it owns (the root passes it) would make `Completeness.ours` exhaustive.
+- [ ] **W3.** `Action` recovers on cancel, a lost actor or a failed step, not on a server stop; a pre-stop hook on `Schedule` driven from `ServerStoppingEvent` would run open recoveries before the save.
+- [ ] **W4.** Command trees that share a root literal merge under the first-declared root, so a requirement on a later root is lost; the primitive could own the one root and take branches instead.
+- [ ] **W5.** Two modules contributing to the same datapack registry would build two `RegistrySetBuilder`s; the datagen core should collect bootstraps per registry key.
+- [ ] **W6.** The datagen walks have run on empty selections only, apart from the temporary proofs made by hand for config and sound; a fixture-driven test of each walk is wanted.
+- [ ] **W7.** `TestPlayer` joins in the test level's game mode, creative, so damage on it is inert (it is marked client-loaded on join since 2026-10-24, as a real client reports itself); a survival mode needs W8 first, since a survival player inside the arena's barrier layer suffocates, and a respawn helper comes with it.
+- [ ] **W8.** The default scene arena is the game's empty structure, a sealed barrier box; scenes spawn inside its barrier layer and get away with it; a template with room to move, or arena coordinates in `TestScene`, is wanted.
+- [x] **W9.** `addPlayer` refuses a scene that is not isolated (2026-10-24).
+- [ ] **W10.** The `@Actor` rule's whitelist of allowed static types will reject the constants every block, entity and menu declares; decide the rule by shape before the first actor.
+- [ ] **W11.** Several architecture rules have never selected a class; a fixture package of deliberate violations would prove each can fail.
+- [x] **W12.** `LootModifiers.registries()` hands contributors the lookup (2026-10-24).
+- [ ] **W14.** `SceneRegistry` checks that scenes were found, not that the game ran them: a run where `RegisterGameTestsEvent` never reached it would pass with nothing executed; a `ServerStartingEvent` check against the test-instance registry would close it.
+- [ ] **W15.** `AttachmentKey.update`'s one-sync guard (`getExistingDataOrNull`) is pinned by no scene; a sync count on a fresh synced holder would.
+- [ ] **W16.** `SoundKey.playFor` is untested for a ranged key's raised volume and for the where-the-player-stands overload's position.
+- [ ] **W17.** The data-less `MenuKey.open(player, title, server)` and the empty-buffer fallback are run by nothing.
+- [ ] **W18.** `Language.plain` is tested only at its fallback; `ModConfig.build` only at one section depth; `whole` and `real` ranges are never tested.
+- [ ] **W19.** `ModNetwork`'s disconnected-player guard never runs in a scene.
+- [ ] **W20.** `ModConfig.get`'s quoted-boolean branch, a loaded STARTUP read, `ModLog`'s prefix and levels, and `ModNetwork`'s away-from-the-server guard have no unit test.
+- [ ] **W21.** `Ledger.grant`'s stale-statistic and failing-grant branches and multi-book loop, `TriggerKey.fire(player)` and `criterion(instance)`, `ModSchedule`'s queue removal on stop, and `PacketRecorder`'s bundle unpacking are run by no scene.
+- [ ] **W22.** No architecture rule keeps `LanguageKey` constants in `@Value` classes, which is all the English walk sees.
+- [ ] **W23.** The adapter's own promises (reverse `onEnd`, players disconnected at the end, a failed check failing the scene, an Error becoming a failure, `isolated` batches) are proven by no scene.
+- [ ] **W13.** A sound definition's audio file, a hand-made `.ogg` under `src/main/resources/assets/jolcraft/sounds`, is not checked to exist by `runData`.
+
+## 2026-10-24 overnight: second whole-tree review, 33 confirmed, all applied
+
+Behaviour: a scene's `succeed()` goes through a one-step sequence so the game's pass listener fires however the
+scene was ended, and a `succeedWhen` condition that throws is the scene's failure (X1); `@Scene` lost `attempts`
+and `requiredSuccesses`, which the game-test server never judged (X2); `ModLoot.declare` checks the id before the
+codec (X3); `ModRegistration` refuses a double declaration and the game's namespace (X4); the generated-resources
+guard asks for a completed run, not an empty cache directory, and runData clears its output first so a failed run
+leaves nothing that passes it (X5, tightened by the third review). Tests: the loot id guard, the schedule thread guard, the loot roll, the attachment update, the
+action's second step and its recovery message are each pinned on their own (X6). Docs: the attachment sync claim,
+the map's menu, logging, architecture-test and player paragraphs, the `@Event` placement, the datapack registry
+directory, the command merge rule, the loot contributor, the language key conventions, and the plan's
+signatures, `ledger`, the new `outcome` shared system, the `flora` feature system and the tag and data-map rule (X7).
+
+## 2026-10-24 overnight: third review, 5 confirmed of 29, all applied
+
+Regressions in the night's fixes, documentation consistency, four call-level dry runs (war horn, deepslate compass,
+strongbox, Muffhorn) and a datagen dry run. Applied: the block and entity loot sub-providers expose `registries()`
+(looting and fortune functions need it); runData clears `src/generated/resources` first (Y1); the plan's shared
+systems have one order; the map states the root-reaches-everything rule under rule 5
+and names `FMLEnvironment.getDist()`; `TestPlayer.runCommand` runs as the live player. The dry runs' design notes
+are in `design/module-plan.md`.
+
+## 2026-10-24 overnight: fourth review, none confirmed of 19; the ledger composite
+
+Documentation sufficiency for the next modules, a hostile client against the primitives, the dev mods across run
+configurations: nothing stood. The dropped items that were true but small went in anyway: the `@Value` row names
+its ban on handles and implementations, the map's names paragraph points at `Ids`, the README says the server
+shares `run/` with the client, the plan's definition of
+"built" fits composites, three more dry-run notes, W13. With the budget left, the `ledger` composite was built
+(class, unit test, holder, isolated scene, both roots, `CLAUDE.md`), the last planned composite that needed no
+scouting.
+
+## 2026-10-24 overnight: the ledger's review, 6 confirmed of 13, all applied
+
+`award` refuses a book never declared through the ledger, naming the remedy; a grant that throws is logged and
+dropped so one bad entry cannot break a login; the root's log line counts the books; the unit test pins that taking
+marks the book dirty and that a decoded book starts clean; the scene checks the grant right after the join, where
+it happens; the test ids use `Dictionary.BOOK`; `CLAUDE.md` no longer calls the ledger planned.
+
+## 2026-10-24 overnight: fifth review, 22 confirmed of 38
+
+Test vacuity per area and every public method held to its javadoc. Applied: a flag is the game's boolean setting
+so the config screen can toggle it, and `ModConfig.get` reads a quoted spelling as the boolean it names (Z1); the
+architecture test demands a `register` call from the root for everything that has one (Z2); scenes now pin a holder
+that only read its fallback, a bystander beside the sender, the recipe's serializer and category, a cancel after
+the end, the told line with its sound and the sound's place, a
+shown line's arguments, a type supplier left alone at declaration, the ledger's own duplicate refusal; the loot
+modifier fixture was made to apply to every table so the missing-table check means something (since 2026-10-26 a second
+fixture gated on the missing table does that instead); five javadocs match their code. Left open as W14 to W19.
+
+## 2026-10-24 overnight: sixth review, 19 confirmed of 20
+
+A second test-vacuity pass. Applied in the last minutes of the budget: the fifth review's loot fixture change, which had landed outside the
+source set, is in `src/gametest/resources`; a reordered attachment chain, a second criterion for the grant, the told
+sound's source, volume and pitch, exactly one sound for a shown line, and an unattached schedule's refusal are
+pinned. The rest is W20 to W23.
+
+## 2026-10-24 morning: the economy system removed
+
+The author: the coin, its tab and texture are a feature of the mod, not a shared module, and no feature is migrated
+yet. `system/economy`, its datagen contributors, scene, test, both roots' wiring, the texture and its dictionary
+words are gone; the `economy` shared system stays planned, unbuilt. What its scene alone proved (generated data
+reaching the game, a tab's contents, the model, English and recipe walks on real content) is open again under W6.
+Kept from its last fix: in one Gradle invocation `processResources` runs before `runData`, so a game-test run in
+the same invocation reads the previous data; run `runData` on its own first.
+
+## 2026-10-24 evening: what only IntelliJ flags
+
+The author's editor, not javac, found two: a type variable of ours handed to a null-marked game generic
+("Non-null type argument is expected") and a method type parameter hiding the record's. The game's and NeoForge's
+packages are JSpecify `@NullMarked` in 26.1; the tree's answer is a use-site `@NotNull` where a type variable of
+ours enters a bounded null-marked generic (`Recipe<@NotNull I>`, `Criterion<@NotNull T>`,
+`BlockEntityType<@NotNull B>`, `DeferredHolder<R, @NotNull T>`), never a bound, which every user would inherit; a
+nested type is annotated as `Outer.@NotNull Inner`. A sweep of the whole tree for the rest of IntelliJ's defaults
+applied: `@NotNull` on the overriding signatures of `SoundKey.Spec.toString`, `Sounds.add` and `ItemTags`; nullable
+returns checked before use in three tests; the deprecated `SavedDataStorage` and `RegistryFriendlyByteBuf`
+constructors replaced; unused lambda parameters and a pattern variable renamed `_`; two unused imports gone; the
+three composites the root builds without a holder marked as such. Two are settings in the author's IDE, not code:
+`TestScene.level()` returns an `AutoCloseable`, so the resource inspection wants it ignored (or renamed
+`getLevel()`); `@Scene` methods are entry points by reflection, so the unused-declaration inspection wants
+`net.sievert.jolcraft.gametest.scene.Scene` listed under its entry-point annotations. Decided against for now: a
+package-level `@NullMarked` for the mod, which would close the category at once but make every unannotated
+reference non-null in the editor's eyes; the author's call.
+
+## 2026-10-26: review of the current tree, 9 confirmed of 16, all applied
+
+Eight lenses over the tree as it stands. Applied: a data-less menu open hands the client an empty buffer, as the
+javadoc promised and the game does not (it passes null); the map and two javadocs give the true reason for the dev
+mods' statics (the adapter instantiates scene classes through a no-argument constructor); the loot fixture gates on
+the dungeon chest again and a second fixture gated on the missing table keeps the missing-table check meaningful,
+so dev runs no longer see a star in every roll; the second-review section sits in its chronological place; the
+remaining unused lambda parameters in the tests and the dev mods are `_`; the flag test, the trigger holder's count
+and CLAUDE.md's registry sentence say what is so.

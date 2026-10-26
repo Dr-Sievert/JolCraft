@@ -24,7 +24,7 @@ public final class ModNetwork implements Network {
     private String version;
 
     @Override
-    public <T extends CustomPacketPayload> void toServer(CustomPacketPayload.Type<T> type, StreamCodec<? super RegistryFriendlyByteBuf, T> codec, ServerHandler<T> handler) {
+    public <T extends CustomPacketPayload> void toServer(CustomPacketPayload.Type<@org.jetbrains.annotations.NotNull T> type, StreamCodec<? super RegistryFriendlyByteBuf, T> codec, ServerHandler<T> handler) {
         declare(type, registrar -> registrar.playToServer(type, codec, (payload, context) -> {
             if (!(context.player() instanceof ServerPlayer player)) {
                 throw new IllegalStateException(type.id() + " was handled away from the server");
@@ -37,7 +37,7 @@ public final class ModNetwork implements Network {
     }
 
     @Override
-    public <T extends CustomPacketPayload> void toClient(CustomPacketPayload.Type<T> type, StreamCodec<? super RegistryFriendlyByteBuf, T> codec) {
+    public <T extends CustomPacketPayload> void toClient(CustomPacketPayload.Type<@org.jetbrains.annotations.NotNull T> type, StreamCodec<? super RegistryFriendlyByteBuf, T> codec) {
         declare(type, registrar -> registrar.playToClient(type, codec));
     }
 

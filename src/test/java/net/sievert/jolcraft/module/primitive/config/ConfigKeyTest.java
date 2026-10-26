@@ -22,7 +22,7 @@ class ConfigKeyTest {
     }
 
     @Test
-    void aWordThatIsNoDictionaryWordOrOneTheScreenUsesIsRefused() {
+    void aWordOutsideLowercaseLettersDigitsAndUnderscoresOrOneTheScreenUsesIsRefused() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> ConfigKey.flag(true, "c", "Trade"));
         Assertions.assertThrows(IllegalArgumentException.class, () -> ConfigKey.flag(true, "c"));
         Assertions.assertThrows(IllegalArgumentException.class, () -> ConfigKey.flag(true, "c", "title"));
@@ -49,10 +49,12 @@ class ConfigKeyTest {
     }
 
     @Test
-    void aFlagTakesOnlyARealBoolean() {
+    void aFlagTakesABooleanOrItsQuotedSpellingAndNothingElse() {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         ModConfigSpec.ValueSpec spec = ConfigKey.flag(true, "c", "a").defineValue(builder, "a").getSpec();
         Assertions.assertTrue(spec.test(false));
-        Assertions.assertFalse(spec.test("true"), "a quoted boolean in the file is corrected, never handed to the caller as text");
+        Assertions.assertTrue(spec.test("true"), "the game's boolean setting accepts the quoted spelling, which ModConfig.get reads as the boolean it names");
+        Assertions.assertFalse(spec.test("yes"), "but not any other text");
+        Assertions.assertInstanceOf(ModConfigSpec.BooleanValue.class, ConfigKey.flag(true, "c", "b").defineValue(builder, "b"), "the game's boolean value, so the config screen can toggle it");
     }
 }

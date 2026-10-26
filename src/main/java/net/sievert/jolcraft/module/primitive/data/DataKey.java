@@ -11,6 +11,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
 import net.sievert.jolcraft.stereotype.Handle;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * One piece of saved data: its id, which names its file in the world, how a fresh one is made, and the codec the
@@ -34,17 +35,17 @@ public sealed interface DataKey<T extends SavedData> {
     boolean isServerWide();
 
     /** The game's type for this key; an error until the key is declared. */
-    SavedDataType<T> type();
+    SavedDataType<@org.jetbrains.annotations.NotNull T> type();
 
     /** The data of this level, or the server's when the key is server-wide; made fresh the first time it is asked for. */
     default T get(ServerLevel level) {
-        SavedDataType<T> type = type();
+        SavedDataType<@org.jetbrains.annotations.NotNull T> type = type();
         return (isServerWide() ? level.getServer().getDataStorage() : level.getDataStorage()).computeIfAbsent(type);
     }
 
     /** The server's data; only for a server-wide key, a per-level key needs its level. */
     default T get(MinecraftServer server) {
-        SavedDataType<T> type = type();
+        SavedDataType<@org.jetbrains.annotations.NotNull T> type = type();
         if (!isServerWide()) {
             throw new IllegalStateException(id() + " is kept per level; read it with a level");
         }
@@ -59,7 +60,7 @@ public sealed interface DataKey<T extends SavedData> {
     }
 
     /** The key with its shape; {@code declaration} is flipped by {@link Data} and readable only inside the primitive. */
-    record Spec<T extends SavedData>(Identifier id, Supplier<T> fresh, Codec<T> codec, boolean shared, SavedDataType<T> type, Declaration declaration)
+    record Spec<T extends SavedData>(Identifier id, Supplier<T> fresh, Codec<T> codec, boolean shared, SavedDataType<@org.jetbrains.annotations.NotNull T> type, Declaration declaration)
             implements DataKey<T> {
 
         Spec(Identifier id, Supplier<T> fresh, Codec<T> codec, boolean shared) {
@@ -77,7 +78,7 @@ public sealed interface DataKey<T extends SavedData> {
         }
 
         @Override
-        public SavedDataType<T> type() {
+        public SavedDataType<@org.jetbrains.annotations.NotNull T> type() {
             if (!declaration.declared) {
                 throw new IllegalStateException(id + " was not declared through Data; a module declares its keys while it is built");
             }
@@ -85,7 +86,7 @@ public sealed interface DataKey<T extends SavedData> {
         }
 
         @Override
-        public String toString() {
+        public @NotNull String toString() {
             return id.toString();
         }
 

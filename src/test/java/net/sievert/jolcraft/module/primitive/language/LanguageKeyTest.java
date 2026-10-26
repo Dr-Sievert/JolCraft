@@ -27,7 +27,7 @@ class LanguageKeyTest {
     }
 
     @Test
-    void aWordThatIsNoDictionaryWordIsRefused() {
+    void aWordOutsideLowercaseLettersDigitsAndUnderscoresIsRefused() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> LanguageKey.of("itemGroup"));
         Assertions.assertThrows(IllegalArgumentException.class, () -> LanguageKey.of("with space"));
         Assertions.assertThrows(IllegalArgumentException.class, () -> LanguageKey.of());

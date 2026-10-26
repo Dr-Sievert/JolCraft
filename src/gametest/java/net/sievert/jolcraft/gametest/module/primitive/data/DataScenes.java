@@ -1,5 +1,7 @@
 package net.sievert.jolcraft.gametest.module.primitive.data;
 
+import java.util.Objects;
+
 import java.nio.file.Path;
 
 import net.minecraft.server.MinecraftServer;
@@ -53,10 +55,10 @@ public final class DataScenes {
         TestData.LOCAL.update(level, data -> data.add(42 - data.count()));
         level.getDataStorage().saveAndJoin();
         Path folder = DimensionType.getStorageFolder(level.dimension(), server.getWorldPath(LevelResource.ROOT)).resolve("data");
-        try (SavedDataStorage fresh = new SavedDataStorage(folder, server.getFixerUpper(), level.registryAccess())) {
+        try (SavedDataStorage fresh = new SavedDataStorage(null, folder, server.getFixerUpper(), level.registryAccess())) { // no level owns a storage read back from its folder
             TestData.Counter read = fresh.get(TestData.LOCAL.type());
             scene.check("the file is there and reads back", () -> scene.assertTrue(read != null, "the saved file for " + TestData.LOCAL + " in " + folder));
-            scene.check("with the written count", () -> scene.assertEquals(42, read.count(), "count read back"));
+            scene.check("with the written count", () -> scene.assertEquals(42, Objects.requireNonNull(read, "read back").count(), "count read back"));
         }
         scene.succeed();
     }
@@ -72,11 +74,11 @@ public final class DataScenes {
         Path serverFolder = server.getWorldPath(LevelResource.DATA);
         Path levelFolder = DimensionType.getStorageFolder(level.dimension(), server.getWorldPath(LevelResource.ROOT)).resolve("data");
         scene.check("the server keeps its data apart from the level's", () -> scene.assertFalse(serverFolder.equals(levelFolder), "two folders"));
-        try (SavedDataStorage fresh = new SavedDataStorage(serverFolder, server.getFixerUpper(), level.registryAccess())) {
+        try (SavedDataStorage fresh = new SavedDataStorage(null, serverFolder, server.getFixerUpper(), level.registryAccess())) {
             TestData.Counter read = fresh.get(TestData.SHARED.type());
             scene.check("the server's folder holds it", () -> scene.assertTrue(read != null && read.count() == 7, "server-wide data in " + serverFolder));
         }
-        try (SavedDataStorage fresh = new SavedDataStorage(levelFolder, server.getFixerUpper(), level.registryAccess())) {
+        try (SavedDataStorage fresh = new SavedDataStorage(null, levelFolder, server.getFixerUpper(), level.registryAccess())) {
             scene.check("the level's folder does not", () -> scene.assertTrue(fresh.get(TestData.SHARED.type()) == null, "no server-wide file in " + levelFolder));
         }
         scene.succeed();

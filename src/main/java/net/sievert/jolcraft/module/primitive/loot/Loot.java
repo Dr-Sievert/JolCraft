@@ -1,0 +1,32 @@
+package net.sievert.jolcraft.module.primitive.loot;
+
+import java.util.List;
+
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.neoforged.bus.api.IEventBus;
+
+import net.sievert.jolcraft.module.Module;
+import net.sievert.jolcraft.module.Primitive;
+import net.sievert.jolcraft.util.text.Dictionary;
+
+/**
+ * The mod's part in loot: the kinds of loot modifier, condition and function it adds to the data pack's
+ * vocabulary, declared as {@link LootKey}s while a module is built and registered once by the root, and rolling a
+ * table of the data pack for a level. The tables themselves are data, written by datagen and named by their key.
+ */
+@Primitive(Dictionary.LOOT)
+public interface Loot extends Module {
+
+    /** Declares a kind. Only while modules are built, once per id. */
+    void declare(LootKey<?> key);
+
+    /** Registers every declared kind with the game. The root calls it once. */
+    void register(IEventBus modBus);
+
+    /** Rolls a table of the level's data pack with the params, every loaded modifier applied; nothing at all for a table the data pack lacks, not even the modifiers' additions. */
+    List<ItemStack> roll(ServerLevel level, ResourceKey<LootTable> table, LootParams params);
+}

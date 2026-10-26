@@ -3,6 +3,9 @@ package net.sievert.jolcraft.datagen.provider;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.lang.annotation.ElementType;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -25,6 +28,7 @@ import net.minecraft.world.level.block.Block;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.config.ModConfigs;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 
 import net.sievert.jolcraft.JolCraft;
@@ -34,12 +38,16 @@ import net.sievert.jolcraft.module.primitive.config.ConfigKey;
 import net.sievert.jolcraft.module.primitive.language.LanguageKey;
 import net.sievert.jolcraft.module.primitive.log.Log;
 import net.sievert.jolcraft.module.primitive.sound.SoundKey;
+import net.sievert.jolcraft.module.primitive.stat.Stat;
+import net.sievert.jolcraft.module.primitive.stat.StatKey;
+import net.sievert.jolcraft.stereotype.Value;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * The English language file from every module's contributor, then the completeness walks: every item, block,
  * entity type, mob effect, attribute and creative tab of the mod has a name, and every setting and section of the
- * mod's config files has a label for the config screen, every sound event a subtitle, or the run fails naming the ones that do not. A registry
+ * mod's config files has a label for the config screen, every sound event a subtitle, every statistic a name, every language key a module
+ * declares in a {@code @Value} class its text, or the run fails naming the ones that do not. A registry
  * the mod starts registering into is added to the walk when that happens. The screen's frame, its title and
  * one button and title per file, is written here.
  */
@@ -56,9 +64,9 @@ public final class Translations extends LanguageProvider {
     }
 
     @Override
-    public void add(@NotNull String key, @NotNull Component value) {
+    public void add(@NotNull String key, @NotNull Component text) {
         keys.add(key);
-        super.add(key, value);
+        super.add(key, text);
     }
 
     @Override
@@ -80,11 +88,16 @@ public final class Translations extends LanguageProvider {
             }
         }
         Completeness.require("config labels", unlabelled);
+        Completeness.require("texts of language keys", languageKeysOfTheMod().stream().map(LanguageKey::key).filter(key -> !keys.contains(key)).toList());
+        Completeness.require("statistic names", Completeness.ours(BuiltInRegistries.CUSTOM_STAT)
+                .map(holder -> Stat.name(Completeness.id(holder)))
+                .filter(name -> !keys.contains(name))
+                .toList());
         Completeness.require("subtitles", Completeness.ours(BuiltInRegistries.SOUND_EVENT)
                 .map(holder -> SoundKey.subtitle(Completeness.id(holder)))
                 .filter(subtitle -> !keys.contains(subtitle))
                 .toList());
-        log.info("{} translations, every registered thing named, every setting labelled, every sound subtitled", keys.size());
+        log.info("{} translations, every registered thing named, every setting labelled, every sound subtitled, every statistic named, every key given its text", keys.size());
     }
 
     private <T> void requireNamed(Registry<T> registry, java.util.function.Function<T, String> key, List<Identifier> missing) {
@@ -95,12 +108,13 @@ public final class Translations extends LanguageProvider {
     }
 
     /** Every setting and section of a spec has a label in the file, found by the translation keys the spec carries. */
+    @SuppressWarnings("deprecation")
     private void requireLabelled(String file, ModConfigSpec spec, UnmodifiableConfig level, List<String> path, List<String> unlabelled) {
         level.valueMap().forEach((name, entry) -> {
             List<String> at = Stream.concat(path.stream(), Stream.of(name)).toList();
             String key = switch (entry) {
                 case ModConfigSpec.ValueSpec setting -> setting.getTranslationKey();
-                case UnmodifiableConfig section -> spec.getLevelTranslationKey(at);
+                case UnmodifiableConfig _ -> spec.getLevelTranslationKey(at);
                 default -> throw new IllegalStateException(file + " holds a " + entry.getClass().getName() + " at " + at);
             };
             if (key == null) {
@@ -148,6 +162,35 @@ public final class Translations extends LanguageProvider {
         add(key.key(), text);
     }
 
+    /** Every {@code LanguageKey} constant the mod declares in a {@code @Value} class, found through the mod's scan data. */
+    private static List<LanguageKey> languageKeysOfTheMod() {
+        List<LanguageKey> found = new ArrayList<>();
+        ModList.get().getModFileById(JolCraft.MOD_ID).getFile().getScanResult().getAnnotatedBy(Value.class, ElementType.TYPE).forEach(data -> {
+            try {
+                Class<?> type = Class.forName(data.clazz().getClassName(), true, Translations.class.getClassLoader());
+                for (Field field : type.getDeclaredFields()) {
+                    if (Modifier.isStatic(field.getModifiers()) && field.getType() == LanguageKey.class) {
+                        field.setAccessible(true);
+                        found.add((LanguageKey) field.get(null));
+                    }
+                }
+            } catch (ReflectiveOperationException unreadable) {
+                throw new IllegalStateException("the value class " + data.clazz().getClassName() + " could not be read for its language keys", unreadable);
+            }
+        });
+        return found;
+    }
+
+    /** Whether the English of a key was written; for the providers that run after this one and need to know. */
+    public boolean has(String key) {
+        return keys.contains(key);
+    }
+
+    /** The name of a statistic. */
+    public void add(StatKey key, String name) {
+        add(key.name(), name);
+    }
+
     /** The subtitle of a sound. */
     public void add(SoundKey key, String subtitle) {
         add(key.subtitle(), subtitle);
@@ -173,15 +216,15 @@ public final class Translations extends LanguageProvider {
 
     /** The name of a registered holder, for contributors that hold a {@code DeferredHolder}. */
     public void add(Holder<?> holder, String name) {
-        Object value = holder.value();
-        switch (value) {
+        Object held = holder.value();
+        switch (held) {
             case Item item -> add(item, name);
             case Block block -> add(block, name);
             case EntityType<?> type -> add(type, name);
             case MobEffect effect -> add(effect, name);
             case Attribute attribute -> add(attribute, name);
             case CreativeModeTab tab -> add(tab, name);
-            default -> throw new IllegalArgumentException("no translation key for " + value.getClass().getName());
+            default -> throw new IllegalArgumentException("no translation key for " + held.getClass().getName());
         }
     }
 }

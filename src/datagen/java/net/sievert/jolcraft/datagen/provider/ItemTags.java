@@ -10,6 +10,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.common.data.BlockTagCopyingItemTagProvider;
+import org.jetbrains.annotations.NotNull;
 
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.datagen.contribute.TagContributor;
@@ -26,13 +27,13 @@ public final class ItemTags extends BlockTagCopyingItemTagProvider {
     }
 
     @Override
-    protected void addTags(HolderLookup.Provider registries) {
+    protected void addTags(HolderLookup.@NotNull Provider registries) {
         contributors.forEach(contributor -> contributor.itemTags(this::tag));
         contributors.forEach(contributor -> contributor.copies(this::copy));
     }
 
     @Override
-    public void copy(TagKey<Block> blockTag, TagKey<Item> itemTag) {
+    public void copy(@NotNull TagKey<Block> blockTag, @NotNull TagKey<Item> itemTag) {
         super.copy(blockTag, itemTag);
     }
 }

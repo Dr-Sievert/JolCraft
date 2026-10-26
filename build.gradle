@@ -273,14 +273,17 @@ test {
 }
 
 // runData's output is gitignored. A build, client or game-test run without it would ship or show
-// nothing, so each fails with the fix in its message instead.
+// nothing, so each fails with the fix in its message instead. The game's data cache writes its files
+// only after every provider completed, and runData clears the whole output first, so a run that failed
+// on incomplete data leaves an empty cache behind and nothing stale beside it.
 def verifyGeneratedResources = tasks.register('verifyGeneratedResources') {
-    description = 'Fails unless runData has produced src/generated/resources.'
+    description = 'Fails unless a runData has completed into src/generated/resources.'
     def cache = layout.projectDirectory.dir('src/generated/resources/.cache').asFile
     outputs.upToDateWhen { false }
     doLast {
-        if (!cache.isDirectory()) {
-            throw new GradleException("src/generated/resources is missing. Run './gradlew runData' first.")
+        def written = cache.isDirectory() ? cache.list() : null
+        if (written == null || written.length == 0) {
+            throw new GradleException("src/generated/resources holds no completed datagen output. Run './gradlew runData' first, and fix what it reports.")
         }
     }
 }
@@ -292,6 +295,13 @@ tasks.named('check') {
 
 tasks.matching { it.name in ['runClient', 'runClient2', 'runServer', 'runGameTestServer'] }.configureEach {
     dependsOn verifyGeneratedResources
+}
+
+// Every data run regenerates everything: no orphan from a removed contributor survives, and a run that
+// fails part-way cannot pass the guard on the previous run's cache files.
+def generatedResources = layout.projectDirectory.dir('src/generated/resources').asFile
+tasks.matching { it.name == 'runData' }.configureEach {
+    doFirst { generatedResources.deleteDir() }
 }
 
 // Expands src/main/templates (neoforge.mods.toml) with the properties above.

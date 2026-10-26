@@ -29,8 +29,10 @@ public interface Registration extends Module {
     <T> Supplier<Registry<T>> custom(ResourceKey<Registry<T>> key, boolean synced);
 
     /**
-     * A datapack registry: its entries are the JSON files under {@code data/<namespace>/<path>/}, decoded with
-     * {@code codec}; with a {@code network} codec they are synced to clients as well.
+     * A datapack registry: its entries are the JSON files under
+     * {@code data/<entry namespace>/<registry namespace>/<registry path>/} (the registry's namespace folder is omitted
+     * only for the game's own registries), decoded with {@code codec}; with a {@code network} codec they are synced to
+     * clients as well.
      */
     <T> void datapack(ResourceKey<Registry<T>> key, Codec<T> codec, @Nullable Codec<T> network);
 

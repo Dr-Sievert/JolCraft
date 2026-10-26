@@ -22,13 +22,13 @@ import net.sievert.jolcraft.util.text.Dictionary;
 public interface Network extends Module {
 
     /** A payload the client sends; the server handles it on its main thread, with the player who sent it. */
-    <T extends CustomPacketPayload> void toServer(CustomPacketPayload.Type<T> type, StreamCodec<? super RegistryFriendlyByteBuf, T> codec, ServerHandler<T> handler);
+    <T extends CustomPacketPayload> void toServer(CustomPacketPayload.Type<@org.jetbrains.annotations.NotNull T> type, StreamCodec<? super RegistryFriendlyByteBuf, T> codec, ServerHandler<T> handler);
 
     /**
      * A payload the server sends. Its handler is given on the client, by the module's client bootstrap through
      * {@code client.ClientNetwork}; a client that starts without one refuses to, naming the payload.
      */
-    <T extends CustomPacketPayload> void toClient(CustomPacketPayload.Type<T> type, StreamCodec<? super RegistryFriendlyByteBuf, T> codec);
+    <T extends CustomPacketPayload> void toClient(CustomPacketPayload.Type<@org.jetbrains.annotations.NotNull T> type, StreamCodec<? super RegistryFriendlyByteBuf, T> codec);
 
     /**
      * Registers every declared payload with the game under the version both sides must share, so a client and a

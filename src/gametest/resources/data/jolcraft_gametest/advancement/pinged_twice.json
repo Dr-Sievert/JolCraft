@@ -1,0 +1,16 @@
+{
+  "criteria": {
+    "once": {
+      "trigger": "jolcraft_gametest:pinged",
+      "conditions": {
+        "at_least": 1
+      }
+    },
+    "much": {
+      "trigger": "jolcraft_gametest:pinged",
+      "conditions": {
+        "at_least": 5
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "jolcraft_gametest:add_star",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "jolcraft_gametest:missing"
+    },
+    {
+      "condition": "jolcraft_gametest:always"
+    }
+  ]
+}

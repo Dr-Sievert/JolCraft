@@ -84,22 +84,22 @@ class ModNetworkTest {
     void payloadsAreCountedOncePerId() {
         ModNetwork network = new ModNetwork();
         network.toClient(Ping.TYPE, Ping.CODEC);
-        network.toServer(Pong.TYPE, Pong.CODEC, (pong, player) -> { });
+        network.toServer(Pong.TYPE, Pong.CODEC, (_, _) -> { });
         Assertions.assertEquals(2, network.declared());
         Assertions.assertThrows(IllegalStateException.class, () -> network.toClient(Ping.TYPE, Ping.CODEC));
-        Assertions.assertThrows(IllegalStateException.class, () -> network.toServer(Ping.TYPE, Ping.CODEC, (ping, player) -> { }), "one direction per id");
+        Assertions.assertThrows(IllegalStateException.class, () -> network.toServer(Ping.TYPE, Ping.CODEC, (_, _) -> { }), "one direction per id");
     }
 
     @Test
     void theGamesNamespaceIsRefused() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new ModNetwork().toServer(Pong.VANILLA, Pong.CODEC, (pong, player) -> { }));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new ModNetwork().toServer(Pong.VANILLA, Pong.CODEC, (_, _) -> { }));
     }
 
     @Test
     void registeringReplaysEveryDeclarationInOrderUnderTheVersion() {
         ModNetwork network = new ModNetwork();
         network.toClient(Ping.TYPE, Ping.CODEC);
-        network.toServer(Pong.TYPE, Pong.CODEC, (pong, player) -> { });
+        network.toServer(Pong.TYPE, Pong.CODEC, (_, _) -> { });
         network.register(bus, "7");
         RecordingEvent event = new RecordingEvent();
         network.onRegister(event);
@@ -113,7 +113,7 @@ class ModNetworkTest {
         network.toClient(Ping.TYPE, Ping.CODEC);
         network.register(bus, "1");
         Assertions.assertThrows(IllegalStateException.class, () -> network.register(bus, "1"));
-        Assertions.assertThrows(IllegalStateException.class, () -> network.toServer(Pong.TYPE, Pong.CODEC, (pong, player) -> { }));
+        Assertions.assertThrows(IllegalStateException.class, () -> network.toServer(Pong.TYPE, Pong.CODEC, (_, _) -> { }));
     }
 
     @Test

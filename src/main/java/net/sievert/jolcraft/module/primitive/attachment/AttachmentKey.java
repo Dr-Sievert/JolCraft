@@ -20,9 +20,9 @@ import net.sievert.jolcraft.stereotype.Handle;
  * One piece of data a holder carries: its id, the fallback a holder answers until something is set, and what the
  * game does with it. {@link #saved(MapCodec)} writes it with the holder, {@link #synced(StreamCodec)} sends it to
  * every player who sees the holder, the holder itself included when it is a player, and {@link #keptOnDeath()}
- * carries it over a player's respawn or an entity's conversion. There is no owner-only sync: the game sends every
- * synced value to a player who starts seeing the holder, so what is a player's own business goes to that player
- * through a network payload instead. A key is a constant where it is used, declared through {@link Attachment}
+ * carries it over a player's respawn or an entity's conversion. There is no owner-only variant: NeoForge consults its per-player predicate on updates only, while the initial sync, when a
+ * player starts tracking the holder, sends every synced value regardless, so an owner-only key would leak and then
+ * desync; a player's own business travels as a network payload. A key is a constant where it is used, declared through {@link Attachment}
  * while its module is built, and reads and writes a holder's data once the game has registered it. Values are
  * immutable: a change is a new value {@link #set} or {@link #update}d.
  */
@@ -42,7 +42,7 @@ public sealed interface AttachmentKey<T> {
     /** What a holder answers until something is set; called per holder, so a mutable fallback is not shared. */
     Supplier<T> fallback();
 
-    /** Written with the holder through the codec and read back when the holder is. */
+    /** Written with the holder through the codec and read back when the holder is; a value equal to the fallback is not written, so a mere read leaves no trace. */
     AttachmentKey<T> saved(MapCodec<T> codec);
 
     /** Sent to every player who sees the holder, whenever it is set or reset, and once when a player starts seeing it. */
@@ -74,8 +74,8 @@ public sealed interface AttachmentKey<T> {
     }
 
     /** Stores the value, and sends it when the key is synced. */
-    default void set(IAttachmentHolder holder, T value) {
-        holder.setData(type(), value);
+    default void set(IAttachmentHolder holder, T held) {
+        holder.setData(type(), held);
     }
 
     /** Stores the changed value and answers it; the fallback goes into the change unstored, so one value is sent, not two. */
@@ -94,7 +94,7 @@ public sealed interface AttachmentKey<T> {
     /** The key with its shape; {@code holder} resolves the registered type lazily. */
     record Spec<T>(Identifier id, Supplier<T> fallback, @Nullable MapCodec<T> saved,
             @Nullable StreamCodec<? super RegistryFriendlyByteBuf, T> synced, boolean kept,
-            DeferredHolder<AttachmentType<?>, AttachmentType<T>> holder) implements AttachmentKey<T> {
+            DeferredHolder<AttachmentType<?>, @NotNull AttachmentType<T>> holder) implements AttachmentKey<T> {
 
         Spec(Identifier id, Supplier<T> fallback, @Nullable MapCodec<T> saved,
                 @Nullable StreamCodec<? super RegistryFriendlyByteBuf, T> synced, boolean kept) {
@@ -144,7 +144,7 @@ public sealed interface AttachmentKey<T> {
         public AttachmentType<T> build() {
             AttachmentType.Builder<T> builder = AttachmentType.builder(fallback);
             if (saved != null) {
-                builder.serialize(saved);
+                builder.serialize(saved, held -> !held.equals(fallback.get())); // a holder that only ever read the fallback carries no file entry
             }
             if (synced != null) {
                 builder.sync(synced);

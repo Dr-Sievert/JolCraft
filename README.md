@@ -32,7 +32,7 @@ generator before packaging:
 ./gradlew runGameTestServer         # headless game tests, the same step CI runs
 ```
 
-Each run has its own folder under `run/`: the client uses `run/`, the second client
+The runs' folders under `run/`: the client and the server use `run/`, the second client
 `run/client2`, the game tests `run/gametest` and datagen `run/data`.
 
 Resources under `src/generated/resources` are produced by the datagen mod in `src/datagen`

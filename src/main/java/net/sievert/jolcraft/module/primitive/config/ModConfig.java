@@ -40,7 +40,7 @@ public final class ModConfig implements Config {
             }
         });
         paths.put(key.path(), file);
-        declared.computeIfAbsent(file, kind -> new ArrayList<>()).add(key);
+        declared.computeIfAbsent(file, _ -> new ArrayList<>()).add(key);
     }
 
     /** Whether one path is a prefix of the other, so one setting would sit where the other's section is. */
@@ -70,7 +70,16 @@ public final class ModConfig implements Config {
             }
             return key.fallback();
         }
-        return loaded ? known.get() : key.fallback();
+        if (!loaded) {
+            return key.fallback();
+        }
+        T held = known.get();
+        if (key instanceof ConfigKey.Flag && held instanceof String text) {
+            @SuppressWarnings("unchecked")
+            T read = (T) Boolean.valueOf(text); // the game's boolean setting accepts the quoted spelling in the file and hands it back as text
+            return read;
+        }
+        return held;
     }
 
     /** How many settings are declared, for the root's log line. */

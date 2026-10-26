@@ -2,6 +2,7 @@ package net.sievert.jolcraft.gametest.scene;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
@@ -30,13 +31,15 @@ public final class TestScene {
     private final String name;
     private final List<Runnable> onEnd = new ArrayList<>();
     private final List<TestPlayer> players = new ArrayList<>();
+    private final boolean isolated;
     private boolean tickingPlayers;
     private boolean ended;
 
-    TestScene(GameTestHelper helper, Log log, String name) {
+    TestScene(GameTestHelper helper, Log log, String name, boolean isolated) {
         this.helper = helper;
         this.log = log.tagged(name);
         this.name = name;
+        this.isolated = isolated;
         helper.testInfo.addListener(new GameTestListener() {
             @Override
             public void testStructureLoaded(GameTestInfo info) {
@@ -97,13 +100,27 @@ public final class TestScene {
         helper.runAfterDelay(ticks, guarded(action));
     }
 
+    /**
+     * Succeeds the scene. The game fires its pass and fail listeners only from inside its own tick of the test, so the
+     * success goes through a one-step sequence: for a caller inside the tick it completes in the same tick, for one
+     * outside it (a scheduled task, a payload handler, an event) in the next, and the scene's cleanup runs either way.
+     */
     public void succeed() {
-        helper.succeed();
+        helper.startSequence().thenSucceed();
     }
 
     /** Succeeds as soon as {@code condition} holds; fails at {@code maxTicks} if it never does. */
     public void succeedWhen(BooleanSupplier condition, String description) {
-        helper.succeedWhen(guarded(() -> assertTrue(condition.getAsBoolean(), description)));
+        helper.succeedWhen(() -> {
+            boolean holds;
+            try {
+                holds = condition.getAsBoolean();
+            } catch (RuntimeException | Error e) {
+                // the game's sequence catches only its own assertion exceptions; anything else would leave the server tick
+                throw helper.assertionException(Component.literal(description + ": the condition threw " + e));
+            }
+            assertTrue(holds, description);
+        });
     }
 
     public void fail(String message) {
@@ -142,10 +159,19 @@ public final class TestScene {
 
     /**
      * A player in the level, recording what it is sent from this moment on; ticked by the scene and disconnected
-     * when the scene ends. A scene that adds players should be {@link Scene#isolated()}.
+     * when the scene ends. A scene that adds players must be {@link Scene#isolated()}, so that its players and their
+     * packets stay out of every other scene's batch; one that is not is refused here.
      */
     public TestPlayer addPlayer(String playerName) {
-        TestPlayer player = TestPlayer.join(this, playerName);
+        return addPlayer(playerName, UUID.randomUUID());
+    }
+
+    /** A player with a chosen id, for a scene that prepared something for that id before the player joined. */
+    public TestPlayer addPlayer(String playerName, UUID id) {
+        if (!isolated) {
+            throw new IllegalStateException("the scene " + name + " adds a player but is not isolated; a scene with players needs a batch of its own: @Scene(isolated = true)");
+        }
+        TestPlayer player = TestPlayer.join(this, playerName, id);
         players.add(player);
         if (!tickingPlayers) {
             tickingPlayers = true;

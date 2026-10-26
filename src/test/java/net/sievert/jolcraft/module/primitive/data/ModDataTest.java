@@ -12,7 +12,7 @@ import net.sievert.jolcraft.util.text.Dictionary;
 class ModDataTest {
 
     static final class Tally extends SavedData {
-        static final Codec<Tally> CODEC = Codec.INT.fieldOf("count").codec().xmap(count -> new Tally(), tally -> 0);
+        static final Codec<Tally> CODEC = Codec.INT.fieldOf("count").codec().xmap(_ -> new Tally(), _ -> 0);
     }
 
     private final DataKey<Tally> tally = DataKey.of(Identifier.fromNamespaceAndPath(Dictionary.JOLCRAFT, "tally"), Tally::new, Tally.CODEC);

@@ -22,6 +22,8 @@ class AttachmentKeyTest {
         Assertions.assertFalse(plain.isKeptOnDeath());
 
         AttachmentKey<Integer> kept = plain.saved(Codec.INT.fieldOf("value")).synced(ByteBufCodecs.VAR_INT).keptOnDeath();
+        AttachmentKey<Integer> reordered = plain.keptOnDeath().synced(ByteBufCodecs.VAR_INT).saved(Codec.INT.fieldOf("value"));
+        Assertions.assertTrue(reordered.isSaved() && reordered.isSynced() && reordered.isKeptOnDeath(), "every ask is kept whatever the order");
         Assertions.assertTrue(kept.isSaved());
         Assertions.assertTrue(kept.isSynced());
         Assertions.assertTrue(kept.isKeptOnDeath());

@@ -1,0 +1,10 @@
+{
+  "criteria": {
+    "pinged": {
+      "trigger": "jolcraft_gametest:pinged",
+      "conditions": {
+        "at_least": 3
+      }
+    }
+  }
+}

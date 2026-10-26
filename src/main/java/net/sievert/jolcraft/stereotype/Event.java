@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Extends the event bus's base type: one of JolCraft's own events, posted by an actor or a mixin and listened to by a system. Sits in a composite, a system or the event primitive.
+ * Extends the event bus's base type: one of JolCraft's own events, posted by an actor or a mixin and listened to by a system. Sits in a composite or a system.
  * Checked by the architecture test; see design/module-map.md, "Stereotypes".
  */
 @Documented

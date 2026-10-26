@@ -17,6 +17,6 @@ public final class TestPayloadsClient {
     }
 
     public static void bootstrap(IEventBus modBus) {
-        ClientNetwork.handle(modBus, TestPayloads.Ping.TYPE, (ping, player) -> { });
+        ClientNetwork.handle(modBus, TestPayloads.Ping.TYPE, (_, _) -> { });
     }
 }

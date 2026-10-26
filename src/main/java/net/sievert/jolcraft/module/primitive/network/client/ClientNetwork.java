@@ -18,7 +18,7 @@ public final class ClientNetwork {
     private ClientNetwork() {
     }
 
-    public static <T extends CustomPacketPayload> void handle(IEventBus modBus, CustomPacketPayload.Type<T> type, ClientHandler<T> handler) {
+    public static <T extends CustomPacketPayload> void handle(IEventBus modBus, CustomPacketPayload.Type<@org.jetbrains.annotations.NotNull T> type, ClientHandler<T> handler) {
         modBus.addListener(RegisterClientPayloadHandlersEvent.class,
                 event -> event.register(type, (payload, context) -> handler.handle(payload, context.player())));
     }

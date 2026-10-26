@@ -7,25 +7,44 @@ package net.sievert.jolcraft.util.text;
  */
 public final class Dictionary {
 
+    public static final String ACTION = "action";
+    public static final String ADVANCEMENT = "advancement";
+    public static final String ADVANCEMENTS = "advancements";
+    public static final String AMOUNT = "amount";
     public static final String ATTACHMENT = "attachment";
+    public static final String AWARDS = "awards";
+    public static final String BOOK = "book";
     /** The namespace of the tags mods share. */
     public static final String C = "c";
+    public static final String CAPABILITY = "capability";
+    public static final String COMMAND = "command";
     public static final String CONFIG = "config";
     public static final String CONFIGURATION = "configuration";
+    public static final String COOLDOWN = "cooldown";
     public static final String DATA = "data";
     public static final String DATAGEN = "datagen";
     public static final String DEFAULT = "default";
+    public static final String DESCRIPTION = "description";
     public static final String EMPTY = "empty";
+    public static final String FEEDBACK = "feedback";
     public static final String GAMETEST = "gametest";
     public static final String JOLCRAFT = "jolcraft";
     public static final String LANGUAGE = "language";
+    public static final String LEDGER = "ledger";
     public static final String LOG = "log";
+    public static final String LOOT = "loot";
+    public static final String MENU = "menu";
     public static final String MINECRAFT = "minecraft";
     public static final String NETWORK = "network";
+    public static final String PLAYER = "player";
+    public static final String RECIPE = "recipe";
     public static final String REGISTRATION = "registration";
-    public static final String SCENE = "scene";
+    public static final String SCHEDULE = "schedule";
     public static final String SOUND = "sound";
+    public static final String STAT = "stat";
     public static final String SUBTITLES = "subtitles";
+    public static final String TITLE = "title";
+    public static final String UNTIL = "until";
 
     private Dictionary() {
     }

@@ -32,11 +32,13 @@ public final class NetworkScenes {
     @Scene(maxTicks = 40, isolated = true)
     public void aPayloadFromAPlayerIsHandledWithThatPlayer(TestScene scene) {
         TestPlayer player = scene.addPlayer("Sender");
+        TestPlayer bystander = scene.addPlayer("Bystander");
         player.clearReceived();
         // What the server's packet listener does when this player's client sends a pong; on the server thread it runs the handler at once.
         player.player().connection.handleCustomPayload(new ServerboundCustomPayloadPacket(new TestPayloads.Pong(7)));
         scene.check("the handler ran with the sending player and answered it",
                 () -> scene.assertEquals(List.of(new TestPayloads.Ping(7)), payloads(player), "payloads the player received"));
+        scene.check("and no one else", () -> scene.assertEquals(List.of(), payloads(bystander), "payloads the bystander received"));
         scene.succeed();
     }
 

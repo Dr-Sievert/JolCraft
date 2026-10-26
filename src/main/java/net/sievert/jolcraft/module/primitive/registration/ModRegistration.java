@@ -1,7 +1,9 @@
 package net.sievert.jolcraft.module.primitive.registration;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import com.mojang.serialization.Codec;
@@ -14,6 +16,7 @@ import net.neoforged.neoforge.registries.RegistryBuilder;
 import org.jetbrains.annotations.Nullable;
 
 import net.sievert.jolcraft.stereotype.Implementation;
+import net.sievert.jolcraft.util.text.Dictionary;
 
 /** {@link Registration} over NeoForge's registry events. */
 @Implementation
@@ -53,6 +56,7 @@ public final class ModRegistration implements Registration {
 
     private final List<Custom<?>> customs = new ArrayList<>();
     private final List<Datapack<?>> datapacks = new ArrayList<>();
+    private final Set<ResourceKey<?>> keys = new HashSet<>();
     private boolean registered;
 
     @Override
@@ -87,6 +91,12 @@ public final class ModRegistration implements Registration {
     private void open(ResourceKey<?> key) {
         if (registered) {
             throw new IllegalStateException(key.identifier() + " was declared after registration was attached to the mod bus");
+        }
+        if (key.identifier().getNamespace().equals(Dictionary.MINECRAFT)) {
+            throw new IllegalArgumentException(key.identifier() + " uses the game's namespace; a registry of the mod's is named under its own");
+        }
+        if (!keys.add(key)) {
+            throw new IllegalStateException(key.identifier() + " was declared twice");
         }
     }
 }

@@ -31,7 +31,8 @@ public final class AttachmentScenes {
         scene.check("the fallback answers", () -> scene.assertEquals(0, TestAttachments.PASSING.get(stand), "fallback"));
         TestAttachments.PASSING.set(stand, 5);
         scene.check("the set value answers", () -> scene.assertEquals(5, TestAttachments.PASSING.get(stand), "after set"));
-        scene.check("an update answers and stores the change", () -> scene.assertEquals(6, TestAttachments.PASSING.update(stand, value -> value + 1), "after update"));
+        scene.check("an update answers the change", () -> scene.assertEquals(6, TestAttachments.PASSING.update(stand, held -> held + 1), "after update"));
+        scene.check("and stores it", () -> scene.assertEquals(6, TestAttachments.PASSING.get(stand), "read after update"));
         TestAttachments.PASSING.reset(stand);
         scene.check("a reset holder answers the fallback again", () -> scene.assertEquals(0, TestAttachments.PASSING.get(stand), "after reset"));
         scene.succeed();
@@ -49,6 +50,12 @@ public final class AttachmentScenes {
                 () -> scene.assertEquals(4, attachments.getCompoundOrEmpty(TestAttachments.SAVED.id().toString()).getIntOr("value", -1), "saved value"));
         scene.check("the passing value is not",
                 () -> scene.assertFalse(attachments.contains(TestAttachments.PASSING.id().toString()), "a passing value is never written"));
+        ArmorStand reader = scene.helper().spawn(EntityType.ARMOR_STAND, STAND.east());
+        TestAttachments.SAVED.get(reader);
+        TagValueOutput readerOutput = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, scene.level().registryAccess());
+        reader.saveWithoutId(readerOutput);
+        scene.check("a holder that only read the fallback carries no entry",
+                () -> scene.assertFalse(readerOutput.buildResult().getCompoundOrEmpty(AttachmentHolder.ATTACHMENTS_NBT_KEY).contains(TestAttachments.SAVED.id().toString()), "a mere read leaves no trace"));
         scene.succeed();
     }
 

@@ -1,6 +1,7 @@
 package net.sievert.jolcraft.datagen.provider;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import net.minecraft.client.data.models.BlockModelGenerators;
@@ -14,6 +15,7 @@ import net.minecraft.world.level.block.Block;
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.datagen.Handmade;
 import net.sievert.jolcraft.datagen.contribute.ModelContributor;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Every module's models through vanilla's provider, which itself fails the run for any block of the mod without a
@@ -29,17 +31,17 @@ public final class Models extends ModelProvider {
     }
 
     @Override
-    protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {
+    protected void registerModels(@NotNull BlockModelGenerators blockModels, @NotNull ItemModelGenerators itemModels) {
         contributors.forEach(contributor -> contributor.models(blockModels, itemModels));
     }
 
     @Override
-    protected Stream<? extends Holder<Block>> getKnownBlocks() {
-        return super.getKnownBlocks().filter(holder -> !Handmade.blockModel(holder.getKey().identifier()));
+    protected @NotNull Stream<? extends Holder<Block>> getKnownBlocks() {
+        return super.getKnownBlocks().filter(holder -> !Handmade.blockModel(Objects.requireNonNull(holder.getKey()).identifier()));
     }
 
     @Override
-    protected Stream<? extends Holder<Item>> getKnownItems() {
-        return super.getKnownItems().filter(holder -> !Handmade.itemModel(holder.getKey().identifier()));
+    protected @NotNull Stream<? extends Holder<Item>> getKnownItems() {
+        return super.getKnownItems().filter(holder -> !Handmade.itemModel(Objects.requireNonNull(holder.getKey()).identifier()));
     }
 }

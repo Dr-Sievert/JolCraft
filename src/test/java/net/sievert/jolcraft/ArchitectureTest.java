@@ -162,7 +162,7 @@ class ArchitectureTest {
     void rule4AModuleDependsOnlyOnThePrimitivesItsConstructorTakes() {
         Map<String, Set<String>> takenByFolder = new HashMap<>();
         for (JavaClass module : modulesAbovePrimitives()) {
-            takenByFolder.computeIfAbsent(placeOf(module), place -> new HashSet<>()).addAll(constructorPrimitives(module));
+            takenByFolder.computeIfAbsent(placeOf(module), _ -> new HashSet<>()).addAll(constructorPrimitives(module));
         }
         List<String> violations = new ArrayList<>();
         for (UnitDependency dependency : unitDependencies()) {
@@ -181,7 +181,42 @@ class ArchitectureTest {
                 "rule 4: a composite or a system may only depend on the primitives its constructor takes, and so may the rest of its folder");
     }
 
-    /** No static field holds a module, no static method outside the root class returns one, and nothing but the root depends on the root. No exception. */
+    /** The root builds every composite and system, and reaches every implementation and every content class, so nothing declared is left unwired. */
+    @Test
+    void rule5TheRootReachesEveryModuleImplementationAndContent() {
+        Set<String> reached = new HashSet<>();
+        for (JavaClass rootClass : unit(JolCraft.class.getName())) {
+            rootClass.getDirectDependenciesFromSelf().forEach(dependency -> reached.add(dependency.getTargetClass().getName()));
+        }
+        List<String> unwired = CLASSES.stream()
+                .filter(type -> type.isAnnotatedWith(Implementation.class) || type.isAnnotatedWith(Content.class)
+                        || type.isAnnotatedWith(Composite.class) || type.isAnnotatedWith(ModSystem.class))
+                .map(JavaClass::getName)
+                .filter(name -> !reached.contains(name))
+                .sorted()
+                .toList();
+        Assertions.assertEquals(List.of(), unwired, "rule 5: the root builds everything the mod declares");
+        Set<String> registered = new HashSet<>();
+        for (JavaClass rootClass : unit(JolCraft.class.getName())) {
+            rootClass.getMethodCallsFromSelf().forEach(call -> {
+                if (call.getName().equals("register")) registered.add(call.getTargetOwner().getName());
+            });
+        }
+        List<String> unregistered = CLASSES.stream()
+                .filter(type -> type.isAnnotatedWith(Implementation.class) || type.isAnnotatedWith(Content.class)
+                        || type.isAnnotatedWith(Composite.class) || type.isAnnotatedWith(ModSystem.class))
+                .filter(type -> type.getMethods().stream().anyMatch(method -> method.getName().equals("register")))
+                .map(JavaClass::getName)
+                .filter(name -> !registered.contains(name))
+                .sorted()
+                .toList();
+        Assertions.assertEquals(List.of(), unregistered, "rule 5: the root calls register on everything that registers");
+    }
+
+    /**
+     * No static field holds a module, no static method outside the root class returns one, and nothing but the root depends on the root. No
+     * exception; a compile-time constant read from the root is invisible to ArchUnit, so nothing reads one.
+     */
     @Test
     void rule5NothingReachesAModuleThroughAStaticAccessorOrALocator() {
         List<String> violations = new ArrayList<>();
@@ -311,7 +346,7 @@ class ArchitectureTest {
         for (JavaClass type : CLASSES) {
             String id = tierId(type);
             if (id == null) continue;
-            byId.computeIfAbsent(id, key -> new ArrayList<>()).add(type.getName());
+            byId.computeIfAbsent(id, _ -> new ArrayList<>()).add(type.getName());
             if (!words.contains(id)) {
                 violations.add(type.getName() + " has id \"" + id + "\", which is no Dictionary word");
             }
@@ -551,9 +586,8 @@ class ArchitectureTest {
     private static void checkEvent(JavaClass type, List<String> violations) {
         if (!type.isAssignableTo(EVENT_BASE)) violations.add(type.getName() + ": an @Event extends " + EVENT_BASE);
         String packageName = type.getPackageName();
-        boolean placed = packageName.startsWith(COMPOSITE + ".") || packageName.startsWith(SYSTEM + ".")
-                || packageName.equals(PRIMITIVE + ".event") || packageName.startsWith(PRIMITIVE + ".event.");
-        if (!placed) violations.add(type.getName() + ": an @Event sits in a composite, a system or the event primitive");
+        boolean placed = packageName.startsWith(COMPOSITE + ".") || packageName.startsWith(SYSTEM + ".");
+        if (!placed) violations.add(type.getName() + ": an @Event sits in a composite or a system");
     }
 
     private static void checkInternal(JavaClass type, List<String> violations) {
@@ -604,13 +638,13 @@ class ArchitectureTest {
     // ---------------------------------------------------------------- helpers
 
     private static Optional<JavaClasses> importDirectories(String property) {
-        String value = System.getProperty(property);
-        if (value == null || value.isBlank()) {
+        String setting = System.getProperty(property);
+        if (setting == null || setting.isBlank()) {
             return Optional.empty();
         }
-        List<Path> paths = Arrays.stream(value.split(java.io.File.pathSeparator)).map(Path::of).filter(Files::isDirectory).toList();
+        List<Path> paths = Arrays.stream(setting.split(java.io.File.pathSeparator)).map(Path::of).filter(Files::isDirectory).toList();
         if (paths.isEmpty()) {
-            throw new IllegalStateException(property + " names no existing directory: " + value);
+            throw new IllegalStateException(property + " names no existing directory: " + setting);
         }
         return Optional.of(new ClassFileImporter().importPaths(paths));
     }

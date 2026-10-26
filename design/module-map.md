@@ -70,8 +70,10 @@ handler through the primitive's client half.
 joins a server level (`EntityJoinLevelEvent`): it adds goals built with the system's own dependencies through
 their constructors, and it handles the interaction and tick events of that entity kind. The entity stays thin.
 A block entity or a block runs its own mechanics from data in its tick and announces what happened. Menus are
-opened by our code, so the server-side constructor takes the system it needs and the `MenuType` builds the
-client copy without it, as vanilla's merchant menu does. Commands, capability providers and
+opened by our code through their `MenuKey`: the system's server-side lambda builds the menu from the system's own
+state and writes the client its data, the menu holds no system, and the `MenuType` builds the client copy from
+that data, through NeoForge's `IMenuTypeExtension.create` and `openMenu(provider, extraDataWriter)`. Commands and capability providers are
+declared into the `command` and `capability` primitives while a module is built and registered once by the root;
 reload listeners are lambdas the root registers, capturing the systems directly. Anything that is really data
 (profession tables, trade tables, corruption rules) is a datapack registry or a data map, readable on both sides
 through `level.registryAccess()` and synced by the game; per-world mutable state is `SavedData` or an
@@ -80,7 +82,7 @@ attachment, so no system holds world state and nothing resets between worlds.
 ## Composition root
 
 `JolCraft`'s constructor builds every primitive, composite and system, registers each folder's `Content`,
-adds the listeners, registers the primitives, and, when `FMLEnvironment.dist` is the client, calls each
+adds the listeners, registers the primitives, and, when `FMLEnvironment.getDist()` is the client, calls each
 module's client bootstrap. No static field holds a module and no static method outside the root returns one,
 so nothing reaches a module through a locator; a module gets what it needs through its constructor.
 
@@ -106,12 +108,12 @@ one stereotype. System folders are unrestricted, but a class that carries one is
 
 | Stereotype | Rule |
 |---|---|
-| `@Implementation` | public, implements its folder's primitive, extends no game type, used only by a composition root: the mod's `JolCraft`, or the dev mods' own entry classes `JolCraftGameTests` and `JolCraftDatagen`, which are roots of their own mods |
-| `@Value` | record, enum or closed set; depends on no module |
+| `@Implementation` | public, implements its folder's primitive, extends no other class, used only by a composition root: the mod's `JolCraft`, or the dev mods' own entry classes `JolCraftGameTests` and `JolCraftDatagen`, which are roots of their own mods |
+| `@Value` | record, enum or closed set; depends on no module and holds no `@Handle` or `@Implementation` |
 | `@Handle` | interface whose every implementor is nested inside its own folder |
 | `@Contract` | open interface callers implement |
 | `@Helper` | final, private constructor, static members only |
-| `@Event` | extends NeoForge's `Event`; sits in a composite, a system or the event primitive |
+| `@Event` | extends NeoForge's `Event`; sits in a composite or a system |
 | `@Bridge` | the only class that may import an optional mod's API (JEI, Jade); behind a `ModList` guard |
 | `@Internal` | package-private, used only inside its folder: the goals a system builds, helpers |
 | `@Content` | new, mod only: the registry declarations described above |
@@ -122,7 +124,7 @@ one stereotype. System folders are unrestricted, but a class that carries one is
 A word used in an id, a key, a path or a tag is never a string literal: it is a constant in `Dictionary`
 (`util/text`), one lowercase word per constant. Longer strings are built with `ModString` (`dotted`,
 `underscored`, `slashed`, `dashed`, `spaced`, `tag`). Every `Identifier` of the mod is built from Dictionary words in one
-place per kind, as `JolCraftIds` did; every translation key likewise, so one name runs from the registry to the
+place per kind, as `Ids` does; every translation key likewise, so one name runs from the registry to the
 language file. A module's id is one Dictionary word, unique across the tiers. A primitive's or a system's id is its folder
 name; a composite sits in a primitive's folder and keeps an id of its own. The rule covers module code: test
 code, the dev mods' own plumbing (a locale code such as `en_us`, a separator) and log, assertion and exception
@@ -138,10 +140,11 @@ the top tier's annotation is `ModSystem`, and a helper over a JDK noun is `ModSt
 ## Logging
 
 A `Log` primitive, whose interface is JDK-only and whose `ModLog` implements it over SLF4J, is handed to
-every module, which tags it with itself and logs through
-it, `[TRADE] [OFFER] message`. No module takes a raw logger. Every system and composite logs at three levels:
-info for what the player or the server owner should know happened, warn or error for every problem, debug for
-the detail someone chasing a problem needs.
+every composite and system, which tags it with itself and logs through it, `[TRADE] [OFFER] message`; a
+primitive takes no `Log` (rule 1), so one that must report declares a small contract the root adapts from `Log`.
+No module takes a raw logger. A system or composite logs at three levels where it has something to say: info for
+what the player or the server owner should know happened, warn or error for every problem, debug for the detail
+someone chasing a problem needs.
 
 ## Source sets and tests
 
@@ -164,14 +167,18 @@ the content; the language contributor in datagen holds the text, every language 
 content (professions, trade tables, corruption rules) goes through the same contributor path, created first and under the mod's namespace so every other provider can
 resolve it. A contributor names its module's folder in `@Contributes` and sits in `datagen.module.<tier>.<folder>`.
 
-**Architecture test.** `ArchitectureTest` in `test`, over ArchUnit, fails `build` on a broken layer. The rules:
+**Architecture test.** `ArchitectureTest` in `test`, over ArchUnit, fails `build` on a broken layer. Rules 1 to 9 read the
+`main` source set alone; the dev mods are held to rule 10 only. The rules:
 
 1. a primitive depends on no other primitive;
 2. a primitive depends on nothing JolCraft-specific outside `util` and the primitives;
 3. a composite depends on no other composite and on no system;
 4. a composite or system depends only on the primitives its constructor takes, and so does the rest of its folder;
+   a key a caller hands in (a `SoundKey`, an `AttachmentKey`) is a value, not a dependency on its primitive;
 5. no static field holds a module and no static method outside the root returns one; nothing below the root
-   depends on the root; there is no exception;
+   depends on the root; there is no exception in the mod; the root reaches every `@Implementation`, `@Content`,
+   `@Composite` and `@ModSystem` class, so nothing declared stays unwired. The dev mods' plumbing may hold what
+   their own root built, since the adapter creates scene classes through a no-argument constructor and hands them nothing;
 6. `util` depends on the JDK alone;
 7. tier annotations sit on modules; each primitive folder declares one primitive whose id is the folder name;
    a composite sits in a primitive's folder; every id is one Dictionary word, unique across tiers; no module
@@ -193,8 +200,8 @@ the module they test, `gametest/module/<tier>/<folder>/<Name>Scenes.java`, and a
 no scene at all fails the run. A scene's shape and values are checked when it is found, not when it runs. A scene
 that adds players is `isolated`: it runs in a batch of its own, so no other scene's players, chat or packets reach it.
 
-**Players.** `scene.addPlayer(name)` returns a `TestPlayer`: a real `ServerPlayer` placed in the level through
-vanilla's mock player, with command and interaction helpers and `received()`, the packets and payloads sent to
+**Players.** `scene.addPlayer(name)` returns a `TestPlayer`: a real `ServerPlayer` placed in the level the way
+vanilla's mock player is built, with a command helper, `chat()` and `received()`, the packets and payloads sent to
 it, captured by one test-only mixin on the packet listener's `send`. A player records from the moment it exists.
 The scene owns its players and recordings: when it ends, pass or fail, it disconnects every player it created and
 drops their recordings, so no test writes a `try/finally` and nothing leaks between scenes.

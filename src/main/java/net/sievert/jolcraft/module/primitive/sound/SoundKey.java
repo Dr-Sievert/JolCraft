@@ -14,6 +14,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.registries.DeferredHolder;
+import org.jetbrains.annotations.NotNull;
 
 import net.sievert.jolcraft.stereotype.Handle;
 import net.sievert.jolcraft.util.text.Dictionary;
@@ -103,8 +104,9 @@ public sealed interface SoundKey {
     }
 
     /** The key with its shape; {@code deferred} resolves the registered event lazily. */
-    record Spec(Identifier id, Optional<Float> range, DeferredHolder<SoundEvent, SoundEvent> deferred) implements SoundKey {
+    record Spec(Identifier id, Optional<Float> range, DeferredHolder<SoundEvent, @org.jetbrains.annotations.NotNull SoundEvent> deferred) implements SoundKey {
 
+        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         Spec(Identifier id, Optional<Float> range) {
             this(id, range, DeferredHolder.create(Registries.SOUND_EVENT, id));
         }
@@ -132,7 +134,7 @@ public sealed interface SoundKey {
         }
 
         @Override
-        public String toString() {
+        public @NotNull String toString() {
             return id.toString();
         }
     }

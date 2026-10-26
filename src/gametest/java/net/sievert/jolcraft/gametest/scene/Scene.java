@@ -33,11 +33,6 @@ public @interface Scene {
     /** A required scene failing fails the run; an optional one is only reported. */
     boolean required() default true;
 
-    /** How many times the scene is run; {@link #requiredSuccesses()} of them must pass. */
-    int attempts() default 1;
-
-    int requiredSuccesses() default 1;
-
     boolean skyAccess() default false;
 
     /**

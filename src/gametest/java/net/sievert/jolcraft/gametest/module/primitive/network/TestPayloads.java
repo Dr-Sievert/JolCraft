@@ -21,9 +21,9 @@ public final class TestPayloads {
     }
 
     /** Sent to a player. */
-    public record Ping(int value) implements CustomPacketPayload {
+    public record Ping(int number) implements CustomPacketPayload {
         public static final Type<Ping> TYPE = new Type<>(Ids.of(JolCraftGameTests.MOD_ID, "ping"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, Ping> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, Ping::value, Ping::new);
+        public static final StreamCodec<RegistryFriendlyByteBuf, Ping> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, Ping::number, Ping::new);
 
         @Override
         public Type<Ping> type() {
@@ -32,9 +32,9 @@ public final class TestPayloads {
     }
 
     /** Sent by a player; the server answers it with a {@link Ping} carrying the same value. */
-    public record Pong(int value) implements CustomPacketPayload {
+    public record Pong(int number) implements CustomPacketPayload {
         public static final Type<Pong> TYPE = new Type<>(Ids.of(JolCraftGameTests.MOD_ID, "pong"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, Pong> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, Pong::value, Pong::new);
+        public static final StreamCodec<RegistryFriendlyByteBuf, Pong> CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, Pong::number, Pong::new);
 
         @Override
         public Type<Pong> type() {
@@ -46,7 +46,7 @@ public final class TestPayloads {
         network.toClient(Ping.TYPE, Ping.CODEC);
         network.toServer(Pong.TYPE, Pong.CODEC, (pong, player) -> {
             HANDLER_THREAD.set(Thread.currentThread());
-            PacketDistributor.sendToPlayer(player, new Ping(pong.value()));
+            PacketDistributor.sendToPlayer(player, new Ping(pong.number()));
         });
     }
 

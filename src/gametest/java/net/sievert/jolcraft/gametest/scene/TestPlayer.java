@@ -36,9 +36,9 @@ public final class TestPlayer {
         this.id = player.getUUID();
     }
 
-    static TestPlayer join(TestScene scene, String name) {
+    static TestPlayer join(TestScene scene, String name, UUID id) {
         ServerLevel level = scene.level();
-        CommonListenerCookie cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), name), false);
+        CommonListenerCookie cookie = CommonListenerCookie.createInitial(new GameProfile(id, name), false);
         // An anonymous subclass on purpose: NeoForge's config sync recognises a game-test player by its class not
         // being ServerPlayer itself and skips it, the way it skips vanilla's own mock player.
         ServerPlayer player = new ServerPlayer(level.getServer(), level, cookie.gameProfile(), cookie.clientInformation()) {
@@ -48,6 +48,7 @@ public final class TestPlayer {
         NetworkRegistry.configureMockConnection(connection);
         PacketRecorder.track(player.getUUID());
         level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+        player.connection.markClientLoaded(); // a real client reports itself loaded right after joining; until then the game keeps the player invulnerable and holds its movement
         // Only after placement: snapTo goes through the connection, which placement creates. The chunk source
         // then tracks the player from the arena rather than from the spawn it was placed at.
         BlockPos origin = scene.origin();
@@ -56,8 +57,10 @@ public final class TestPlayer {
         return new TestPlayer(player);
     }
 
+    /** The player as the server has it now: after a respawn the server holds a new instance under the same id. */
     public ServerPlayer player() {
-        return player;
+        ServerPlayer live = player.level().getServer().getPlayerList().getPlayer(id);
+        return live != null ? live : player;
     }
 
     public UUID id() {
@@ -70,7 +73,7 @@ public final class TestPlayer {
 
     /** Dispatches a command as this player, with the player's own permissions; the reply arrives as packets. */
     public void runCommand(String command) {
-        player.level().getServer().getCommands().performPrefixedCommand(player.createCommandSourceStack(), command);
+        player().level().getServer().getCommands().performPrefixedCommand(player().createCommandSourceStack(), command);
     }
 
     /** Every packet sent to this player since it joined or since the last {@link #clearReceived()}, in order, bundles unpacked. */
@@ -96,14 +99,14 @@ public final class TestPlayer {
         if (player.level().getServer().getPlayerList().getPlayer(id) == null) {
             return;
         }
-        player.doTick();
-        player.connection.chunkSender.onChunkBatchReceivedByClient(CHUNKS_PER_TICK);
+        player().doTick();
+        player().connection.chunkSender.onChunkBatchReceivedByClient(CHUNKS_PER_TICK);
     }
 
     void leave() {
         PacketRecorder.untrack(id);
         if (player.level().getServer().getPlayerList().getPlayer(id) != null) {
-            player.connection.disconnect(Component.literal("scene ended"));
+            player().connection.disconnect(Component.literal("scene ended"));
         }
     }
 }

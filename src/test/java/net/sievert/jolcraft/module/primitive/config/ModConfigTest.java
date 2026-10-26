@@ -1,6 +1,7 @@
 package net.sievert.jolcraft.module.primitive.config;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.List;
 import java.util.Map;
 
@@ -77,7 +78,7 @@ class ModConfigTest {
         Assertions.assertEquals(2, ((UnmodifiableConfig) common.getValues().get(List.of("trade"))).size());
         ModConfigSpec.ValueSpec spec = (ModConfigSpec.ValueSpec) common.getSpec().get(List.of("trade", "offers"));
         Assertions.assertEquals("jolcraft.configuration.trade.offers", spec.getTranslationKey());
-        Assertions.assertTrue(spec.getComment().startsWith("How many offers a dwarf shows."), "the comment leads, the game appends default and range");
+        Assertions.assertTrue(Objects.requireNonNull(spec.getComment()).startsWith("How many offers a dwarf shows."), "the comment leads, the game appends default and range");
         Assertions.assertEquals(ModConfigSpec.RestartType.NONE, spec.restartType());
         Assertions.assertEquals(2, config.declared());
     }

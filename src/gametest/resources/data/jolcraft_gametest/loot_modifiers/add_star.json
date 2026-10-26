@@ -1,0 +1,12 @@
+{
+  "type": "jolcraft_gametest:add_star",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "minecraft:chests/simple_dungeon"
+    },
+    {
+      "condition": "jolcraft_gametest:always"
+    }
+  ]
+}

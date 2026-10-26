@@ -94,25 +94,28 @@ public sealed interface ConfigKey<T> {
         return List.of(path);
     }
 
-    /** A boolean; the file must hold {@code true} or {@code false} unquoted, a quoted one is corrected to the fallback. */
+    /**
+     * A boolean, as the game's own boolean setting so the config screen can toggle it; the game also accepts the quoted
+     * spelling in the file and hands it back as text, which {@code ModConfig.get} reads as the boolean it names.
+     */
     record Flag(List<String> path, Boolean fallback, String comment) implements ConfigKey<Boolean> {
         @Override
         public ConfigValue<Boolean> defineValue(ModConfigSpec.Builder builder, String name) {
-            return builder.define(name, fallback, value -> value instanceof Boolean);
+            return builder.define(name, fallback.booleanValue());
         }
     }
 
     record Whole(List<String> path, Integer fallback, int min, int max, String comment) implements ConfigKey<Integer> {
         @Override
         public ConfigValue<Integer> defineValue(ModConfigSpec.Builder builder, String name) {
-            return builder.defineInRange(name, fallback.intValue(), min, max);
+            return builder.defineInRange(name, fallback, min, max);
         }
     }
 
     record Real(List<String> path, Double fallback, double min, double max, String comment) implements ConfigKey<Double> {
         @Override
         public ConfigValue<Double> defineValue(ModConfigSpec.Builder builder, String name) {
-            return builder.defineInRange(name, fallback.doubleValue(), min, max);
+            return builder.defineInRange(name, fallback, min, max);
         }
     }
 

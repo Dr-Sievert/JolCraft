@@ -12,6 +12,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.neoforged.neoforge.common.data.SoundDefinition;
 import net.neoforged.neoforge.common.data.SoundDefinitionsProvider;
+import org.jetbrains.annotations.NotNull;
 
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.datagen.Completeness;
@@ -50,7 +51,7 @@ public final class Sounds extends SoundDefinitionsProvider {
 
     /** A sound event's definition, given its subtitle; both ways of adding end here, so the walk sees every definition and every one is subtitled. */
     @Override
-    public void add(SoundEvent soundEvent, SoundDefinition definition) {
+    public void add(@NotNull SoundEvent soundEvent, @NotNull SoundDefinition definition) {
         Identifier id = BuiltInRegistries.SOUND_EVENT.getKey(soundEvent);
         if (!definitions.add(definition)) {
             throw new IllegalStateException(id + " was given a definition already used for another sound; every sound needs a definition of its own");

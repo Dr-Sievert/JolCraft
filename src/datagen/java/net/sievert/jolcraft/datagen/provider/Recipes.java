@@ -1,6 +1,9 @@
 package net.sievert.jolcraft.datagen.provider;
 
 import java.util.List;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import java.util.concurrent.CompletableFuture;
 
 import net.minecraft.advancements.Criterion;
@@ -20,6 +23,7 @@ import net.minecraft.world.level.ItemLike;
 
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.datagen.contribute.RecipeContributor;
+import org.jetbrains.annotations.NotNull;
 
 /** Every module's recipes through one vanilla runner; contributors write against {@link Provider}. */
 public final class Recipes extends RecipeProvider.Runner {
@@ -32,12 +36,12 @@ public final class Recipes extends RecipeProvider.Runner {
     }
 
     @Override
-    protected RecipeProvider createRecipeProvider(HolderLookup.Provider registries, RecipeOutput output) {
+    protected @NotNull RecipeProvider createRecipeProvider(HolderLookup.@NotNull Provider registries, @NotNull RecipeOutput output) {
         return new Provider(registries, output, contributors);
     }
 
     @Override
-    public String getName() {
+    public @NotNull String getName() {
         return "Recipes - " + JolCraft.MOD_ID;
     }
 
@@ -56,6 +60,11 @@ public final class Recipes extends RecipeProvider.Runner {
             contributors.forEach(contributor -> contributor.recipes(this));
         }
 
+        /** A recipe of one of the mod's own kinds, under its id; the kind's codec writes it. */
+        public void add(Identifier id, net.minecraft.world.item.crafting.Recipe<?> recipe) {
+            output().accept(ResourceKey.create(Registries.RECIPE, id), recipe, null);
+        }
+
         public RecipeOutput output() {
             return output;
         }
@@ -69,37 +78,37 @@ public final class Recipes extends RecipeProvider.Runner {
         }
 
         @Override
-        public Criterion<InventoryChangeTrigger.TriggerInstance> has(ItemLike item) {
+        public @NotNull Criterion<InventoryChangeTrigger.@NotNull TriggerInstance> has(@NotNull ItemLike item) {
             return super.has(item);
         }
 
         @Override
-        public Criterion<InventoryChangeTrigger.TriggerInstance> has(TagKey<Item> tag) {
+        public @NotNull Criterion<InventoryChangeTrigger.@NotNull TriggerInstance> has(@NotNull TagKey<Item> tag) {
             return super.has(tag);
         }
 
         @Override
-        public Ingredient tag(TagKey<Item> tag) {
+        public @NotNull Ingredient tag(@NotNull TagKey<Item> tag) {
             return super.tag(tag);
         }
 
         @Override
-        public ShapedRecipeBuilder shaped(RecipeCategory category, ItemLike item) {
+        public @NotNull ShapedRecipeBuilder shaped(@NotNull RecipeCategory category, @NotNull ItemLike item) {
             return super.shaped(category, item);
         }
 
         @Override
-        public ShapedRecipeBuilder shaped(RecipeCategory category, ItemLike item, int count) {
+        public @NotNull ShapedRecipeBuilder shaped(@NotNull RecipeCategory category, @NotNull ItemLike item, int count) {
             return super.shaped(category, item, count);
         }
 
         @Override
-        public ShapelessRecipeBuilder shapeless(RecipeCategory category, ItemLike item) {
+        public @NotNull ShapelessRecipeBuilder shapeless(@NotNull RecipeCategory category, @NotNull ItemLike item) {
             return super.shapeless(category, item);
         }
 
         @Override
-        public ShapelessRecipeBuilder shapeless(RecipeCategory category, ItemLike item, int count) {
+        public @NotNull ShapelessRecipeBuilder shapeless(@NotNull RecipeCategory category, @NotNull ItemLike item, int count) {
             return super.shapeless(category, item, count);
         }
     }
