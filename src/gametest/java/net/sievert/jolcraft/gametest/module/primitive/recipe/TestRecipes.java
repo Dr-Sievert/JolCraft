@@ -1,7 +1,10 @@
 package net.sievert.jolcraft.gametest.module.primitive.recipe;
 
+import java.util.List;
+
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.world.item.Items;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -12,13 +15,16 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.Level;
 
+import net.sievert.jolcraft.module.composite.loot.Yield;
+import net.sievert.jolcraft.gametest.module.primitive.loot.TestShapes;
+import net.sievert.jolcraft.gametest.module.composite.loot.TestYields;
 import net.sievert.jolcraft.gametest.JolCraftGameTests;
 import net.sievert.jolcraft.module.primitive.recipe.Recipe;
 import net.sievert.jolcraft.module.primitive.recipe.RecipeKey;
 import net.sievert.jolcraft.module.primitive.registration.Ids;
 import org.jetbrains.annotations.NotNull;
 
-/** The recipe kind the recipe scenes use: doubling one item; the game-test mod declares it in its root and its data pack holds one recipe of it. */
+/** The recipe kinds the recipe and yield scenes use: doubling one item, and yielding what the data names; the game-test mod declares them in its root and its data pack holds their recipes. */
 public final class TestRecipes {
 
     /** One item in, two of it out. */
@@ -46,10 +52,31 @@ public final class TestRecipes {
 
     public static final RecipeKey<SingleRecipeInput, Doubling> DOUBLING = RecipeKey.of(Ids.of(JolCraftGameTests.MOD_ID, "doubling"), Doubling.CODEC, Doubling.STREAM_CODEC);
 
+    /** A stick in, the yields the data names out; validated against the place-and-entity shape the yield scenes roll it with. */
+    public record Yielding(List<Yield> yields) implements Recipe.Custom<SingleRecipeInput> {
+        public static final MapCodec<Yielding> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                TestYields.KINDS.listCodec().validate(TestShapes.AT_A_PLACE.listValidator()).fieldOf("yields").forGetter(Yielding::yields)).apply(instance, Yielding::new));
+        public static final StreamCodec<RegistryFriendlyByteBuf, Yielding> STREAM_CODEC = StreamCodec.composite(
+                TestYields.KINDS.streamCodec().apply(ByteBufCodecs.list()), Yielding::yields, Yielding::new);
+
+        @Override
+        public RecipeKey<SingleRecipeInput, Yielding> key() {
+            return YIELDING;
+        }
+
+        @Override
+        public boolean matches(SingleRecipeInput input, Level level) {
+            return input.item().is(Items.STICK);
+        }
+    }
+
+    public static final RecipeKey<SingleRecipeInput, Yielding> YIELDING = RecipeKey.of(Ids.of(JolCraftGameTests.MOD_ID, "yielding"), Yielding.CODEC, Yielding.STREAM_CODEC);
+
     private TestRecipes() {
     }
 
     public static void declare(Recipe recipe) {
         recipe.declare(DOUBLING);
+        recipe.declare(YIELDING);
     }
 }

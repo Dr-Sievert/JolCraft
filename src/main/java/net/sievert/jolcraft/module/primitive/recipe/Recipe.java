@@ -33,6 +33,12 @@ public interface Recipe extends Module {
     void register(IEventBus modBus);
 
     /**
+     * Asks the game to send every declared kind's recipes to a player who joins or sees a reload, since the game no
+     * longer sends recipes of its own accord; the JEI bridge reads them there. The root attaches it to the game bus once.
+     */
+    void sync(IEventBus gameBus);
+
+    /**
      * What a module's recipe record implements: {@code matches} and, when the recipe yields an item,
      * {@code assemble}; the rest the game asks of a recipe is answered here, since a kind of the mod's own has no
      * recipe-book page and nothing a crafting grid could place.

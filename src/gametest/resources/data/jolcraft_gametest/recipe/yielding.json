@@ -1,0 +1,49 @@
+{
+  "type": "jolcraft_gametest:yielding",
+  "yields": [
+    {
+      "type": "jolcraft_gametest:item",
+      "pool": {
+        "rolls": 1,
+        "entries": [
+          {
+            "type": "minecraft:item",
+            "name": "minecraft:stick",
+            "functions": [
+              {
+                "function": "minecraft:set_count",
+                "count": 3
+              }
+            ]
+          }
+        ]
+      },
+      "hooks": [
+        "jolcraft_gametest:gilding"
+      ]
+    },
+    {
+      "type": "jolcraft_gametest:sound",
+      "sound": "minecraft:block.anvil.use",
+      "source": "block",
+      "volume": 0.5,
+      "pitch": 1.5
+    },
+    {
+      "type": "jolcraft_gametest:tally",
+      "number": 4
+    },
+    {
+      "type": "jolcraft_gametest:entity",
+      "entity": "minecraft:armor_stand",
+      "count": 2
+    },
+    {
+      "type": "jolcraft_gametest:effect",
+      "effect": {
+        "id": "minecraft:speed",
+        "duration": 100
+      }
+    }
+  ]
+}

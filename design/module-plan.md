@@ -19,8 +19,8 @@ static in the mod; the game-test mod's plumbing hands scenes what its root built
 | Primitive | Job | Replaces in `old/` | Datagen seam |
 |---|---|---|---|
 | `schedule` | server-thread tasks after N ticks or every N ticks, cancellable, dropped when the server stops; failures reported through a contract the root adapts from `Log` | the per-entity tick counters in events and goals, the brewing sleep handler's ticking | none |
-| `recipe` | a module's recipe types and serializers as keys, with `key.find(level, input)` and `key.all(level)` over the level's recipe access | `world/recipe/JolCraftRecipes`, the custom recipe types' registrations; not `world/recipe/base`, the outcome framework, which is the `outcome` shared system below | `RecipeContributor` (exists) |
-| `loot` | loot modifier serializers, loot condition and function types as keys, and `roll(level, table, params)` | `world/loot/JolCraftLootModifiers`, `AddItemModifier`, `AddLootTableModifier` | `LootContributor` (exists) plus a loot-modifier provider |
+| `recipe` | a module's recipe types and serializers as keys, with `key.find(level, input)` and `key.all(level)` over the level's recipe access | `world/recipe/JolCraftRecipes`, the custom recipe types' registrations; not `world/recipe/base`, whose generic pieces were built from `result.md`: context shapes in `loot`, the dispatch helper in `registration`, the `result` composite, and `ItemInput` with its `Fate`, `key.check(registries, recipe)` and `sync(gameBus)` here (built 2026-10-27, step 4) | `RecipeContributor` (exists) |
+| `loot` | loot modifier serializers, loot condition and function types as keys, `roll(level, table, params)`, and `Shape` with `context(level, shape, [random,] params)` to validate data against a loot context's keys and build the context (built 2026-10-26, step 1 of `result.md`) | `world/loot/JolCraftLootModifiers`, `AddItemModifier`, `AddLootTableModifier` | `LootContributor` (exists) plus a loot-modifier provider |
 | `advancement` | custom criterion triggers as keys with `key.fire(player, matcher)`, and the advancement datagen provider with its completeness (title and description text) | `world/entity/player/advancement/*`, `datagen/advancement/*` | new `AdvancementContributor` and `Advancements` provider |
 | `menu` | menu types as keys, `open(player, title, menu, extra data)`, and the client half that gives a menu its screen | `world/gui/JolCraftMenuTypes`, `JolCraftMenu`, the screen registrations | none |
 | `command` | a module's Brigadier command trees declared while it is built, registered once at `RegisterCommandsEvent` (`module-map.md` says so since this plan) | nothing; roadmap item 9 is new, and the old dev key's dwarf level-up is a candidate for a dev command | none |
@@ -43,6 +43,7 @@ Built from primitives only, in the folder of the primitive they extend.
 | `feedback` | `composite/language` | language, log; the sound arrives as a key the caller holds | telling a player something: a message to chat or the action bar, with a sound, in one call, on the server | the scattered `displayClientMessage` and sound pairs in handlers |
 | `cooldown` | `composite/attachment` | attachment, log | per-entity cooldowns in ticks that survive a save, kept as the game time they end at, asked as `ready(entity, key)` and `start(entity, key, ticks)`; no timer runs, the game time decides | the dwarf busy gates and the endorsement and promotion timers; the per-tick packet limiter is another thing and stays with the system that needs it |
 | `ledger` (built 2026-10-24) | `composite/stat` | stat, data, log | awarding a statistic to a player who is offline: the award waits in saved data and is granted when the player next joins | `world/data/custom/PendingStatData` |
+| `result` (built 2026-10-26, step 3 of `result.md`) | `composite/loot` | loot, registration, log | data-described yields rolled against a loot context, for any system: item pools, entities, sounds and effects as kinds in a registry declared per root, hooks by id checked at load, one `apply` answering a delivery of values the system acts on; designed in `result.md`, challenged, approved 2026-10-26 | `world/recipe/base/output/*`, the hook table |
 | `inventory` | `composite/capability` | capability | counting, taking and giving items against a holder's item handler, found through the game's capability lookups, with the overflow dropped at the holder; not built yet; the 26.1 transfer API it stands on is `ResourceHandler<ItemResource>` (indexed slots: `size`, `getResource`, `getAmountAsInt`, `getCapacityAsInt`, `isValid`, `insert(index, resource, amount, transaction)`, `extract`), every change inside a `Transaction.openRoot()` that is committed or closed, and `ResourceHandlerUtil.insertStacking`, `extractFirst` and `move` for the common moves; the handler comes from `Capabilities.Item.BLOCK`, `ENTITY` or `ITEM` lookups | `world/item/inventory/*`, the coin pickup helpers |
 
 ## Shared systems
@@ -52,7 +53,6 @@ this order; none is built yet, so nothing is forgotten.
 
 | System | Takes | Job | Replaces in `old/` |
 |---|---|---|---|
-| `outcome` | registration, loot, log | the data-driven outcome framework the bounty, trade, mortar, lapidary, hand-interaction and fermenting recipes are written in: the outcome registry with its codecs, the hooks, conditions, context parameters, inputs and validation; built before any of those features, since no one feature folder may own what the others depend on | `world/recipe/base/*` (`CustomRecipe`, `RecipeValidation`, `condition`, `context`, `input`, `output`) |
 | `integration` | log | the optional-mod bridges: a JEI plugin and a Jade plugin that are `@Bridge` classes behind a `ModList` guard, each giving a feature system one place to add its categories and tooltips | `integration/jei`, `integration/jade` |
 | `worldgen` | registration, log | the structure plumbing every structure shares: the jigsaw structure base with the terrain veto, the structure processors and rule tests, the placement modifiers, declared as content and bootstrapped in datagen | the `structure`, `processor` and `placement` folders of `world/worldgen`; a vegetation feature or biome modifier belongs to the feature system that owns the plant, as `@Content` with a `RegistryContributor` |
 | `effect` | attachment, schedule, network, log | the effect plumbing: stacking and duration rules, crowd control, the client-side effect payloads | `event/game/world/entity/effect/*`, `world/entity/effect` |
@@ -93,9 +93,9 @@ behaviours the tests had left loose; what it left is W14 to W19. A sixth (19 con
 
 The `ledger` composite was built and reviewed last, at the end of the budget: a `Ledger.Book` per module naming the statistics
 it may award, server-wide saved data for the awards of absent players, granted at their next login; one isolated
-scene joins a player under a chosen id, which `TestScene.addPlayer(name, id)` now allows. Not built, in the order
+scene joins a player under a chosen id, which `TestScene.addPlayer(name, id)` now allows. Every piece of `result.md` is built as of 2026-10-27. Not built, in the order
 they should come: the `inventory` composite (its row notes 26.1's transfer
-API; a day of its own), then the shared systems `outcome`, `integration`, `worldgen`, `effect` and `economy`, each a day's work of its own with the old tree as
+API; a day of its own), then the shared systems `integration`, `worldgen`, `effect` and `economy`, each a day's work of its own with the old tree as
 reference. Nothing is committed; the author commits.
 
 ## Dry-run notes, 2026-10-24

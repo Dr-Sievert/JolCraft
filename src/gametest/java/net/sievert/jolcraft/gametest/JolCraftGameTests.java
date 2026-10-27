@@ -8,6 +8,7 @@ import net.neoforged.neoforge.common.NeoForge;
 
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.gametest.module.composite.attachment.TestCooldowns;
+import net.sievert.jolcraft.gametest.module.composite.loot.TestYields;
 import net.sievert.jolcraft.gametest.module.composite.stat.TestLedgers;
 import net.sievert.jolcraft.gametest.module.primitive.advancement.TestTriggers;
 import net.sievert.jolcraft.gametest.module.primitive.attachment.TestAttachments;
@@ -24,6 +25,7 @@ import net.sievert.jolcraft.gametest.module.primitive.sound.TestSounds;
 import net.sievert.jolcraft.gametest.module.primitive.stat.TestStats;
 import net.sievert.jolcraft.gametest.scene.SceneRegistry;
 import net.sievert.jolcraft.module.composite.attachment.Cooldown;
+import net.sievert.jolcraft.module.composite.loot.Result;
 import net.sievert.jolcraft.module.composite.stat.Ledger;
 import net.sievert.jolcraft.module.composite.language.Feedback;
 import net.sievert.jolcraft.module.composite.schedule.Action;
@@ -38,6 +40,7 @@ import net.sievert.jolcraft.module.primitive.log.Log;
 import net.sievert.jolcraft.module.primitive.log.ModLog;
 import net.sievert.jolcraft.module.primitive.loot.Loot;
 import net.sievert.jolcraft.module.primitive.loot.ModLoot;
+import net.sievert.jolcraft.module.primitive.registration.ModRegistration;
 import net.sievert.jolcraft.module.primitive.menu.ModMenu;
 import net.sievert.jolcraft.module.primitive.network.ModNetwork;
 import net.sievert.jolcraft.module.primitive.recipe.ModRecipe;
@@ -65,6 +68,7 @@ public final class JolCraftGameTests {
     private static Feedback feedback;
     private static Cooldown cooldown;
     private static Ledger ledger;
+    private static Result result;
 
     public JolCraftGameTests(IEventBus modBus) {
         Log log = new ModLog(LogUtils.getLogger()).tagged(Dictionary.GAMETEST);
@@ -89,6 +93,12 @@ public final class JolCraftGameTests {
         TestLoot.declare(built);
         built.register(modBus);
         loot = built;
+        ModRegistration registration = new ModRegistration();
+        Result results = new Result(built, registration, log);
+        TestYields.declare(results);
+        registration.register(modBus);
+        results.register(modBus);
+        result = results;
         ModAdvancement criteria = new ModAdvancement();
         TestTriggers.declare(criteria);
         criteria.register(modBus);
@@ -99,6 +109,7 @@ public final class JolCraftGameTests {
         ModRecipe recipe = new ModRecipe();
         TestRecipes.declare(recipe);
         recipe.register(modBus);
+        recipe.sync(NeoForge.EVENT_BUS);
         ModCommand command = new ModCommand();
         TestCommands.declare(command);
         command.register(NeoForge.EVENT_BUS);
@@ -148,5 +159,9 @@ public final class JolCraftGameTests {
 
     public static Ledger ledger() {
         return ledger;
+    }
+
+    public static Result result() {
+        return result;
     }
 }

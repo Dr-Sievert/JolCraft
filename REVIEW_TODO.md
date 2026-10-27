@@ -277,3 +277,41 @@ the dungeon chest again and a second fixture gated on the missing table keeps th
 so dev runs no longer see a star in every roll; the second-review section sits in its chronological place; the
 remaining unused lambda parameters in the tests and the dev mods are `_`; the flag test, the trigger holder's count
 and CLAUDE.md's registry sentence say what is so.
+
+## 2026-10-26: step 1 of result.md, the context shapes in loot, reviewed, 8 confirmed of 13, all applied
+
+The scene asserts the dungeon table's own stacks, not the fixture's star; the javadocs say the shape bounds what
+data may read (NeoForge lets a context carry keys beyond its set, so building enforces only the required keys: a
+key the data always reads goes under required); the unreachable catch clause is gone; `toString` carries
+`@NotNull`; the loot type doc names the context job; a second `allowing` is proven to keep the first; the plan and
+the design mark the step built. Noted, not changed: a caller's null random silently becomes the level's, and a
+`Shape` equals another only by the identity of its key set, both as the game has it.
+
+## 2026-10-26: step 2 of result.md, the Dispatch helper in registration, reviewed, 2 confirmed of 5, all applied
+
+The helper reaches custom registries only, since the game's root registry holds those and not the datapack ones;
+its javadoc, its message and CLAUDE.md say so now, and the javadoc adds that the field naming the kind sits beside
+the kind's own fields. The design's proof says what the unit test covers (the game's registry and a missing one)
+and leaves the declared registry to the composite's scenes.
+
+## 2026-10-26: step 3 of result.md, the result composite, reviewed, 15 confirmed of 21, all applied
+
+Behaviour: the item kind rolls through the game's own stack splitter, so stacks are capped at the item's size and
+features the level disables are dropped, as a table roll does; the hook check is on the `YieldKinds` handle
+(`hooksValidator`, `single(kindCodec)`), so a field typed as one kind is checked at load too and a bad id never
+reaches `apply`; `declare` refuses a codec or a hook instance under two ids before the game would; `hooks()` is none
+by default; the hook registry's word is in the dictionary. Tests: the composite's own guards are the ones proven
+(another namespace, every kind of declaration after registering), the entity and effect kinds go through the data
+pack, pitch and sound are pinned, the weighted choice is checked against the seeded random, and the choice and wire
+forms run. Docs: the design's Yields row says what was built, the plan marks the step, the proof claims only what
+the unit tests do.
+
+## 2026-10-27: step 4 of result.md, the recipe values, the round trip and the sync, reviewed, 10 confirmed of 14, all applied
+
+Behaviour: `RecipeKey.check` reads back through the registries' lookups, where a mod tag is an empty set at datagen
+rather than a missing one, so a tag input survives the check (the serialization context the provider writes with
+hands the codec the raw registry, which has no mod tags); a damage fate is covered by a damageable stack, not by a
+count a tool never has; a worn-out stack breaks audibly through the game's own wear. Tests: the round trip's read
+half is pinned by a codec that refuses on the way in only; the cover rule per kind and the worn-out break are
+scenes; `TestPlayer` joins over a NeoForge connection by its cookie, as a modded client does, so the sync scene sees
+the recipes reach a joining player. Docs: the design and the plan say what was built and where the proofs are.

@@ -5,6 +5,8 @@ import java.util.EnumMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.Map;
 import java.util.Set;
 
@@ -13,7 +15,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
@@ -83,6 +87,26 @@ public final class ModLoot implements Loot {
                 .flatMap(tables -> tables.get(table))
                 .<List<ItemStack>>map(found -> found.value().getRandomItems(params))
                 .orElse(List.of());
+    }
+
+    @Override
+    public LootContext context(ServerLevel level, Shape shape, Consumer<LootParams.Builder> params) {
+        return new LootContext.Builder(paramsUnder(level, shape, params)).create(Optional.empty());
+    }
+
+    @Override
+    public LootContext context(ServerLevel level, Shape shape, RandomSource random, Consumer<LootParams.Builder> params) {
+        return new LootContext.Builder(paramsUnder(level, shape, params)).withOptionalRandomSource(random).create(Optional.empty());
+    }
+
+    private static LootParams paramsUnder(ServerLevel level, Shape shape, Consumer<LootParams.Builder> params) {
+        LootParams.Builder builder = new LootParams.Builder(level);
+        params.accept(builder);
+        try {
+            return builder.create(shape.keys());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("no context under " + shape + ": " + e.getMessage() + "; the shape says what a caller provides", e);
+        }
     }
 
     /** How many kinds are declared, for the root's log line. */

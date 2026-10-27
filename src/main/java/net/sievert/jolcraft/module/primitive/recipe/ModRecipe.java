@@ -6,7 +6,9 @@ import java.util.Map;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.RecipeBookCategory;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
 import net.sievert.jolcraft.stereotype.Implementation;
@@ -18,6 +20,7 @@ public final class ModRecipe implements Recipe {
 
     private final Map<Identifier, RecipeKey<?, ?>> declared = new LinkedHashMap<>();
     private boolean registered;
+    private boolean synced;
 
     @Override
     public void declare(RecipeKey<?, ?> key) {
@@ -45,6 +48,15 @@ public final class ModRecipe implements Recipe {
         event.register(Registries.RECIPE_TYPE, helper -> declared.values().forEach(key -> helper.register(key.id(), key.buildType())));
         event.register(Registries.RECIPE_SERIALIZER, helper -> declared.values().forEach(key -> helper.register(key.id(), key.buildSerializer())));
         event.register(Registries.RECIPE_BOOK_CATEGORY, helper -> declared.values().forEach(key -> helper.register(key.id(), new RecipeBookCategory())));
+    }
+
+    @Override
+    public void sync(IEventBus gameBus) {
+        if (synced) {
+            throw new IllegalStateException("the recipe kinds were attached to the game bus twice");
+        }
+        synced = true;
+        gameBus.addListener(OnDatapackSyncEvent.class, event -> event.sendRecipes(declared.values().stream().<RecipeType<?>>map(RecipeKey::type).toList()));
     }
 
     /** How many kinds are declared, for the root's log line. */

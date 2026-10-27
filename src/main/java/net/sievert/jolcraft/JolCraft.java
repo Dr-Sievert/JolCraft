@@ -8,6 +8,8 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 
 import net.sievert.jolcraft.module.composite.attachment.Cooldown;
+import net.sievert.jolcraft.module.composite.loot.Result;
+import net.sievert.jolcraft.module.composite.loot.YieldKinds;
 import net.sievert.jolcraft.module.composite.stat.Ledger;
 import net.sievert.jolcraft.module.composite.language.Feedback;
 import net.sievert.jolcraft.module.composite.schedule.Action;
@@ -26,6 +28,7 @@ import net.sievert.jolcraft.module.primitive.language.Language;
 import net.sievert.jolcraft.module.primitive.language.ModLanguage;
 import net.sievert.jolcraft.module.primitive.network.ModNetwork;
 import net.sievert.jolcraft.module.primitive.recipe.ModRecipe;
+import net.sievert.jolcraft.module.primitive.registration.Ids;
 import net.sievert.jolcraft.module.primitive.registration.ModRegistration;
 import net.sievert.jolcraft.module.primitive.schedule.ModSchedule;
 import net.sievert.jolcraft.module.primitive.sound.ModSound;
@@ -65,6 +68,8 @@ public final class JolCraft {
         @SuppressWarnings("unused") Feedback feedback = new Feedback(language, log);
         @SuppressWarnings("unused") Cooldown cooldown = new Cooldown(attachment, log);
         Ledger ledger = new Ledger(stat, data, log);
+        Result result = new Result(loot, registration, log);
+        result.declare(YieldKinds.of(Ids.of(MOD_ID, Dictionary.YIELD)));
 
         // Systems are built here, taking the primitives and the composites above through their constructors; each folder's content is registered.
 
@@ -72,6 +77,7 @@ public final class JolCraft {
         attachment.register(modBus);
         sound.register(modBus);
         recipe.register(modBus);
+        recipe.sync(NeoForge.EVENT_BUS);
         loot.register(modBus);
         advancement.register(modBus);
         menu.register(modBus);
@@ -80,14 +86,15 @@ public final class JolCraft {
         schedule.register(NeoForge.EVENT_BUS);
         command.register(NeoForge.EVENT_BUS);
         ledger.register(NeoForge.EVENT_BUS);
+        result.register(modBus);
         config.register(container);
         network.register(modBus, container.getModInfo().getVersion().toString());
         if (config.declared() > 0 && FMLEnvironment.getDist().isClient()) {
             ConfigScreen.register(container);
         }
         log.info("JolCraft {} loading with {} registries of its own, {} attachments, {} saved data, {} sounds, {} recipe kinds, {} loot kinds, {} criteria, {} menus,"
-                + " {} command trees, {} capability providers, {} statistics, {} settings, {} payloads and {} ledger books",
+                + " {} command trees, {} capability providers, {} statistics, {} settings, {} payloads, {} ledger books and {} yield kinds and hooks",
                 container.getModInfo().getVersion(), registration.declared(), attachment.declared(), data.declared(), sound.declared(), recipe.declared(), loot.declared(),
-                advancement.declared(), menu.declared(), command.declared(), capability.declared(), stat.declared(), config.declared(), network.declared(), ledger.declared());
+                advancement.declared(), menu.declared(), command.declared(), capability.declared(), stat.declared(), config.declared(), network.declared(), ledger.declared(), result.declared());
     }
 }

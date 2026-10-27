@@ -1,0 +1,12 @@
+{
+  "type": "jolcraft_gametest:yielding",
+  "yields": [
+    {
+      "type": "jolcraft_gametest:tally",
+      "number": 1,
+      "hooks": [
+        "jolcraft_gametest:no_such_hook"
+      ]
+    }
+  ]
+}

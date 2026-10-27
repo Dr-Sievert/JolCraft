@@ -1,6 +1,8 @@
 package net.sievert.jolcraft.datagen.provider;
 
 import java.util.List;
+import com.mojang.serialization.DataResult;
+import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -21,6 +23,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 
+import net.sievert.jolcraft.module.primitive.recipe.RecipeKey;
+import net.sievert.jolcraft.module.primitive.recipe.Recipe;
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.datagen.contribute.RecipeContributor;
 import org.jetbrains.annotations.NotNull;
@@ -62,11 +66,21 @@ public final class Recipes extends RecipeProvider.Runner {
 
         /** A recipe of one of the mod's own kinds, under its id; the kind's codec writes it. */
         public void add(Identifier id, net.minecraft.world.item.crafting.Recipe<?> recipe) {
+            if (recipe instanceof Recipe.Custom<?> custom) {
+                check(custom).getOrThrow(message -> new IllegalStateException(id + " does not survive its own codec: " + message));
+            }
             output().accept(ResourceKey.create(Registries.RECIPE, id), recipe, null);
         }
 
         public RecipeOutput output() {
             return output;
+        }
+
+        /** The recipe through its kind's codec under the registries, as at load; typed over the input the kind takes. */
+        private <I extends RecipeInput> DataResult<?> check(Recipe.Custom<I> custom) {
+            @SuppressWarnings("unchecked")
+            RecipeKey<I, Recipe.Custom<I>> key = (RecipeKey<I, Recipe.Custom<I>>) custom.key();
+            return key.check(registries(), custom);
         }
 
         public HolderLookup.Provider registries() {

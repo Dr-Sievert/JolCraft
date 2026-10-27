@@ -3,11 +3,16 @@ package net.sievert.jolcraft.module.primitive.recipe;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import com.google.gson.JsonElement;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.crafting.RecipeBookCategory;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -60,6 +65,19 @@ public sealed interface RecipeKey<I extends RecipeInput, R extends Recipe.Custom
      */
     default Optional<RecipeHolder<@NotNull R>> find(ServerLevel level, I input) {
         return level.recipeAccess().getRecipeFor(type(), input, level);
+    }
+
+    /**
+     * Writes and reads the recipe back through this kind's codec under the registries, as the data pack would at load,
+     * and answers what the codec made of it: datagen fails on an error here, naming it, instead of the first login.
+     * The write uses the registries' own serialization context, as the provider does; the read goes through their
+     * lookups, where a tag of the mod's is an empty set at datagen rather than a missing one, so a tag input survives
+     * the check and no codec check may read a tag's members.
+     */
+    default DataResult<R> check(HolderLookup.Provider registries, R recipe) {
+        RegistryOps<JsonElement> write = registries.createSerializationContext(JsonOps.INSTANCE);
+        RegistryOps<JsonElement> read = RegistryOps.create(JsonOps.INSTANCE, registries);
+        return codec().codec().encodeStart(write, recipe).flatMap(json -> codec().codec().parse(read, json));
     }
 
     /** Every recipe of this kind on the level's data pack. */

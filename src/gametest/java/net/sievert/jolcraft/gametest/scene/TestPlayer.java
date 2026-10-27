@@ -13,7 +13,9 @@ import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.neoforged.neoforge.network.connection.ConnectionType;
 import net.neoforged.neoforge.network.registration.NetworkRegistry;
 
 /**
@@ -38,7 +40,8 @@ public final class TestPlayer {
 
     static TestPlayer join(TestScene scene, String name, UUID id) {
         ServerLevel level = scene.level();
-        CommonListenerCookie cookie = CommonListenerCookie.createInitial(new GameProfile(id, name), false);
+        // A NeoForge connection, as a modded client's is: the game sends mod payloads such as requested recipes only over one.
+        CommonListenerCookie cookie = new CommonListenerCookie(new GameProfile(id, name), 0, ClientInformation.createDefault(), false, ConnectionType.NEOFORGE);
         // An anonymous subclass on purpose: NeoForge's config sync recognises a game-test player by its class not
         // being ServerPlayer itself and skips it, the way it skips vanilla's own mock player.
         ServerPlayer player = new ServerPlayer(level.getServer(), level, cookie.gameProfile(), cookie.clientInformation()) {
