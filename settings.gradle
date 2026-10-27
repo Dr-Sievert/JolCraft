@@ -4,4 +4,9 @@ pluginManagement {
     }
 }
 
+// Lets Gradle download a missing JDK. ModDevGradle runs NeoForm Runtime on Java 21 even though the mod builds on 25.
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
 rootProject.name = 'JolCraft'
