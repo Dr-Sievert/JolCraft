@@ -179,7 +179,7 @@ Found by the last review of the night and left open on purpose; each is a decisi
 - [ ] **W18.** `Language.plain` is tested only at its fallback; `ModConfig.build` only at one section depth; `whole` and `real` ranges are never tested.
 - [ ] **W19.** `ModNetwork`'s disconnected-player guard never runs in a scene.
 - [ ] **W20.** `ModConfig.get`'s quoted-boolean branch, a loaded STARTUP read, `ModLog`'s prefix and levels, and `ModNetwork`'s away-from-the-server guard have no unit test.
-- [ ] **W21.** `Ledger.grant`'s stale-statistic and failing-grant branches and multi-book loop, `TriggerKey.fire(player)` and `criterion(instance)`, `ModSchedule`'s queue removal on stop, and `PacketRecorder`'s bundle unpacking are run by no scene.
+- [ ] **W21.** `Ledger.grant`'s stale-statistic and failing-grant branches and multi-book loop, `TriggerKey.fire(player)` and `criterion(instance)`, and `PacketRecorder`'s bundle unpacking are run by no scene (`ModSchedule`'s queue removal on stop was listed here too; `ScheduleScenes` asserts it, 2026-10-27).
 - [ ] **W22.** No architecture rule keeps `LanguageKey` constants in `@Value` classes, which is all the English walk sees.
 - [ ] **W23.** The adapter's own promises (reverse `onEnd`, players disconnected at the end, a failed check failing the scene, an Error becoming a failure, `isolated` batches) are proven by no scene.
 - [ ] **W13.** A sound definition's audio file, a hand-made `.ogg` under `src/main/resources/assets/jolcraft/sounds`, is not checked to exist by `runData`.

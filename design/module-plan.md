@@ -71,12 +71,16 @@ trims), `muffhorn`, `flora` (barley and hops, the wild plants and mushrooms, ver
 planting and bonemeal rules, their vegetation features and biome modifiers, and the events its two mixins post;
 `muffhorn`, `brew`, `trade` and `bounty` reach its items), `crate`.
 
-## Status, 2026-10-24 overnight
+## Status, 2026-10-27
 
-Built, each with scenes on the game-test server, unit tests where a tick-free assertion exists (`feedback` needs a
-player and is proven by a scene alone), a datagen seam where it has one, an independent review
-and a `CLAUDE.md` line: every round-three primitive (`schedule`, `recipe`, `loot`, `advancement`, `menu`,
-`command`, `capability`, `stat`), and the composites `action`, `feedback` and `cooldown`. No system is built: an `economy`
+The generic layer is complete and committed on `main`: every primitive in the two tables above (sixteen) and every
+composite (`action`, `feedback`, `cooldown`, `ledger`, `result`, `inventory`), each with scenes on the game-test
+server, unit tests where a tick-free assertion exists (`feedback` needs a player and is proven by a scene alone;
+`log` has none), a datagen seam where it has one, an independent review and a `CLAUDE.md` line. No system is
+built; the shared systems come next, in their table's order. The history below says how the layer got here.
+
+The night of 2026-10-24 built every round-three primitive (`schedule`, `recipe`, `loot`, `advancement`, `menu`,
+`command`, `capability`, `stat`) and the composites `action`, `feedback` and `cooldown`. No system was built: an `economy`
 system with a coin, a tab and a texture was built overnight as the worked example of a system and removed the
 next morning at the author's direction, since those are feature content and no feature is migrated yet. The game-test mod declares its own keys of every kind in its root and exposes what its root
 built to the scenes through static accessors, the one exception to rule 5 that `module-map.md` states.
@@ -97,7 +101,7 @@ The `ledger` composite was built and reviewed last, at the end of the budget: a 
 it may award, server-wide saved data for the awards of absent players, granted at their next login; one isolated
 scene joins a player under a chosen id, which `TestScene.addPlayer(name, id)` now allows. Every piece of `result.md` is built as of 2026-10-27. The `inventory` composite is built as of 2026-10-27 (`inventory.md`, both steps). Not built, in the order
 they should come: the shared systems `integration`, `worldgen`, `effect` and `economy`, each a day's work of its own with the old tree as
-reference. Nothing is committed; the author commits.
+reference. Everything above is committed as of 2026-10-27; the author commits.
 
 ## Dry-run notes, 2026-10-24
 
