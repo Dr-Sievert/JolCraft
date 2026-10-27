@@ -54,6 +54,7 @@ import net.sievert.jolcraft.stereotype.Handle;
 import net.sievert.jolcraft.stereotype.Helper;
 import net.sievert.jolcraft.stereotype.Implementation;
 import net.sievert.jolcraft.stereotype.Internal;
+import net.sievert.jolcraft.stereotype.Keys;
 import net.sievert.jolcraft.stereotype.Value;
 import net.sievert.jolcraft.util.text.Dictionary;
 
@@ -96,7 +97,7 @@ class ArchitectureTest {
 
     private static final List<Class<?>> TIERS = List.of(Primitive.class, Composite.class, ModSystem.class);
     private static final List<Class<?>> STEREOTYPES = List.of(Implementation.class, Value.class, Handle.class, Contract.class,
-            Helper.class, Event.class, Bridge.class, Internal.class, Content.class, Actor.class);
+            Helper.class, Event.class, Bridge.class, Internal.class, Content.class, Actor.class, Keys.class);
 
     private static final JavaClasses CLASSES = importDirectories("jolcraft.main.classes")
             .orElseGet(() -> new ClassFileImporter().importPackages(ROOT));
@@ -479,6 +480,7 @@ class ArchitectureTest {
             if (type.isAnnotatedWith(Internal.class)) checkInternal(type, violations);
             if (type.isAnnotatedWith(Content.class)) checkContent(type, violations);
             if (type.isAnnotatedWith(Actor.class)) checkActor(type, violations);
+            if (type.isAnnotatedWith(Keys.class)) checkKeys(type, violations);
         }
         Assertions.assertEquals(List.of(), violations, "stereotype rules");
     }
@@ -615,6 +617,24 @@ class ArchitectureTest {
         for (JavaClass member : unit(type.getName())) {
             for (Dependency dependency : member.getDirectDependenciesFromSelf()) {
                 if (isModule(dependency.getTargetClass())) violations.add(type.getName() + ": a @Content depends on no module; depends on " + dependency.getTargetClass().getName());
+            }
+        }
+    }
+
+    private static void checkKeys(JavaClass type, List<String> violations) {
+        checkStaticOnly(type, "@Keys", violations);
+        if (!type.getPackageName().startsWith(SYSTEM + ".")) violations.add(type.getName() + ": a @Keys sits in a system");
+        for (JavaField field : type.getFields()) {
+            boolean handle = field.getRawType().isAnnotatedWith(Handle.class);
+            boolean constant = field.getModifiers().containsAll(Set.of(JavaModifier.PUBLIC, JavaModifier.STATIC, JavaModifier.FINAL));
+            if (!handle || !constant) violations.add(type.getName() + ": a @Keys holds only public static final handles; " + field.getName() + " is not one");
+        }
+        for (JavaClass member : unit(type.getName())) {
+            for (Dependency dependency : member.getDirectDependenciesFromSelf()) {
+                JavaClass to = dependency.getTargetClass();
+                if (isModule(to) || to.isAnnotatedWith(Implementation.class)) {
+                    violations.add(type.getName() + ": a @Keys depends on no module or implementation; depends on " + to.getName());
+                }
             }
         }
     }

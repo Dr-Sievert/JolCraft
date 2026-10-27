@@ -8,6 +8,7 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 
 import net.sievert.jolcraft.module.composite.attachment.Cooldown;
+import net.sievert.jolcraft.module.composite.capability.Inventory;
 import net.sievert.jolcraft.module.composite.loot.Result;
 import net.sievert.jolcraft.module.composite.loot.YieldKinds;
 import net.sievert.jolcraft.module.composite.stat.Ledger;
@@ -70,6 +71,7 @@ public final class JolCraft {
         Ledger ledger = new Ledger(stat, data, log);
         Result result = new Result(loot, registration, log);
         result.declare(YieldKinds.of(Ids.of(MOD_ID, Dictionary.YIELD)));
+        Inventory inventory = new Inventory(capability, log);
 
         // Systems are built here, taking the primitives and the composites above through their constructors; each folder's content is registered.
 
@@ -93,8 +95,9 @@ public final class JolCraft {
             ConfigScreen.register(container);
         }
         log.info("JolCraft {} loading with {} registries of its own, {} attachments, {} saved data, {} sounds, {} recipe kinds, {} loot kinds, {} criteria, {} menus,"
-                + " {} command trees, {} capability providers, {} statistics, {} settings, {} payloads, {} ledger books and {} yield kinds and hooks",
+                + " {} command trees, {} capability providers, {} statistics, {} settings, {} payloads, {} ledger books, {} yield kinds and hooks and {} exposed inventories",
                 container.getModInfo().getVersion(), registration.declared(), attachment.declared(), data.declared(), sound.declared(), recipe.declared(), loot.declared(),
-                advancement.declared(), menu.declared(), command.declared(), capability.declared(), stat.declared(), config.declared(), network.declared(), ledger.declared(), result.declared());
+                advancement.declared(), menu.declared(), command.declared(), capability.declared(), stat.declared(), config.declared(), network.declared(), ledger.declared(), result.declared(),
+                inventory.declared());
     }
 }

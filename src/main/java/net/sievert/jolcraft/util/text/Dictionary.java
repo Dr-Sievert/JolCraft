@@ -36,6 +36,7 @@ public final class Dictionary {
     public static final String GAMETEST = "gametest";
     public static final String HOOK = "hook";
     public static final String HOOKS = "hooks";
+    public static final String INVENTORY = "inventory";
     public static final String ITEM = "item";
     public static final String JOLCRAFT = "jolcraft";
     public static final String KEEP = "keep";

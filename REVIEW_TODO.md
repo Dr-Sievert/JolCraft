@@ -315,3 +315,69 @@ count a tool never has; a worn-out stack breaks audibly through the game's own w
 half is pinned by a codec that refuses on the way in only; the cover rule per kind and the worn-out break are
 scenes; `TestPlayer` joins over a NeoForge connection by its cookie, as a modded client does, so the sync scene sees
 the recipes reach a joining player. Docs: the design and the plan say what was built and where the proofs are.
+
+## 2026-10-27: the `@Keys` stereotype, a system's handle constants
+
+A `Recipe.Custom` record names its `RecipeKey` from `key()` and a yield host embeds `YieldKinds.codec()` as a
+constant, so a system needs static handles before any module exists; a `@Value` holds no handle, a `@Content`
+holds registers and holders only, and no static holds a module. `@Keys` is the closed set for exactly that: final,
+private constructor, public static final handles only, in a system folder, depending on no module or
+implementation; a `RecipeKey` is declared to `Recipe` by the system's constructor and the mod's one `YieldKinds` to
+`Result` by the root, which reads it from the set; the root registers once. Rule 9 checks it; the check is vacuous
+until the first system. `TestRecipes` and `TestYields` stay plumbing: the dev mods are held to rule 10 only, and
+they also hold records, hooks and kinds. Reviewed (57 agents, three lenses): 2 confirmed of 18, both wording,
+applied; the dropped ones were a static-initialisation cycle if one set held both a record's `RecipeKey` and the
+`YieldKinds` its codec embeds (nothing says they share a class), and that no rule checks a constant is declared,
+which no handle field ever had.
+
+## 2026-10-27: the inventory design (`design/inventory.md`), challenged, 7 confirmed of 25, all folded in
+
+Five readers scouted 26.1's transfer API, vanilla's inventory side, the old tree's 24 inventory operations and our
+seams (reports kept in the session's scratchpad); three reviewers then challenged the draft. Folded in: unit tests
+hold shape and guards only, since the test JVM makes no stack, and the scenes switch a `TestPlayer` to survival; a
+hand holder's give offers the hand's slot first, so a remainder lands where the hand was; `give` skips empty stacks,
+since the handler refuses an empty resource; the old order flaw is restated with the real mechanism (the wrapper
+updates the slot's stack in place at commit, so a host never keeps a captured stack across a pay or a give); the
+insert call per holder is named (`PlayerInventoryWrapper.insert` for a player, `insertStacking` elsewhere); exposing
+starts with block entities, and an entity exposure declares `ENTITY_AUTOMATION` too when it comes; `pay` verifies
+every extract before any wear, since the break sound and criterion survive a rollback. Also taken from the dropped
+findings: `Fate.apply` on a scratch stack is the one roll for both kinds, an entity holder refuses a player, the
+decision names `/give`'s drop exactly, matching's lack of backtracking is a stated choice.
+
+## 2026-10-27: step 1 of the inventory composite, reviewed, 5 confirmed of 27, all applied
+
+Built: `composite/capability/Inventory` over `capability` and `log` with its sealed `Holder` (player, hand, entity,
+block), `count`, `has`, `give` and `exposeBlockEntity`; `Dictionary.INVENTORY`; both roots build it; the game-test
+mod's bin block and three-slot container block entity, exposed in its root, with a blockstate over the barrel model;
+`TestPlayer.survival()`; six scenes and a unit test. Confirmed and applied: the plan row said "not built yet" beside
+"step 1 built"; the javadoc, the design and CLAUDE.md said every operation opens a transaction and every holder comes
+from a capability lookup, while counting is pure and a player's handler is the game's wrapper; the warn claimed the
+given stacks had lost items; the chest scene's stacking check also held under index order, so the filled slot is no
+longer the first; the first scene's item-entity box of six blocks could see a neighbouring arena's leftovers. Taken
+from the dropped findings: the overflow is dropped as a copy so the answer is a snapshot, a hand's name is lowercased
+under the root locale, the count javadoc says the predicate sees the game's shared stack, the slot packet is checked
+at the commit before any tick, and a two-stack overflow pins the split by max stack size and the block-centre drop.
+Dropped on purpose: `commit()` throwing from a root-commit callback after the state is committed skips the drops (a
+broken container's bug, not ours), `spawnAtLocation` cannot report a refused entity join (its warn path is dead for
+entities), a bin that calls `setChanged` inside a transaction (a dev double), and a sided container scene (NeoForge's
+wrapper, not ours).
+
+## 2026-10-27: step 2 of the inventory composite, matching, paying and take, reviewed, 7 confirmed of 21, all applied
+
+Built: `match(holder, inputs)` over the recipe primitive's `ItemInput`s (one resource per input in index order, less
+earlier claims, no backtracking, a `Match` of the holder and per input the resource and its available count),
+`pay(match)` in one root transaction (coverage re-checked; consumes rolled through `Fate.apply` on a scratch stack and
+extracted; damages extracting their one item; a shortfall leaving without commit and answering false; then the wear
+through `Fate.apply`, put back at its slot, elsewhere, else overflow; crafting remainders one per item consumed;
+commit; overflow dropped), `take` as match then pay; four pay scenes and a unit test. Confirmed and applied, all in
+the scenes: the creative check accepted a lost tool, since an empty stack's damage is zero; the shortfall was only the
+pre-check, so a sided furnace seen from below now proves the mid-pay rollback (the ingot extracted, the stick refused
+through the face, both back after); a consume across slots and a range were only probabilistic, so a constant five
+empties three slots and a provider that always rolls two of one to four leaves three; the hand scene could not tell
+a hand from the whole player, so the other stack now sits before the hand and a six is refused; a remainder was
+never more than one and no pay overflow ran, so two honey bottles give two glass bottles tossed at a full player and
+the furnace drops a worn pickaxe its result slot refuses; an unused local. Taken from the dropped findings: the
+design says a consume is rolled on a scratch stack and a damage once at its wear, names the holder's insert as the
+shared transaction-taking step, says what each kind claims, and says a sided block's face bounds what is read and
+put in while a count may include what the face will not give up; the plan row no longer names an `ITEM` lookup; a
+trivial unit assertion is gone; two negatives (no mixing of kinds under one input, a keep needs its item) are scenes.

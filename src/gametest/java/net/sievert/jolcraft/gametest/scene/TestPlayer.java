@@ -15,6 +15,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.world.level.GameType;
 import net.neoforged.neoforge.network.connection.ConnectionType;
 import net.neoforged.neoforge.network.registration.NetworkRegistry;
 
@@ -64,6 +65,12 @@ public final class TestPlayer {
     public ServerPlayer player() {
         ServerPlayer live = player.level().getServer().getPlayerList().getPlayer(id);
         return live != null ? live : player;
+    }
+
+    /** Switches this player to survival, since a fresh mock player is creative as vanilla's is and pays nothing; answers this player. */
+    public TestPlayer survival() {
+        player().setGameMode(GameType.SURVIVAL);
+        return this;
     }
 
     public UUID id() {

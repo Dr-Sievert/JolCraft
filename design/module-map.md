@@ -52,6 +52,13 @@ These are **declarations**, not modules, and the tier rules do not see them as m
   constructor whose public static final fields are `DeferredRegister`s and `DeferredHolder`s, plus one
   `register(IEventBus)`. It may depend on vanilla, NeoForge and its own folder's values, never on a module.
 - **Values** (`@Value`): records, enums, closed sets, codecs, payload records, attachment values.
+- **Keys** (`@Keys`): a system's handle constants, the keys a record must name before the system exists (a
+  `RecipeKey` for `Recipe.Custom.key()`, a `YieldKinds` for a yield codec). A final class with a private
+  constructor whose public static final fields are handles. A constant is declared where its kind is: a
+  `RecipeKey` to `Recipe` by the system's constructor, the mod's one `YieldKinds` to `Result` by the root, which
+  reads it from the set; the root registers once. A handle holds a lazy holder and no module, so the set is a
+  declaration, not a locator. It may depend on handles, values, helpers and the game, never on a module or an
+  implementation. A value constant (a `LanguageKey`, a `Shape`) keeps its `@Value` set.
 - **Events** (`@Event`): JolCraft's own `Event` subclasses on the NeoForge bus, the way the mod's parts talk
   to each other without holding each other: an actor or a mixin announces, a system listens. An event that
   needs an answer carries a result or a cancel flag, as NeoForge's own events do.
@@ -117,6 +124,7 @@ one stereotype. System folders are unrestricted, but a class that carries one is
 | `@Bridge` | the only class that may import an optional mod's API (JEI, Jade); behind a `ModList` guard |
 | `@Internal` | package-private, used only inside its folder: the goals a system builds, helpers |
 | `@Content` | new, mod only: the registry declarations described above |
+| `@Keys` | new, mod only: the handle constants described above; final, private constructor, public static final handles only; depends on no module or implementation; sits in a system |
 | `@Actor` | new, mod only: a public class the game creates, extending a game type; holds no module and no mutable static state; reads data and posts events |
 
 ## Names, ids and text

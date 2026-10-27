@@ -8,6 +8,7 @@ import net.neoforged.neoforge.common.NeoForge;
 
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.gametest.module.composite.attachment.TestCooldowns;
+import net.sievert.jolcraft.gametest.module.composite.capability.TestBins;
 import net.sievert.jolcraft.gametest.module.composite.loot.TestYields;
 import net.sievert.jolcraft.gametest.module.composite.stat.TestLedgers;
 import net.sievert.jolcraft.gametest.module.primitive.advancement.TestTriggers;
@@ -25,6 +26,7 @@ import net.sievert.jolcraft.gametest.module.primitive.sound.TestSounds;
 import net.sievert.jolcraft.gametest.module.primitive.stat.TestStats;
 import net.sievert.jolcraft.gametest.scene.SceneRegistry;
 import net.sievert.jolcraft.module.composite.attachment.Cooldown;
+import net.sievert.jolcraft.module.composite.capability.Inventory;
 import net.sievert.jolcraft.module.composite.loot.Result;
 import net.sievert.jolcraft.module.composite.stat.Ledger;
 import net.sievert.jolcraft.module.composite.language.Feedback;
@@ -69,6 +71,7 @@ public final class JolCraftGameTests {
     private static Cooldown cooldown;
     private static Ledger ledger;
     private static Result result;
+    private static Inventory inventory;
 
     public JolCraftGameTests(IEventBus modBus) {
         Log log = new ModLog(LogUtils.getLogger()).tagged(Dictionary.GAMETEST);
@@ -115,6 +118,10 @@ public final class JolCraftGameTests {
         command.register(NeoForge.EVENT_BUS);
         ModCapability capability = new ModCapability();
         TestCapabilities.declare(capability);
+        Inventory inventories = new Inventory(capability, log);
+        TestBins.declare(inventories);
+        TestBins.register(modBus);
+        inventory = inventories;
         capability.register(modBus);
         ModStat statistics = new ModStat();
         TestStats.declare(statistics);
@@ -163,5 +170,9 @@ public final class JolCraftGameTests {
 
     public static Result result() {
         return result;
+    }
+
+    public static Inventory inventory() {
+        return inventory;
     }
 }
