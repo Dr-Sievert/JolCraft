@@ -87,16 +87,13 @@ neoForge {
             client()
             sourceSet = sourceSets.gametest
             loadedMods = [mods."${mod_id}", mods."${mod_id}_gametest"]
-            // Minecraft's default 854x480 window is tiny on a high-resolution screen. NeoForge's loading
-            // window reads the same size and hands the window on to the game.
-            programArguments.addAll '--width', '1920', '--height', '1080'
         }
 
         client2 {
             client()
             sourceSet = sourceSets.gametest
             loadedMods = [mods."${mod_id}", mods."${mod_id}_gametest"]
-            programArguments.addAll '--username', 'Dev2', '--width', '1920', '--height', '1080'
+            programArguments.addAll '--username', 'Dev2'
             gameDirectory = file('run/client2')
         }
 
