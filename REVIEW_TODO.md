@@ -169,7 +169,7 @@ Found by the last review of the night and left open on purpose; each is a decisi
 - [ ] **W7.** `TestPlayer` joins in the test level's game mode, creative, so damage on it is inert (it is marked client-loaded on join since 2026-10-24, as a real client reports itself); a survival mode needs W8 first, since a survival player inside the arena's barrier layer suffocates, and a respawn helper comes with it.
 - [ ] **W8.** The default scene arena is the game's empty structure, a sealed barrier box; scenes spawn inside its barrier layer and get away with it; a template with room to move, or arena coordinates in `TestScene`, is wanted.
 - [x] **W9.** `addPlayer` refuses a scene that is not isolated (2026-10-24).
-- [ ] **W10.** The `@Actor` rule's whitelist of allowed static types will reject the constants every block, entity and menu declares; decide the rule by shape before the first actor.
+- [x] **W10.** Decided with the first actors (2026-10-28): `checkActor` skips javac's synthetic fields and member classes and allows state properties and voxel shapes as static finals beside ids, keys, holders and codecs.
 - [ ] **W11.** Several architecture rules have never selected a class; a fixture package of deliberate violations would prove each can fail.
 - [x] **W12.** `LootModifiers.registries()` hands contributors the lookup (2026-10-24).
 - [ ] **W14.** `SceneRegistry` checks that scenes were found, not that the game ran them: a run where `RegisterGameTestsEvent` never reached it would pass with nothing executed; a `ServerStartingEvent` check against the test-instance registry would close it.

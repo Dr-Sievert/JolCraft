@@ -10,6 +10,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.sievert.jolcraft.module.composite.attachment.Cooldown;
 import net.sievert.jolcraft.module.composite.capability.Inventory;
 import net.sievert.jolcraft.module.composite.loot.Result;
+import net.sievert.jolcraft.module.composite.menu.Station;
 import net.sievert.jolcraft.module.composite.loot.YieldKinds;
 import net.sievert.jolcraft.module.composite.stat.Ledger;
 import net.sievert.jolcraft.module.composite.language.Feedback;
@@ -72,6 +73,7 @@ public final class JolCraft {
         Result result = new Result(loot, registration, log);
         result.declare(YieldKinds.of(Ids.of(MOD_ID, Dictionary.YIELD)));
         Inventory inventory = new Inventory(capability, log);
+        Station station = new Station(menu, log);
 
         // Systems are built here, taking the primitives and the composites above through their constructors; each folder's content is registered.
 
@@ -95,9 +97,9 @@ public final class JolCraft {
             ConfigScreen.register(container);
         }
         log.info("JolCraft {} loading with {} registries of its own, {} attachments, {} saved data, {} sounds, {} recipe kinds, {} loot kinds, {} criteria, {} menus,"
-                + " {} command trees, {} capability providers, {} statistics, {} settings, {} payloads, {} ledger books, {} yield kinds and hooks and {} exposed inventories",
+                + " {} command trees, {} capability providers, {} statistics, {} settings, {} payloads, {} ledger books, {} yield kinds and hooks, {} exposed inventories and {} stations",
                 container.getModInfo().getVersion(), registration.declared(), attachment.declared(), data.declared(), sound.declared(), recipe.declared(), loot.declared(),
                 advancement.declared(), menu.declared(), command.declared(), capability.declared(), stat.declared(), config.declared(), network.declared(), ledger.declared(), result.declared(),
-                inventory.declared());
+                inventory.declared(), station.declared());
     }
 }

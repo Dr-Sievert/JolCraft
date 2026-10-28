@@ -89,7 +89,8 @@ class ArchitectureTest {
     private static final List<String> OPTIONAL_MOD_PACKAGES = List.of("mezz.jei..", "snownee.jade..");
     private static final List<String> GAME_PREFIXES = List.of("net.minecraft.", "net.neoforged.");
     private static final List<String> IMMUTABLE_STATIC_PREFIXES = List.of("net.minecraft.resources.", "net.minecraft.tags.",
-            "net.neoforged.neoforge.registries.", "net.minecraft.core.Holder", "com.mojang.serialization.");
+            "net.neoforged.neoforge.registries.", "net.minecraft.core.Holder", "com.mojang.serialization.",
+            "net.minecraft.world.level.block.state.properties.", "net.minecraft.world.phys.shapes.");
     private static final String EVENT_BASE = "net.neoforged.bus.api.Event";
     private static final String DEFERRED_REGISTER = "net.neoforged.neoforge.registries.DeferredRegister";
     private static final String DEFERRED_HOLDER = "net.neoforged.neoforge.registries.DeferredHolder";
@@ -645,7 +646,13 @@ class ArchitectureTest {
             violations.add(type.getName() + ": an @Actor extends a game type");
         }
         for (JavaClass member : unit(type.getName())) {
+            if (member.getModifiers().contains(JavaModifier.SYNTHETIC)) {
+                continue;
+            }
             for (JavaField field : member.getFields()) {
+                if (field.getModifiers().contains(JavaModifier.SYNTHETIC)) {
+                    continue;
+                }
                 if (involvesModule(field.getType())) violations.add(type.getName() + ": an @Actor holds no module; " + field.getFullName() + " does");
                 if (field.getModifiers().contains(JavaModifier.STATIC)) {
                     boolean immutable = field.getModifiers().contains(JavaModifier.FINAL) && isImmutableStaticType(field.getRawType());
@@ -791,7 +798,7 @@ class ArchitectureTest {
         return packageName.startsWith(ROOT + ".") && (packageName.endsWith(".client") || packageName.contains(".client."));
     }
 
-    /** What a static final field of an actor may hold: a primitive, a string, a record, an enum, or an id, key, holder or codec type. */
+    /** What a static final field of an actor may hold: a primitive, a string, a record, an enum, or an id, key, holder, codec, block state property or voxel shape type. */
     private static boolean isImmutableStaticType(JavaClass type) {
         return type.isPrimitive() || type.getName().equals(String.class.getName()) || type.isRecord() || type.isEnum()
                 || IMMUTABLE_STATIC_PREFIXES.stream().anyMatch(prefix -> type.getName().startsWith(prefix));

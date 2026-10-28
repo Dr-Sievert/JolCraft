@@ -47,6 +47,7 @@ Built from primitives only, in the folder of the primitive they extend.
 | `ledger` (built 2026-10-24) | `composite/stat` | stat, data, log | awarding a statistic to a player who is offline: the award waits in saved data and is granted when the player next joins | `world/data/custom/PendingStatData` |
 | `result` (built 2026-10-26, step 3 of `result.md`) | `composite/loot` | loot, registration, log | data-described yields rolled against a loot context, for any system: item pools, entities, sounds and effects as kinds in a registry declared per root, hooks by id checked at load, one `apply` answering a delivery of values the system acts on; designed in `result.md`, challenged, approved 2026-10-26 | `world/recipe/base/output/*`, the hook table |
 | `inventory` | `composite/capability` | capability | counting, taking and giving items against a holder's item handler, found through the game's capability lookups, with the overflow dropped at the holder; the 26.1 transfer API it stands on is `ResourceHandler<ItemResource>` (indexed slots: `size`, `getResource`, `getAmountAsInt`, `getCapacityAsInt`, `isValid`, `insert(index, resource, amount, transaction)`, `extract`), every change inside a `Transaction.openRoot()` that is committed or closed, and `ResourceHandlerUtil.insertStacking`, `extractFirst` and `move` for the common moves; the handler comes from `Capabilities.Item.BLOCK` or `ENTITY` lookups, an `ITEM` holder coming with its first consumer; designed in `inventory.md` (2026-10-27, challenged by three reviewers): holders per call, `count`, `match` and `pay` over `ItemInput`, `give` with overflow dropped at the holder, a block entity exposed through `capability`, in two steps, both built 2026-10-27 | `world/item/inventory/*`, the coin pickup helpers |
+| `station` (step 1 built 2026-10-28, step 2 (client) open) | `composite/menu` | menu, log | the container stations: a kind with a layout of role-typed cells, a block entity over the game's storage base, a block, a menu with one role-driven quick-move, a slot with the result bookkeeping, and `Button` and `Changed` events for the owning system; `Tick` and `Sync` serve any block entity; designed in `station.md` | `world/gui/menu/JolCraftMenu`, `gui/slot/*`, `gui/client/screen/JolCraftScreen`, the two base interfaces |
 
 ## Shared systems
 
@@ -99,7 +100,7 @@ behaviours the tests had left loose; what it left is W14 to W19. A sixth (19 con
 
 The `ledger` composite was built and reviewed last, at the end of the budget: a `Ledger.Book` per module naming the statistics
 it may award, server-wide saved data for the awards of absent players, granted at their next login; one isolated
-scene joins a player under a chosen id, which `TestScene.addPlayer(name, id)` now allows. Every piece of `result.md` is built as of 2026-10-27. The `inventory` composite is built as of 2026-10-27 (`inventory.md`, both steps). Not built, in the order
+scene joins a player under a chosen id, which `TestScene.addPlayer(name, id)` now allows. Every piece of `result.md` is built as of 2026-10-27. The `inventory` composite is built as of 2026-10-27 (`inventory.md`, both steps). The `station` composite is built as of 2026-10-28 in its first step, the server side (`station.md`); the screen and button are the second step. Not built, in the order
 they should come: the shared systems `integration`, `worldgen`, `effect` and `economy`, each a day's work of its own with the old tree as
 reference. Everything above is committed as of 2026-10-27; the author commits.
 
@@ -125,8 +126,8 @@ modules at call level. What it settled, for whoever builds the first feature:
   that survives a save.
 - `SoundKey.play(entity, …)` is positional; a sound that follows a moving entity (the game's entity-bound sound
   packet) is an overload to add with its first consumer.
-- The menu, screen, slot and block-entity bases the strongbox, lapidary and mortar share are decided when the
-  first of them is built: a shared `gui` system or a composite over `menu`.
+- The menu, slot and block-entity bases the strongbox, lapidary and mortar share are the `station` composite
+  over `menu` (`design/station.md`).
 - The game blocks the use of an item under `ItemCooldowns` itself, so no "not ready" line can be shown for it; a
   feature that wants the line uses `Cooldown` and checks before the use.
 - A registered payload has no size cap (the game's 32767-byte fallback applies only to unregistered ones), so a

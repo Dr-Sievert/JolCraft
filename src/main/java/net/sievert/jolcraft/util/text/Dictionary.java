@@ -59,6 +59,7 @@ public final class Dictionary {
     public static final String SOUND = "sound";
     public static final String SOURCE = "source";
     public static final String STAT = "stat";
+    public static final String STATION = "station";
     public static final String SUBTITLES = "subtitles";
     public static final String TITLE = "title";
     public static final String TYPE = "type";
