@@ -100,4 +100,28 @@ class StationLayoutTest {
         Assertions.assertThrows(IllegalArgumentException.class, () -> StationLayout.of(2).input(2, 1).check());
         Assertions.assertThrows(IllegalArgumentException.class, () -> StationLayout.of(3).check());
     }
+
+    @Test
+    void aFrameForAnItemIsInsideThePanelAndOverlapsNoCell() {
+        StationLayout layout = StationLayout.of(4).input(2, 2);
+        layout.checkFrame("button", 100, 20);
+        layout.checkFrame("button", 1, 40);
+        layout.checkFrame("button", 159, 47);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> layout.checkFrame("button", 0, 20), "frame left of the panel");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> layout.checkFrame("button", 100, 0), "frame above the panel");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> layout.checkFrame("button", 160, 20), "frame right of the panel");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> layout.checkFrame("button", 100, 48), "frame below the panel");
+        IllegalArgumentException refused = Assertions.assertThrows(IllegalArgumentException.class, () -> layout.checkFrame("button", 32, 20));
+        Assertions.assertTrue(refused.getMessage().contains("button") && refused.getMessage().contains("overlaps cell 0"), refused.getMessage());
+    }
+
+    @Test
+    void aFrameTouchingACellWithoutOverlappingIsAccepted() {
+        StationLayout layout = StationLayout.of(5).input(5, 3);
+        layout.checkFrame("right", 64 + 18, 32);
+        layout.checkFrame("left", 64 - 18, 32);
+        layout.checkFrame("below", 64, 32 + 18);
+        layout.checkFrame("above", 64, 32 - 18);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> layout.checkFrame("one tile along", 64 + StationLayout.TILE, 32));
+    }
 }

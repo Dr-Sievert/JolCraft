@@ -120,18 +120,44 @@ public record StationLayout(int height, List<Cell> cells) {
         }
         for (int index = 0; index < cells.size(); index++) {
             Cell cell = cells.get(index);
-            if (cell.x() - 1 < 0 || cell.x() + FRAME - 1 > WIDTH || cell.y() - 1 < 0 || cell.y() + FRAME - 1 > panelHeight()) {
+            if (!inside(cell.x(), cell.y())) {
                 throw new IllegalArgumentException("cell " + index + " at " + cell.x() + ", " + cell.y() + " has its frame outside the panel of "
                         + WIDTH + " by " + panelHeight() + " pixels");
             }
             for (int other = 0; other < index; other++) {
                 Cell before = cells.get(other);
-                if (Math.abs(cell.x() - before.x()) < FRAME && Math.abs(cell.y() - before.y()) < FRAME) {
+                if (overlap(cell.x(), cell.y(), before.x(), before.y())) {
                     throw new IllegalArgumentException("cells " + other + " and " + index + " overlap");
                 }
             }
         }
         runs();
+    }
+
+    /**
+     * Refuses an 18 by 18 frame around an item at the pixel {@code x}, {@code y} of the panel, such as a button's, unless it
+     * lies inside the panel and overlaps no cell's frame, naming {@code what} and the fault. A frame that only touches a
+     * cell's is fine.
+     */
+    public void checkFrame(String what, int x, int y) {
+        if (!inside(x, y)) {
+            throw new IllegalArgumentException(what + " at " + x + ", " + y + " has its frame outside the panel of "
+                    + WIDTH + " by " + panelHeight() + " pixels");
+        }
+        for (int index = 0; index < cells.size(); index++) {
+            Cell cell = cells.get(index);
+            if (overlap(x, y, cell.x(), cell.y())) {
+                throw new IllegalArgumentException(what + " at " + x + ", " + y + " overlaps cell " + index);
+            }
+        }
+    }
+
+    private boolean inside(int x, int y) {
+        return x - 1 >= 0 && x + FRAME - 1 <= WIDTH && y - 1 >= 0 && y + FRAME - 1 <= panelHeight();
+    }
+
+    private static boolean overlap(int x, int y, int otherX, int otherY) {
+        return Math.abs(x - otherX) < FRAME && Math.abs(y - otherY) < FRAME;
     }
 
     /**

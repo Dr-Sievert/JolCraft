@@ -381,3 +381,17 @@ design says a consume is rolled on a scratch stack and a damage once at its wear
 shared transaction-taking step, says what each kind claims, and says a sided block's face bounds what is read and
 put in while a count may include what the face will not give up; the plan row no longer names an `ITEM` lookup; a
 trivial unit assertion is gone; two negatives (no mixing of kinds under one input, a keep needs its item) are scenes.
+
+## 2026-11-09: step 2 of station.md, the screen and button, reviewed, 2 confirmed of 3, all applied
+
+Step 2 gave the station composite its client side: `StationScreen` draws the panel and a well for every station slot
+from the game's own art (the `container/slot` wells and the top of `generic_54` with row 16 stretched) unless the
+kind names its own sprites, with `progress` and a `button` widget that sends the inventory button click for the
+server to decide, and the dev mod got a bench screen, its sprites and the stations' titles in English. Confirmed and
+applied, both in the docs: the design table's Screen row still described the draft (flat greys, a button in tiles from
+the layout's `tile` helper) and now says the game's art and a button in panel pixels refused through
+`StationLayout.checkFrame`; the `gametest` row of CLAUDE.md, copied byte for byte to AGENTS.md, now names the test
+stations' client assets beside the data pack and the bin's blockstate. Later the same day the author had the dev mod's
+bench screen, its client bootstrap, its sprites and the titles' English taken out again, and the `gametest` row's
+mention of them with them: no test assets until migrated features bring real ones, and the screen is first drawn by
+the first feature that has a station.

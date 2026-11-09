@@ -5,6 +5,7 @@ screens, the two base interfaces they shared, and vanilla 26.1.2's container, me
 NeoForge 26.1.2.122's patches; challenged by three reviewers (rules, fidelity to the old hosts, 26.1
 feasibility; 15 findings of 34 confirmed and folded in, see the end). The shared gui module that
 `module-plan.md` left open, decided here as the `station` composite over `menu`. Step 1 (server side) built 2026-10-28.
+Step 2 (screen and button) built 2026-11-09.
 
 ## What the old tree did
 
@@ -97,7 +98,7 @@ the dev mod's bin does today.
 | **Slot.** `StationSlot extends Slot`, built from a cell: `mayPlace` is the cell's rule, the hint is set as the slot's background sprite. For an `OUTPUT` cell it keeps vanilla's result bookkeeping (`remove`, `onQuickCraft`, `onSwapCraft`, the count), and on take fires `stack.onCraftedBy(player, count)` and `EventHooks.firePlayerCraftingEvent(player, stack, container)` with the station as the container, so a bench result counts in the crafted statistic and NeoForge's crafting event; the `recipe_crafted` criterion is a feature's own `triggerRecipeCrafted` from its listener. It is not a fake slot, its items are real. No change hooks: the block entity's `contentsChanged` is the one trigger. |
 | **Events.** `StationEvent`, an `@Event` with `Button(player, station, id)` carrying a handled flag and `Changed(station)`, both posted on the game bus by the block entity, server only. A feature system listens, reads `event.station().kind()` to know its own, and does there what needs a module. |
 | **Tick and Sync.** `Tick`, a `@Contract` with `tickServer(ServerLevel level)` for any block entity that ages, brews or polls, and `Tick.ticker(actual, expected)` the server-only ticker a block's `getTicker` answers, null on the client; `Sync`, a `@Helper` with `send(blockEntity)`, `setChanged` then `sendBlockUpdated` with `UPDATE_CLIENTS` on a server level. Both serve a plain block entity as well as a station: the hearth, barrel and cauldron, which have no items and no menu, use these two and nothing else of this composite, and a tick that must reach a module posts its feature's own event. No client tick: a lid animation is a feature's own `getTicker`. |
-| **Screen.** `client/StationScreen<M extends StationMenu> extends AbstractContainerScreen<M>`: sized `176` by `panelHeight + 96` through the five-argument constructor, the inventory label at `panelHeight + 3`; `extractBackground` draws, after `super`, the panel and a well for every station slot read from the menu, and the vanilla strip from `generic_54.png` at `v = 126`; the panel and the wells are the kind's `art` sprites when it names them, else flat fills in the vanilla GUI greys, so the composite ships no texture; labels in opaque colours. Helpers for subclasses: `progress(sprite, x, y, width, height, fraction)`, the furnace's partial sprite blit, and `button(tileX, tileY, icon, id, active)`, a `StationButton` widget (a `Button` subclass drawing the vanilla button sprite under an item, greyed through the sprite when inactive since items take no tint) that sends `handleInventoryButtonClick(containerId, id)` and lets the server decide; both from the same `tile` helper as the layout, in free cells, since widgets draw under slots. The theme layer, the tool ghost tinting, the theme hooks and the per-pixel progress renderer are not carried: the empty-slot hint is the cell's sprite, the look is the feature's art, which arrives with the first feature. |
+| **Screen.** `client/StationScreen<M extends StationMenu> extends AbstractContainerScreen<M>`: sized `176` by `panelHeight + 96` through the five-argument constructor, the inventory label at `panelHeight + 3`; `extractBackground` draws, after `super`, the panel and a well for every station slot read from the menu, and the vanilla strip from `generic_54.png` at `v = 126`; the panel and the wells are the kind's `art` sprites when it names them, else the game's own art (the `container/slot` wells and the top of `generic_54` with row 16 stretched), so the composite ships no texture; labels in opaque colours. Helpers for subclasses: `progress(sprite, x, y, width, height, fraction)`, the furnace's partial sprite blit, and `button(x, y, icon, id, active)` in panel pixels, refused through `StationLayout.checkFrame`, a `StationButton` widget (a `Button` subclass drawing the vanilla button sprite under an item, greyed through the sprite when inactive since items take no tint) that sends `handleInventoryButtonClick(containerId, id)` and lets the server decide; in free cells, since widgets draw under slots. The theme layer, the tool ghost tinting, the theme hooks and the per-pixel progress renderer are not carried: the empty-slot hint is the cell's sprite, the look is the feature's art, which arrives with the first feature. |
 
 What stays with the features: the recipe lookup and the progress loop a tick or a button drives, in the block
 entity when it needs no module; giving what `deliver` could not place through `inventory.give`, paying from the
@@ -143,9 +144,8 @@ the output, a hopper below extracting the output only, the exposed capability sh
 and taking from any cell with no side; a save and load round trip keeping the items and dropping a removed one,
 `onLoad` refreshing so a menu opened after the reload shows the cached state; `sync` sending the block entity
 data packet with the cells to a tracking player and never the lock code, the crate sending none; the ticker
-advancing the counter every server tick; the comparator reading the fill. The screen has no headless proof: the
-author checks it in `runClient` with the dev stations, the first screen of the new tree, their sprites under
-`src/gametest/resources`.
+advancing the counter every server tick; the comparator reading the fill. The screen has no headless proof: it is
+checked in `runClient` with the first migrated feature that has a station, with that feature's own screen and art.
 
 ## Where things go, and the order
 
@@ -155,8 +155,7 @@ author checks it in `runClient` with the dev stations, the first screen of the n
 actors: `checkActor` skips javac's synthetic members and allows, by shape, the game's immutable constant types
 a block or block entity declares (state properties, voxel shapes, holders, codecs, identifiers). The dev mod gets
 `gametest/module/composite/menu/TestStations` (two blocks, two block entities, keys, declared and exposed by its
-root, a `Button` listener in its root, screens registered by its client bootstrap), `StationScenes`, blockstates
-and sprites in `src/gametest/resources`. Two steps, one at a time: the composite, kind, layout, block entity,
+root, a `Button` listener in its root), `StationScenes` and blockstates in `src/gametest/resources`. Two steps, one at a time: the composite, kind, layout, block entity,
 block, menu, slot, events, tick and sync with their tests and scenes, and the W10 decision; then the screen, the
 button and the progress helper, checked in the client. `module-plan.md` gets the `station` row when the first
 step is built. A `CLAUDE.md` line with each step, mirrored into `AGENTS.md`.
@@ -174,7 +173,7 @@ change; slot hooks are gone. Data is per viewer and read-only on the server. The
 `player.openMenu(blockEntity)`, the block entity being the game's provider, so `MenuKey.open` is not on this path
 and the client copy reads no position. Sync carries only what a kind lists, items on request, the lock never.
 The result slot fires the crafting event with the station as its container. Buttons are real widgets. The
-composite ships no texture: art is the feature's, the dev mod's sprites stay in its own resources.
+composite ships no texture: art is the feature's.
 
 ## Decided 2026-10-28
 
@@ -193,3 +192,37 @@ with the first actors; the composite ships no texture, by the rule that textures
 gained the two-viewer, reload, property, crate, no-drop and event-count scenes. Refuted and kept as designed:
 vanilla's spectator path, real widgets for buttons, the consumer's own exposure call, the missing-screen warning
 the menu primitive already documents.
+
+## Decided 2026-11-09
+
+Built as step 2: `StationScreen`, `StationButton` and the progress helper. The build departed from the draft in these
+places.
+
+The default art is the game's own, not flat fills. Without `art`, the wells are `minecraft:container/slot` and the panel
+is the top 17 rows of `generic_54.png` (the border and the title band above the chest's first well) with one clean row of
+the band, row 16, stretched down to the panel's bottom. Row 16 is the same, pixel for pixel, as rows 15, 125 and 126 of
+the texture, the first rows of the player strip, so the stretched panel joins the strip without a seam; the screen reads
+the texture and the sprite by id like any vanilla screen. The reason: flat fills in the vanilla greys would leave the
+panel unstyled above a styled strip and wells for a resource pack that restyles the GUI, and this way a station restyles
+with the rest of it. The composite still ships no texture.
+
+Positions are panel pixels, not tiles. An 18 pixel frame one 16 pixel tile from a cell overlaps it by two pixels, so a
+button beside a cell sits off the tile grid, and `button(x, y, icon, id, active)` and `progress` take pixels; a screen
+that wants the grid computes its pixels with `StationLayout.tile`. This replaces the draft's `button(tileX, tileY, ...)`
+and its note that both were from the same `tile` helper.
+
+The placement test lives in the layout, so the rule is written once: `StationLayout.checkFrame(what, x, y)` refuses a
+frame around an item at the pixel position unless it lies inside the panel and overlaps no cell's frame (touching is
+fine), with `check()` using the same two predicates for the cells. `button` calls it with the kind and the button id, so
+the refusal names the kind and the position; widgets draw under slots, which is why overlap is refused.
+
+`StationScreen` is concrete and open like `StationMenu`; `StationButton` is an `@Actor` with a protected constructor,
+built through `button`, copies its icon stack once, narrates the icon's hover name and never draws it, and sends
+`handleInventoryButtonClick` without changing anything on the client. An inactive button is greyed by the disabled
+sprite alone.
+
+No proof comes with this step. A dev bench screen with sprites of its own, the dev mod's client bootstrap for it and a
+hand-made English file for the stations' titles were built and taken out again the same day, at the author's direction:
+no test assets. The screen is first drawn, and checked in `runClient`, by the first migrated feature that has a
+station, with its real art. Until then the dev stations have no screen, so a dev client that opens one drops the menu
+with a line in its log, as the menu primitive documents.
