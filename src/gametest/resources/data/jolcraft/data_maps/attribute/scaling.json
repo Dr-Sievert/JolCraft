@@ -1,0 +1,7 @@
+{
+  "values": {
+    "minecraft:oxygen_bonus": {"effects": ["minecraft:dolphins_grace"], "direction": "lengthen"},
+    "minecraft:movement_efficiency": {"effects": ["minecraft:hero_of_the_village"], "direction": "shorten"},
+    "minecraft:water_movement_efficiency": {"effects": ["minecraft:luck"], "direction": "shorten"}
+  }
+}

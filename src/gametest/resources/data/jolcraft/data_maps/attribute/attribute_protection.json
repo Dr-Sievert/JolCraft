@@ -1,0 +1,5 @@
+{
+  "values": {
+    "minecraft:explosion_knockback_resistance": {"blocks": ["minecraft:conduit_power"]}
+  }
+}

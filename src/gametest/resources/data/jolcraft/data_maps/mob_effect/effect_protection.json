@@ -1,0 +1,6 @@
+{
+  "values": {
+    "minecraft:luck": {"blocks": ["minecraft:unluck"], "cleanse": true},
+    "minecraft:slow_falling": {"blocks": ["minecraft:glowing"]}
+  }
+}

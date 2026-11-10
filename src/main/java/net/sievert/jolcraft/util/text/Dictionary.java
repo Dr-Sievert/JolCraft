@@ -12,15 +12,20 @@ public final class Dictionary {
     public static final String ADVANCEMENT = "advancement";
     public static final String ADVANCEMENTS = "advancements";
     public static final String AMOUNT = "amount";
+    public static final String AMPLIFIER = "amplifier";
     public static final String ATTACHMENT = "attachment";
+    public static final String ATTRIBUTE = "attribute";
     public static final String AWARDS = "awards";
     public static final String BLOCK = "block";
+    public static final String BLOCKS = "blocks";
     public static final String BOOK = "book";
     /** The namespace of the tags mods share. */
     public static final String C = "c";
     public static final String CAPABILITY = "capability";
+    public static final String CATEGORY = "category";
     public static final String CAVE = "cave";
     public static final String CHANCE = "chance";
+    public static final String CLEANSE = "cleanse";
     public static final String COBWEB = "cobweb";
     public static final String COMMAND = "command";
     public static final String CONFIG = "config";
@@ -33,7 +38,9 @@ public final class Dictionary {
     public static final String DATAGEN = "datagen";
     public static final String DEFAULT = "default";
     public static final String DESCRIPTION = "description";
+    public static final String DIRECTION = "direction";
     public static final String EFFECT = "effect";
+    public static final String EFFECTS = "effects";
     public static final String EMPTY = "empty";
     public static final String ENTITY = "entity";
     public static final String FATE = "fate";
@@ -53,6 +60,7 @@ public final class Dictionary {
     public static final String KIND = "kind";
     public static final String LANGUAGE = "language";
     public static final String LEDGER = "ledger";
+    public static final String LENGTHEN = "lengthen";
     public static final String LOG = "log";
     public static final String LOOT = "loot";
     public static final String MAX = "max";
@@ -64,13 +72,17 @@ public final class Dictionary {
     public static final String PLAYER = "player";
     public static final String POOL = "pool";
     public static final String PREDICATE = "predicate";
+    public static final String PROTECTION = "protection";
     public static final String RANDOM = "random";
     public static final String RECIPE = "recipe";
     public static final String REGISTRATION = "registration";
     public static final String RESULT = "result";
+    public static final String SCALING = "scaling";
     public static final String SCHEDULE = "schedule";
+    public static final String SHORTEN = "shorten";
     public static final String SOUND = "sound";
     public static final String SOURCE = "source";
+    public static final String STACKING = "stacking";
     public static final String STAT = "stat";
     public static final String STATION = "station";
     public static final String SUBTITLES = "subtitles";

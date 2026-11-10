@@ -108,6 +108,10 @@ Mixins are outside the tiers, in `mixin`, listed in `jolcraft.mixins.json`, and 
 holds no reference to anything of ours: it posts an event, exactly as NeoForge's own patches do, and a system
 listens. Mixins stay few; a NeoForge event is preferred wherever one exists.
 
+A game field a system must read or edit in place is opened by the access transformer,
+`src/main/resources/META-INF/accesstransformer.cfg` (MDG applies it in development and FML finds the same path at
+runtime), with the smallest set of lines that works and a comment saying which system needs each.
+
 ## Stereotypes
 
 Every top-level class in a primitive or composite folder carries exactly one annotation: a tier annotation or

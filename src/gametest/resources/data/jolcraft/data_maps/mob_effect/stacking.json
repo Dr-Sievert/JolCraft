@@ -1,0 +1,6 @@
+{
+  "values": {
+    "minecraft:luck": {"max_amplifier": 2},
+    "minecraft:unluck": {}
+  }
+}

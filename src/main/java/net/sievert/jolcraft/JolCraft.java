@@ -35,6 +35,8 @@ import net.sievert.jolcraft.module.primitive.registration.ModRegistration;
 import net.sievert.jolcraft.module.primitive.schedule.ModSchedule;
 import net.sievert.jolcraft.module.primitive.sound.ModSound;
 import net.sievert.jolcraft.module.primitive.stat.ModStat;
+import net.sievert.jolcraft.module.system.effect.Effect;
+import net.sievert.jolcraft.module.system.effect.EffectContent;
 import net.sievert.jolcraft.module.system.worldgen.Worldgen;
 import net.sievert.jolcraft.module.system.worldgen.WorldgenContent;
 import net.sievert.jolcraft.util.text.Dictionary;
@@ -78,6 +80,7 @@ public final class JolCraft {
         Station station = new Station(menu, log);
 
         // Systems are built here, taking the primitives and the composites above through their constructors; each folder's content is registered below.
+        Effect effect = new Effect(log);
         @SuppressWarnings("unused") Worldgen worldgen = new Worldgen();
 
         registration.register(modBus);
@@ -94,6 +97,8 @@ public final class JolCraft {
         command.register(NeoForge.EVENT_BUS);
         ledger.register(NeoForge.EVENT_BUS);
         result.register(modBus);
+        effect.register(NeoForge.EVENT_BUS);
+        EffectContent.register(modBus);
         WorldgenContent.register(modBus);
         config.register(container);
         network.register(modBus, container.getModInfo().getVersion().toString());
