@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "net.sievert.jolcraft.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "ClearAllStatusEffectsConsumeEffectMixin",
+    "MeleeAttackGoalMixin",
+    "RangedBowAttackGoalMixin",
+    "RangedCrossbowAttackGoalMixin",
+    "SpellcasterUseSpellGoalMixin"
+  ],
+  "client": [],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "minVersion": "0.8"
+}

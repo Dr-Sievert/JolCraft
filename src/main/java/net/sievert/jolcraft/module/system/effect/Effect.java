@@ -1,12 +1,17 @@
 package net.sievert.jolcraft.module.system.effect;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
@@ -16,7 +21,10 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 
 import net.sievert.jolcraft.module.ModSystem;
 import net.sievert.jolcraft.module.Module;
+import net.sievert.jolcraft.module.primitive.attachment.Attachment;
+import net.sievert.jolcraft.module.primitive.attachment.AttachmentKey;
 import net.sievert.jolcraft.module.primitive.log.Log;
+import net.sievert.jolcraft.module.primitive.registration.Ids;
 import net.sievert.jolcraft.module.system.effect.EffectData.Protection;
 import net.sievert.jolcraft.module.system.effect.EffectData.Scaling;
 import net.sievert.jolcraft.module.system.effect.EffectData.Stacking;
@@ -35,16 +43,25 @@ import net.sievert.jolcraft.util.text.Dictionary;
 @ModSystem(Dictionary.EFFECT)
 public final class Effect implements Module {
 
+    /** The sources holding an infinite effect on an entity; saved with the entity and not kept on death, as the effects are not. Public so a scene can ask whether anything was recorded. */
+    public static final AttachmentKey<Owned> OWNED = AttachmentKey.of(Ids.of(Dictionary.JOLCRAFT, Dictionary.EFFECT, Dictionary.OWNED), () -> Owned.NONE).saved(Owned.CODEC);
+
     private final Log log;
 
-    public Effect(Log log) {
+    public Effect(Attachment attachment, Log log) {
         this.log = log.tagged(this);
+        attachment.declare(OWNED);
+    }
+
+    /** One infinite effect a source holds: the effect, its amplifier and how the game shows it. */
+    public record Held(Holder<MobEffect> effect, int amplifier, boolean ambient, boolean visible, boolean icon) {
     }
 
     /** Adds the system's listeners to the game bus. */
     public void register(IEventBus gameBus) {
         gameBus.addListener(this::onApplicable);
         gameBus.addListener(this::onAdded);
+        gameBus.addListener(this::onClear);
     }
 
     private static boolean skipped(LivingEntity entity) {
@@ -180,5 +197,124 @@ public final class Effect implements Module {
         log.debug("{} stacked {} from amplifier {} and {} to {}", entity.getName().getString(), key.identifier(), old.getAmplifier(), added.getAmplifier(), merged.amplifier());
         added.amplifier = merged.amplifier();
         added.duration = merged.duration();
+    }
+
+    // ------------------------------------------------------------------ cure and incurable
+
+    /** The game's clear-all removes every active effect not in {@link EffectTags#INCURABLE}, and answers true when there was one to clear. */
+    private void onClear(ClearEvent event) {
+        LivingEntity entity = event.entity();
+        if (entity.level().isClientSide()) {
+            return;
+        }
+        List<Holder<MobEffect>> clearing = active(entity, effect -> !effect.is(EffectTags.INCURABLE));
+        for (Holder<MobEffect> effect : clearing) {
+            entity.removeEffect(effect);
+        }
+        event.setCleared(!clearing.isEmpty());
+        log.debug("{} was cleared of {} effects through {}", entity.getName().getString(), clearing.size(), event.stack().getHoverName().getString());
+    }
+
+    /** Removes every active effect the tag lists, as a feature's named cure; answers whether there was one. Server side. */
+    public boolean cure(LivingEntity entity, TagKey<MobEffect> cure) {
+        List<Holder<MobEffect>> curing = active(entity, effect -> effect.is(cure));
+        for (Holder<MobEffect> effect : curing) {
+            entity.removeEffect(effect);
+        }
+        if (!curing.isEmpty()) {
+            log.debug("{} was cured of {} effects through {}", entity.getName().getString(), curing.size(), cure.location());
+        }
+        return !curing.isEmpty();
+    }
+
+    private static List<Holder<MobEffect>> active(LivingEntity entity, Predicate<Holder<MobEffect>> matching) {
+        List<Holder<MobEffect>> found = new ArrayList<>();
+        for (MobEffectInstance instance : entity.getActiveEffects()) {
+            if (matching.test(instance.getEffect())) {
+                found.add(instance.getEffect());
+            }
+        }
+        return found;
+    }
+
+    // ------------------------------------------------------------------ owned infinite effects
+
+    /**
+     * A source's infinite effect on an entity, called each tick or when its condition changes; one {@code source} per
+     * held effect. Active: with no instance of the effect there, an infinite one is added and, if the game took it,
+     * the source recorded; an instance already there is never replaced, and a recorded source whose infinite instance
+     * has vanished from the chain is forgotten. Inactive: a recorded source's infinite instance of that amplifier is
+     * unlinked from the chain, wherever a stronger finite effect has pushed it, and the source forgotten; a source
+     * not recorded returns before anything is touched, so almost no entity carries the attachment. Server side.
+     */
+    public void hold(LivingEntity entity, Identifier source, Held held, boolean active) {
+        if (active) {
+            start(entity, source, held);
+        } else if (OWNED.isSet(entity) && OWNED.get(entity).has(source)) {
+            if (unlink(entity, held)) {
+                forget(entity, source);
+                log.debug("{} stopped holding {} for {}", source, held.effect().getRegisteredName(), entity.getName().getString());
+            }
+        }
+    }
+
+    private void start(LivingEntity entity, Identifier source, Held held) {
+        MobEffectInstance present = entity.getEffect(held.effect());
+        if (present == null) {
+            MobEffectInstance infinite = new MobEffectInstance(held.effect(), MobEffectInstance.INFINITE_DURATION, held.amplifier(), held.ambient(), held.visible(), held.icon());
+            if (entity.addEffect(infinite)) {
+                OWNED.update(entity, owned -> owned.with(source));
+                log.debug("{} holds {} for {}", source, held.effect().getRegisteredName(), entity.getName().getString());
+            }
+        } else if (OWNED.isSet(entity) && OWNED.get(entity).has(source) && !holds(present, held)) {
+            forget(entity, source);
+        }
+    }
+
+    private static void forget(LivingEntity entity, Identifier source) {
+        Owned remaining = OWNED.get(entity).without(source);
+        if (remaining.sources().isEmpty()) {
+            OWNED.reset(entity);
+        } else {
+            OWNED.set(entity, remaining);
+        }
+    }
+
+    private static boolean isHeld(MobEffectInstance instance, Held held) {
+        return instance.isInfiniteDuration() && instance.getAmplifier() == held.amplifier();
+    }
+
+    /** Whether the chain starting at {@code head} holds the infinite instance of the held amplifier. */
+    private static boolean holds(MobEffectInstance head, Held held) {
+        for (MobEffectInstance node = head; node != null; node = node.hiddenEffect) {
+            if (isHeld(node, held)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Takes the held instance out of the chain. The game's own merge gives a hidden chain only to a finite head, so an
+     * infinite instance never has anything under it: held as the head it is removed alone, held below a finite head it
+     * is spliced out in place and nothing passes through the rules again. Answers false only when the head is the held
+     * instance and its removal was cancelled, so the source stays recorded and the next call tries again.
+     */
+    private static boolean unlink(LivingEntity entity, Held held) {
+        MobEffectInstance head = entity.getEffect(held.effect());
+        if (head == null) {
+            return true;
+        }
+        if (isHeld(head, held)) {
+            return entity.removeEffect(held.effect());
+        }
+        for (MobEffectInstance previous = head; previous.hiddenEffect != null; previous = previous.hiddenEffect) {
+            MobEffectInstance node = previous.hiddenEffect;
+            if (isHeld(node, held)) {
+                previous.hiddenEffect = node.hiddenEffect;
+                return true;
+            }
+        }
+        return true;
     }
 }

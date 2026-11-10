@@ -21,11 +21,11 @@ import net.sievert.jolcraft.gametest.scene.TestPlayer;
 import net.sievert.jolcraft.gametest.scene.TestScene;
 
 /**
- * The effect rules on real entities, against the fixture data maps in {@code data/jolcraft/data_maps}: luck stacks to
+ * The effect rules on real entities, against the fixture data maps in {@code scene/data/jolcraft/data_maps} (the scene pack): luck stacks to
  * amplifier 2, protects (and cleanses) against unluck, and is shortened by water movement efficiency; slow falling
  * protects against glowing; explosion knockback resistance protects against conduit power; oxygen bonus lengthens
  * dolphin's grace and movement efficiency shortens hero of the village. Every attribute involved defaults to 0 and
- * every effect is met in a dev run only by command, so the fixtures are inert elsewhere.
+ * every effect is met in a dev run only by command, and the pack is off in a dev run unless enabled by hand.
  */
 public final class EffectScenes {
 

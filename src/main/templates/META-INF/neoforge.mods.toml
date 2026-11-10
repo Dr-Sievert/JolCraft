@@ -22,3 +22,6 @@ ordering="NONE"
 side="BOTH"
 
 ${integration_dependencies}
+
+[[mixins]]
+config="jolcraft.mixins.json"

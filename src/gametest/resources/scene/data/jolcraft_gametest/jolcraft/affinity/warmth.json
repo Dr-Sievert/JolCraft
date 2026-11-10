@@ -1,0 +1,5 @@
+{
+  "damage": ["minecraft:on_fire", "minecraft:magic"],
+  "resistance": "minecraft:explosion_knockback_resistance",
+  "vulnerability": "minecraft:luck"
+}

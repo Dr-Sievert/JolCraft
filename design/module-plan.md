@@ -58,9 +58,9 @@ this order; only `worldgen` is built so far (its kinds), so nothing is forgotten
 |---|---|---|---|
 | `integration` | log | the optional-mod bridges: a JEI plugin and a Jade plugin that are `@Bridge` classes behind a `ModList` guard, each giving a feature system one place to add its categories and tooltips | `integration/jei`, `integration/jade` |
 | `worldgen` | nothing | the world-generation plumbing no feature owns: the structure processor and placement filter kinds, built 2026-11-10 (`add_loot_table`, `random_cobweb`, `random_cave_in`, `hanging`, `height_filter`); the jigsaw structure base with the terrain veto, and the pool and processor-list datagen helpers, come with the fortress; the vanilla JSON forms of the old `random_replace_with_loot`, `random_not_air` and `structure_void` are recorded in `worldgen.md` | the `structure`, `processor` and `placement` folders of `world/worldgen`; a vegetation feature or biome modifier belongs to the feature system that owns the plant, as `@Content` with a `RegistryContributor` |
-| `effect` (step 1 built 2026-11-10, `effect.md`) | attachment, log (step 1 takes log only; the attachment comes with `Owned` in step 2) | the effect rules no feature owns, read from data maps: stacking with a cap, protection by effect or attribute with cleansing, duration scaling and immunity; cure, incurable and held infinite effects come in step 2 | `event/game/world/entity/effect/JolCraftEffectEvents`, `util/JolCraftStackingEffectEventsHelper`, `JolCraftEffectApplicationEventsHelper`, `JolCraftEffectDurationEventsHelper` |
-| `control` (not built) | nothing | crowd control: the tags of effects that stop attack, ranged use, use, move, look and target, the player and mob seams that read them | the Stunned, Rooted, Suppressed and Disarmed handlers and the four mob-goal mixins |
-| `damage` (not built) | registration | damage affinity: the datapack registry of rows, the innate modifiers, `Stage` for the order of damage handlers | the six affinity rows, their entity tags and the stage-order helper |
+| `effect` (steps 1 and 2 built 2026-11-10, `effect.md`) | attachment, log | the effect rules no feature owns, read from data maps: stacking with a cap, protection by effect or attribute with cleansing, duration scaling and immunity; held infinite effects (`hold`, the saved `Owned` attachment), cure by tag and the incurable tag the game's clear-all leaves, through the first mixin of the main mod | `event/game/world/entity/effect/JolCraftEffectEvents`, `util/JolCraftStackingEffectEventsHelper`, `JolCraftEffectApplicationEventsHelper`, `JolCraftEffectDurationEventsHelper` |
+| `control` (built 2026-11-10, `effect.md` step 3) | nothing | crowd control: the tags of effects that stop attack, ranged use, use, move, look and target, the player and mob seams that read them | the Stunned, Rooted, Suppressed and Disarmed handlers and the four mob-goal mixins |
+| `damage` (built 2026-11-10, `effect.md` step 4) | registration | damage affinity: the datapack registry of rows, the innate modifiers, `Stage` for the order of damage handlers | the six affinity rows, their entity tags and the stage-order helper |
 | `economy` | log | the coin items, their values and the pay and give helpers trade and bounties share | the coin items in `world/item/JolCraftItems`, `world/item/custom/container/CoinPouchItem`, `JolCraftCoinPickupEventsHelper` |
 
 ## Feature systems, for later
@@ -76,9 +76,12 @@ planting and bonemeal rules, their vegetation features and biome modifiers, and 
 
 ## Status, 2026-11-10
 
-The `effect` system's rules (step 1 of `effect.md`) are built beside `worldgen`: the access transformer, the four data
-map types, stacking, protection, scaling and immunity, with unit tests and scenes. `control` and `damage` are designed
-in the same document and not built.
+The `effect` system (steps 1 and 2 of `effect.md`) is built beside `worldgen`: the access transformer, the four data
+map types, stacking, protection, scaling and immunity, then `hold` with the `Owned` attachment, `cure`, `ClearEvent` with
+the `INCURABLE` tag and the first mixin of the main mod, `jolcraft.mixins.json`, with unit tests and scenes. `control`
+(step 3) is built after them: `Stop` and its six empty tags, the server handlers, `GoalEvent` and the four goal mixins,
+the two new access transformer lines and the client half `ControlClient`, with scenes for the player events and every
+mob goal. `damage` (step 4) is built last: the `jolcraft:affinity` datapack registry (empty in the main mod), `Affinity`, `Stage`, the Pre listener and the join listener, with unit tests and scenes on dev fixtures that name vanilla damage types and attributes. The effect document is built in all four steps.
 
 ## Status, 2026-10-27
 

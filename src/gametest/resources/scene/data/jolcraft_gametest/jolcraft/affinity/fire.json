@@ -1,0 +1,6 @@
+{
+  "damage": "#minecraft:is_fire",
+  "except": "minecraft:lava",
+  "resistance": "minecraft:attack_knockback",
+  "vulnerability": "minecraft:max_absorption"
+}

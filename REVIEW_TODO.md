@@ -160,7 +160,7 @@ integrations header (already says what the reviewer asked for).
 
 Found by the last review of the night and left open on purpose; each is a decision or a day of its own.
 
-- [ ] **W1.** Custom and datapack registries and the config file kinds have never been registered in a running game by the game-test mod; the first data-driven feature is the proof, or the game-test root declares one of each.
+- [ ] **W1.** `Registration.datapack` is proven for `jolcraft:affinity` (2026-11-10): the damage scenes read the three dev rows from the data pack in a running game, through the registry the main mod declares. Still open: `Registration.custom` and the config file kinds have never been registered in a running game by the game-test mod, and the synced datapack form (a network codec) is not run; the first data-driven feature is the proof.
 - [ ] **W2.** Every `Mod*` checks a key's namespace only against `minecraft`; giving each the namespace it owns (the root passes it) would make `Completeness.ours` exhaustive.
 - [ ] **W3.** `Action` recovers on cancel, a lost actor or a failed step, not on a server stop; a pre-stop hook on `Schedule` driven from `ServerStoppingEvent` would run open recoveries before the save.
 - [ ] **W4.** Command trees that share a root literal merge under the first-declared root, so a requirement on a later root is lost; the primitive could own the one root and take branches instead.

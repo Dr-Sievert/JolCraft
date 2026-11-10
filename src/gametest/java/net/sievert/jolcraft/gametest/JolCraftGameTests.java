@@ -25,6 +25,7 @@ import net.sievert.jolcraft.gametest.module.primitive.recipe.TestRecipes;
 import net.sievert.jolcraft.gametest.module.primitive.schedule.TestSchedule;
 import net.sievert.jolcraft.gametest.module.primitive.sound.TestSounds;
 import net.sievert.jolcraft.gametest.module.primitive.stat.TestStats;
+import net.sievert.jolcraft.gametest.scene.ScenePack;
 import net.sievert.jolcraft.gametest.scene.SceneRegistry;
 import net.sievert.jolcraft.module.composite.attachment.Cooldown;
 import net.sievert.jolcraft.module.composite.capability.Inventory;
@@ -52,6 +53,7 @@ import net.sievert.jolcraft.module.primitive.schedule.ModSchedule;
 import net.sievert.jolcraft.module.primitive.sound.ModSound;
 import net.sievert.jolcraft.module.primitive.stat.ModStat;
 import net.sievert.jolcraft.module.primitive.stat.Stat;
+import net.sievert.jolcraft.module.system.effect.Effect;
 import net.sievert.jolcraft.util.text.Dictionary;
 
 /**
@@ -75,16 +77,20 @@ public final class JolCraftGameTests {
     private static Result result;
     private static Inventory inventory;
     private static Station station;
+    private static Effect effect;
 
     public JolCraftGameTests(IEventBus modBus) {
         Log log = new ModLog(LogUtils.getLogger()).tagged(Dictionary.GAMETEST);
         new SceneRegistry(MOD_ID, log).register(modBus);
+        ScenePack.register(modBus, MOD_ID);
         ModAttachment attachment = new ModAttachment();
         TestAttachments.declare(attachment);
         Cooldown cooldowns = new Cooldown(attachment, log);
         TestCooldowns.declare(cooldowns);
         attachment.register(modBus);
         cooldown = cooldowns;
+        // Not registered: the real mod registered the attachment type under this key's id, which this instance only asks. Its listeners are the real mod's, not added here.
+        effect = new Effect(new ModAttachment(), log);
         ModData data = new ModData();
         TestData.declare(data);
         ModSound sound = new ModSound();
@@ -187,5 +193,10 @@ public final class JolCraftGameTests {
 
     public static Station station() {
         return station;
+    }
+
+    /** An effect system as the real mod's root builds it, for scenes to call {@code hold} and {@code cure}: the rules are the real mod's listeners. */
+    public static Effect effect() {
+        return effect;
     }
 }

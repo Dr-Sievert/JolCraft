@@ -1,0 +1,9 @@
+{
+  "damage": "minecraft:generic_kill",
+  "resistance": "minecraft:knockback_resistance",
+  "vulnerability": "minecraft:armor",
+  "innate": [
+    {"entities": ["minecraft:rabbit"], "resistance": 0.2, "vulnerability": 0.5},
+    {"entities": ["minecraft:rabbit"], "resistance": 0.6, "vulnerability": 0.1}
+  ]
+}

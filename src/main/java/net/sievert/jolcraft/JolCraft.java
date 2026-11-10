@@ -35,6 +35,9 @@ import net.sievert.jolcraft.module.primitive.registration.ModRegistration;
 import net.sievert.jolcraft.module.primitive.schedule.ModSchedule;
 import net.sievert.jolcraft.module.primitive.sound.ModSound;
 import net.sievert.jolcraft.module.primitive.stat.ModStat;
+import net.sievert.jolcraft.module.system.control.Control;
+import net.sievert.jolcraft.module.system.control.client.ControlClient;
+import net.sievert.jolcraft.module.system.damage.Damage;
 import net.sievert.jolcraft.module.system.effect.Effect;
 import net.sievert.jolcraft.module.system.effect.EffectContent;
 import net.sievert.jolcraft.module.system.worldgen.Worldgen;
@@ -80,7 +83,9 @@ public final class JolCraft {
         Station station = new Station(menu, log);
 
         // Systems are built here, taking the primitives and the composites above through their constructors; each folder's content is registered below.
-        Effect effect = new Effect(log);
+        Effect effect = new Effect(attachment, log);
+        Control control = new Control();
+        Damage damage = new Damage(registration);
         @SuppressWarnings("unused") Worldgen worldgen = new Worldgen();
 
         registration.register(modBus);
@@ -98,10 +103,15 @@ public final class JolCraft {
         ledger.register(NeoForge.EVENT_BUS);
         result.register(modBus);
         effect.register(NeoForge.EVENT_BUS);
+        control.register(NeoForge.EVENT_BUS);
+        damage.register(NeoForge.EVENT_BUS);
         EffectContent.register(modBus);
         WorldgenContent.register(modBus);
         config.register(container);
         network.register(modBus, container.getModInfo().getVersion().toString());
+        if (FMLEnvironment.getDist().isClient()) {
+            ControlClient.register(NeoForge.EVENT_BUS, control);
+        }
         if (config.declared() > 0 && FMLEnvironment.getDist().isClient()) {
             ConfigScreen.register(container);
         }

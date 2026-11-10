@@ -109,6 +109,8 @@ neoForge {
             sourceSet = sourceSets.gametest
             loadedMods = [mods."${mod_id}", mods."${mod_id}_gametest"]
             gameDirectory = file('run/gametest')
+            // The scene fixtures pack is forced on here and listed but off in every other run (ScenePack).
+            systemProperty 'jolcraft.gametest.scene', 'true'
         }
 
         data {
