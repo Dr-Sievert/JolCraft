@@ -52,12 +52,12 @@ Built from primitives only, in the folder of the primitive they extend.
 ## Shared systems
 
 Systems that several features stand on and that are not features themselves. Built after the composites, in
-this order; none is built yet, so nothing is forgotten.
+this order; only `worldgen` is built so far (its kinds), so nothing is forgotten.
 
 | System | Takes | Job | Replaces in `old/` |
 |---|---|---|---|
 | `integration` | log | the optional-mod bridges: a JEI plugin and a Jade plugin that are `@Bridge` classes behind a `ModList` guard, each giving a feature system one place to add its categories and tooltips | `integration/jei`, `integration/jade` |
-| `worldgen` | registration, log | the structure plumbing every structure shares: the jigsaw structure base with the terrain veto, the structure processors and rule tests, the placement modifiers, declared as content and bootstrapped in datagen | the `structure`, `processor` and `placement` folders of `world/worldgen`; a vegetation feature or biome modifier belongs to the feature system that owns the plant, as `@Content` with a `RegistryContributor` |
+| `worldgen` | nothing | the world-generation plumbing no feature owns: the structure processor and placement filter kinds, built 2026-11-10 (`add_loot_table`, `random_cobweb`, `random_cave_in`, `hanging`, `height_filter`); the jigsaw structure base with the terrain veto, and the pool and processor-list datagen helpers, come with the fortress; the vanilla JSON forms of the old `random_replace_with_loot`, `random_not_air` and `structure_void` are recorded in `worldgen.md` | the `structure`, `processor` and `placement` folders of `world/worldgen`; a vegetation feature or biome modifier belongs to the feature system that owns the plant, as `@Content` with a `RegistryContributor` |
 | `effect` | attachment, schedule, network, log | the effect plumbing: stacking and duration rules, crowd control, the client-side effect payloads | `event/game/world/entity/effect/*`, `world/entity/effect` |
 | `economy` | log | the coin items, their values and the pay and give helpers trade and bounties share | the coin items in `world/item/JolCraftItems`, `world/item/custom/container/CoinPouchItem`, `JolCraftCoinPickupEventsHelper` |
 
@@ -100,8 +100,8 @@ behaviours the tests had left loose; what it left is W14 to W19. A sixth (19 con
 
 The `ledger` composite was built and reviewed last, at the end of the budget: a `Ledger.Book` per module naming the statistics
 it may award, server-wide saved data for the awards of absent players, granted at their next login; one isolated
-scene joins a player under a chosen id, which `TestScene.addPlayer(name, id)` now allows. Every piece of `result.md` is built as of 2026-10-27. The `inventory` composite is built as of 2026-10-27 (`inventory.md`, both steps). The `station` composite is built as of 2026-10-28 in its first step, the server side, and 2026-11-09 in its second, the screen, the button and the progress helper (`station.md`). Not built, in the order
-they should come: the shared systems `integration`, `worldgen`, `effect` and `economy`, each a day's work of its own with the old tree as
+scene joins a player under a chosen id, which `TestScene.addPlayer(name, id)` now allows. Every piece of `result.md` is built as of 2026-10-27. The `inventory` composite is built as of 2026-10-27 (`inventory.md`, both steps). The `station` composite is built as of 2026-10-28 in its first step, the server side, and 2026-11-09 in its second, the screen, the button and the progress helper (`station.md`). The `worldgen` system is built as of 2026-11-10 in its first step, the kinds (`worldgen.md`); the jigsaw base and the datagen helpers wait for the fortress. Not built, in the order
+they should come: the shared systems `integration`, `effect` and `economy`, each a day's work of its own with the old tree as
 reference. Everything above is committed as of 2026-10-27; the author commits.
 
 ## Dry-run notes, 2026-10-24

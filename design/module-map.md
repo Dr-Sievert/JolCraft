@@ -50,7 +50,7 @@ These are **declarations**, not modules, and the tier rules do not see them as m
 
 - **Content** (`@Content`): a module folder's registry declarations. A final class with a private
   constructor whose public static final fields are `DeferredRegister`s and `DeferredHolder`s, plus one
-  `register(IEventBus)`. It may depend on vanilla, NeoForge and its own folder's values, never on a module.
+  `register(IEventBus)`. It may depend on vanilla, NeoForge and its own folder's values and actors, never on a module, since a content registers its folder's actors (a feature's blocks and items, the worldgen system's kinds).
 - **Values** (`@Value`): records, enums, closed sets, codecs, payload records, attachment values.
 - **Keys** (`@Keys`): a system's handle constants, the keys a record must name before the system exists (a
   `RecipeKey` for `Recipe.Custom.key()`, a `YieldKinds` for a yield codec). A final class with a private

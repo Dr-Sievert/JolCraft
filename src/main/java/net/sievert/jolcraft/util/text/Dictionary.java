@@ -8,15 +8,20 @@ package net.sievert.jolcraft.util.text;
 public final class Dictionary {
 
     public static final String ACTION = "action";
+    public static final String ADD = "add";
     public static final String ADVANCEMENT = "advancement";
     public static final String ADVANCEMENTS = "advancements";
     public static final String AMOUNT = "amount";
     public static final String ATTACHMENT = "attachment";
     public static final String AWARDS = "awards";
+    public static final String BLOCK = "block";
     public static final String BOOK = "book";
     /** The namespace of the tags mods share. */
     public static final String C = "c";
     public static final String CAPABILITY = "capability";
+    public static final String CAVE = "cave";
+    public static final String CHANCE = "chance";
+    public static final String COBWEB = "cobweb";
     public static final String COMMAND = "command";
     public static final String CONFIG = "config";
     public static final String CONFIGURATION = "configuration";
@@ -33,9 +38,14 @@ public final class Dictionary {
     public static final String ENTITY = "entity";
     public static final String FATE = "fate";
     public static final String FEEDBACK = "feedback";
+    public static final String FILTER = "filter";
     public static final String GAMETEST = "gametest";
+    public static final String HANGING = "hanging";
+    public static final String HEIGHT = "height";
     public static final String HOOK = "hook";
     public static final String HOOKS = "hooks";
+    public static final String IN = "in";
+    public static final String INCLUSIVE = "inclusive";
     public static final String INVENTORY = "inventory";
     public static final String ITEM = "item";
     public static final String JOLCRAFT = "jolcraft";
@@ -45,13 +55,16 @@ public final class Dictionary {
     public static final String LEDGER = "ledger";
     public static final String LOG = "log";
     public static final String LOOT = "loot";
+    public static final String MAX = "max";
     public static final String MENU = "menu";
+    public static final String MIN = "min";
     public static final String MINECRAFT = "minecraft";
     public static final String NETWORK = "network";
     public static final String PITCH = "pitch";
     public static final String PLAYER = "player";
     public static final String POOL = "pool";
     public static final String PREDICATE = "predicate";
+    public static final String RANDOM = "random";
     public static final String RECIPE = "recipe";
     public static final String REGISTRATION = "registration";
     public static final String RESULT = "result";
@@ -61,10 +74,12 @@ public final class Dictionary {
     public static final String STAT = "stat";
     public static final String STATION = "station";
     public static final String SUBTITLES = "subtitles";
+    public static final String TABLE = "table";
     public static final String TITLE = "title";
     public static final String TYPE = "type";
     public static final String UNTIL = "until";
     public static final String VOLUME = "volume";
+    public static final String WORLDGEN = "worldgen";
     public static final String YIELD = "yield";
 
     private Dictionary() {

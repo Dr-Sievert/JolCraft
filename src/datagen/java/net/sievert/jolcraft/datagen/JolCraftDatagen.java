@@ -3,7 +3,6 @@ package net.sievert.jolcraft.datagen;
 import java.util.Set;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.server.packs.PackType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -20,6 +19,7 @@ import net.sievert.jolcraft.datagen.contribute.SoundContributor;
 import net.sievert.jolcraft.datagen.contribute.TagContributor;
 import net.sievert.jolcraft.datagen.provider.BlockTags;
 import net.sievert.jolcraft.datagen.provider.DataMaps;
+import net.sievert.jolcraft.datagen.provider.DatapackEntries;
 import net.sievert.jolcraft.datagen.provider.ItemTags;
 import net.sievert.jolcraft.datagen.contribute.AdvancementContributor;
 import net.sievert.jolcraft.datagen.provider.Advancements;
@@ -57,9 +57,9 @@ public final class JolCraftDatagen {
 
         // First: the datapack-registry entries, under the mod's namespace. This replaces the event's lookup with
         // one that holds them, so every provider created after it can resolve a profession or a trade table.
-        RegistrySetBuilder registries = new RegistrySetBuilder();
-        contributors.of(RegistryContributor.class).forEach(contributor -> contributor.registries(registries));
-        event.createDatapackRegistryObjects(registries, Set.of(JolCraft.MOD_ID));
+        DatapackEntries entries = new DatapackEntries();
+        contributors.of(RegistryContributor.class).forEach(contributor -> contributor.registries(entries));
+        event.createDatapackRegistryObjects(entries.builder(), Set.of(JolCraft.MOD_ID));
 
         Handmade.verify(event.getResourceManager(PackType.CLIENT_RESOURCES), event.getResourceManager(PackType.SERVER_DATA));
 
