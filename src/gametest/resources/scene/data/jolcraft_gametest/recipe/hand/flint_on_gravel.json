@@ -1,0 +1,31 @@
+{
+  "type": "jolcraft:hand",
+  "tool": {
+    "predicate": {
+      "items": "minecraft:flint"
+    },
+    "fate": {
+      "kind": "keep"
+    }
+  },
+  "target": {
+    "predicate": {
+      "items": "minecraft:gravel"
+    }
+  },
+  "results": [
+    {
+      "type": "jolcraft:item",
+      "pool": {
+        "rolls": 1,
+        "entries": []
+      }
+    }
+  ],
+  "success": {
+    "sound": "minecraft:entity.experience_orb.pickup"
+  },
+  "failure": {
+    "sound": "minecraft:block.gravel.break"
+  }
+}

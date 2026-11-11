@@ -52,15 +52,16 @@ Built from primitives only, in the folder of the primitive they extend.
 ## Shared systems
 
 Systems that several features stand on and that are not features themselves. Built after the composites, in
-this order; only `worldgen` is built so far (its kinds), so nothing is forgotten.
+this order; `worldgen` (its kinds), `effect`, `damage`, `outcome` and `hand` are built so far, so nothing is forgotten.
 
 | System | Takes | Job | Replaces in `old/` |
 |---|---|---|---|
 | `integration` | log | the optional-mod bridges: a JEI plugin and a Jade plugin that are `@Bridge` classes behind a `ModList` guard, each giving a feature system one place to add its categories and tooltips | `integration/jei`, `integration/jade` |
 | `worldgen` | nothing | the world-generation plumbing no feature owns: the structure processor and placement filter kinds, built 2026-11-10 (`add_loot_table`, `random_cobweb`, `random_cave_in`, `hanging`, `height_filter`); the jigsaw structure base with the terrain veto, and the pool and processor-list datagen helpers, come with the fortress; the vanilla JSON forms of the old `random_replace_with_loot`, `random_not_air` and `structure_void` are recorded in `worldgen.md` | the `structure`, `processor` and `placement` folders of `world/worldgen`; a vegetation feature or biome modifier belongs to the feature system that owns the plant, as `@Content` with a `RegistryContributor` |
 | `effect` (steps 1 and 2 built 2026-11-10, `effect.md`) | attachment, log | the effect rules no feature owns, read from data maps: stacking with a cap, protection by effect or attribute with cleansing, duration scaling and immunity; held infinite effects (`hold`, the saved `Owned` attachment), cure by tag and the incurable tag the game's clear-all leaves, through the first mixin of the main mod | `event/game/world/entity/effect/JolCraftEffectEvents`, `util/JolCraftStackingEffectEventsHelper`, `JolCraftEffectApplicationEventsHelper`, `JolCraftEffectDurationEventsHelper` |
-| `control` (built 2026-11-10, `effect.md` step 3) | nothing | crowd control: the tags of effects that stop attack, ranged use, use, move, look and target, the player and mob seams that read them | the Stunned, Rooted, Suppressed and Disarmed handlers and the four mob-goal mixins |
 | `damage` (built 2026-11-10, `effect.md` step 4) | registration | damage affinity: the datapack registry of rows, the innate modifiers, `Stage` for the order of damage handlers | the six affinity rows, their entity tags and the stage-order helper |
+| `outcome` (built 2026-11-11, `outcome.md`, step 2 of `hand.md`) | inventory, log | the mod's one `YieldKinds`, `OutcomeKeys.YIELDS`, which the root declares to `Result` and every host's records embed, and the delivery of what results roll to a player: the stacks given together, the entities spawned at the player, the effects added as copies, the sounds played for everyone in range; a host's own kinds stay the host's | each old host's own dispatch on the output's class, as in `JolCraftHandInteractionEvents` |
+| `hand` (built 2026-11-11, `hand.md`) | recipe, result, inventory, outcome, log | two-hand interaction recipes: the kind `jolcraft:hand` that features fill with data, a tool and a target matched in either hand, results of the four kinds rolled against the hand context and delivered by `outcome`, both hands paid in one transaction, the item's use consumed on every path after a match; a client half keeps the client from predicting the use | `world/recipe/custom/hand/*`, `JolCraftHandInteractionEvents` |
 | `economy` | log | the coin items, their values and the pay and give helpers trade and bounties share | the coin items in `world/item/JolCraftItems`, `world/item/custom/container/CoinPouchItem`, `JolCraftCoinPickupEventsHelper` |
 
 ## Feature systems, for later
@@ -74,14 +75,26 @@ trims), `muffhorn`, `flora` (barley and hops, the wild plants and mushrooms, ver
 planting and bonemeal rules, their vegetation features and biome modifiers, and the events its two mixins post;
 `muffhorn`, `brew`, `trade` and `bounty` reach its items), `crate`.
 
+## Status, 2026-11-11
+
+`hand.md` plans the hand interaction recipes in four steps. Step 1 is built: `Inventory.pay` takes a list of matches
+and pays them in one transaction, so a player's two hands pay all or nothing. Step 2 is built: the `outcome` system
+of `outcome.md` holds the mod's `YieldKinds`, which the root no longer builds inline, under the same registry ids,
+and delivers a result to a player. Step 3 is built: the `hand` system with its recipe kind `jolcraft:hand`, fired from
+the main hand's use on the server, with unit tests of its codec and scenes on fixture recipes in the scene pack. Step 4
+is built: the client half, which consumes the client's own use when a recipe the server sent matches, so the client
+predicts nothing the server then takes back; no scene can reach it, and its proof is the hand check in `runClient`,
+which the author did the same night and which holds.
+
 ## Status, 2026-11-10
 
 The `effect` system (steps 1 and 2 of `effect.md`) is built beside `worldgen`: the access transformer, the four data
 map types, stacking, protection, scaling and immunity, then `hold` with the `Owned` attachment, `cure`, `ClearEvent` with
 the `INCURABLE` tag and the first mixin of the main mod, `jolcraft.mixins.json`, with unit tests and scenes. `control`
-(step 3) is built after them: `Stop` and its six empty tags, the server handlers, `GoalEvent` and the four goal mixins,
-the two new access transformer lines and the client half `ControlClient`, with scenes for the player events and every
-mob goal. `damage` (step 4) is built last: the `jolcraft:affinity` datapack registry (empty in the main mod), `Affinity`, `Stage`, the Pre listener and the join listener, with unit tests and scenes on dev fixtures that name vanilla damage types and attributes. The effect document is built in all four steps.
+(step 3: six stop tags, their handlers, four mob-goal mixins, two access transformer lines and a client half) was built
+the same evening and removed again at the author's direction: crowd control is the work of the features that own stun,
+root, suppress and disarm, and mixins on vanilla classes for one feature are not the generic layer; the clear mixin
+stays, since it rebuilds the cure API NeoForge dropped. The code is in history at `dd43d50d`. `damage` (step 4) is built last: the `jolcraft:affinity` datapack registry (empty in the main mod), `Affinity`, `Stage`, the Pre listener and the join listener, with unit tests and scenes on dev fixtures that name vanilla damage types and attributes. The effect document is built in steps 1, 2 and 4.
 
 ## Status, 2026-10-27
 

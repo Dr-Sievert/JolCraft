@@ -11,7 +11,6 @@ import net.sievert.jolcraft.module.composite.attachment.Cooldown;
 import net.sievert.jolcraft.module.composite.capability.Inventory;
 import net.sievert.jolcraft.module.composite.loot.Result;
 import net.sievert.jolcraft.module.composite.menu.Station;
-import net.sievert.jolcraft.module.composite.loot.YieldKinds;
 import net.sievert.jolcraft.module.composite.stat.Ledger;
 import net.sievert.jolcraft.module.composite.language.Feedback;
 import net.sievert.jolcraft.module.composite.schedule.Action;
@@ -30,16 +29,17 @@ import net.sievert.jolcraft.module.primitive.language.Language;
 import net.sievert.jolcraft.module.primitive.language.ModLanguage;
 import net.sievert.jolcraft.module.primitive.network.ModNetwork;
 import net.sievert.jolcraft.module.primitive.recipe.ModRecipe;
-import net.sievert.jolcraft.module.primitive.registration.Ids;
 import net.sievert.jolcraft.module.primitive.registration.ModRegistration;
 import net.sievert.jolcraft.module.primitive.schedule.ModSchedule;
 import net.sievert.jolcraft.module.primitive.sound.ModSound;
 import net.sievert.jolcraft.module.primitive.stat.ModStat;
-import net.sievert.jolcraft.module.system.control.Control;
-import net.sievert.jolcraft.module.system.control.client.ControlClient;
 import net.sievert.jolcraft.module.system.damage.Damage;
 import net.sievert.jolcraft.module.system.effect.Effect;
 import net.sievert.jolcraft.module.system.effect.EffectContent;
+import net.sievert.jolcraft.module.system.hand.Hand;
+import net.sievert.jolcraft.module.system.hand.client.HandClient;
+import net.sievert.jolcraft.module.system.outcome.Outcome;
+import net.sievert.jolcraft.module.system.outcome.OutcomeKeys;
 import net.sievert.jolcraft.module.system.worldgen.Worldgen;
 import net.sievert.jolcraft.module.system.worldgen.WorldgenContent;
 import net.sievert.jolcraft.util.text.Dictionary;
@@ -78,13 +78,14 @@ public final class JolCraft {
         @SuppressWarnings("unused") Cooldown cooldown = new Cooldown(attachment, log);
         Ledger ledger = new Ledger(stat, data, log);
         Result result = new Result(loot, registration, log);
-        result.declare(YieldKinds.of(Ids.of(MOD_ID, Dictionary.YIELD)));
+        result.declare(OutcomeKeys.YIELDS);
         Inventory inventory = new Inventory(capability, log);
         Station station = new Station(menu, log);
 
         // Systems are built here, taking the primitives and the composites above through their constructors; each folder's content is registered below.
+        Outcome outcome = new Outcome(inventory, log);
+        Hand hand = new Hand(recipe, result, inventory, outcome, log);
         Effect effect = new Effect(attachment, log);
-        Control control = new Control();
         Damage damage = new Damage(registration);
         @SuppressWarnings("unused") Worldgen worldgen = new Worldgen();
 
@@ -103,14 +104,14 @@ public final class JolCraft {
         ledger.register(NeoForge.EVENT_BUS);
         result.register(modBus);
         effect.register(NeoForge.EVENT_BUS);
-        control.register(NeoForge.EVENT_BUS);
         damage.register(NeoForge.EVENT_BUS);
+        hand.register(NeoForge.EVENT_BUS);
         EffectContent.register(modBus);
         WorldgenContent.register(modBus);
         config.register(container);
         network.register(modBus, container.getModInfo().getVersion().toString());
         if (FMLEnvironment.getDist().isClient()) {
-            ControlClient.register(NeoForge.EVENT_BUS, control);
+            HandClient.register(NeoForge.EVENT_BUS);
         }
         if (config.declared() > 0 && FMLEnvironment.getDist().isClient()) {
             ConfigScreen.register(container);

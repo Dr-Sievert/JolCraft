@@ -3,11 +3,7 @@
   "package": "net.sievert.jolcraft.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "ClearAllStatusEffectsConsumeEffectMixin",
-    "MeleeAttackGoalMixin",
-    "RangedBowAttackGoalMixin",
-    "RangedCrossbowAttackGoalMixin",
-    "SpellcasterUseSpellGoalMixin"
+    "ClearAllStatusEffectsConsumeEffectMixin"
   ],
   "client": [],
   "injectors": {

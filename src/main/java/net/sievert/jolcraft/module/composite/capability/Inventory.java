@@ -169,77 +169,59 @@ public final class Inventory implements Module {
         return Optional.of(new Match(holder, found));
     }
 
-    /**
-     * Pays the match's fates in one transaction, in this order: the holder's coverage of the match is checked again;
-     * every consume is rolled through {@link Fate#apply} on a scratch stack, the one roll and creative rule, and that
-     * amount extracted across the holder's slots, its crafting remainder (a bucket's empty bucket) noted, one per item;
-     * every damage extracts its one item; a shortfall anywhere (a sided handler refusing through its face) leaves
-     * without a commit, nothing changed, and answers false; only then each damage's copy is worn through
-     * {@link Fate#apply}, the game's own wear with its break sound and criterion, which no rollback undoes, hence the
-     * order, and put back at its slot when it survived, elsewhere in the holder when that slot refuses it, else as
-     * overflow; the remainders are given to the holder, so a creative payer, who consumed nothing, gets none; then
-     * the commit, and the overflow drops at the holder. A keep does nothing.
-     */
+    /** Pays one match; see {@link #pay(List)}. */
     public boolean pay(Match match) {
-        Holder holder = match.holder();
-        requireServerThread(holder);
-        ResourceHandler<ItemResource> handler = holder.taking().orElse(null);
-        if (handler == null) {
-            return match.found().isEmpty();
+        return pay(List.of(match));
+    }
+
+    /**
+     * Pays the matches' fates in one transaction, so several holders, such as a player's two hands, are paid all or
+     * nothing. In this order: a match whose holder has no handler is paid only when it has no inputs, and each
+     * holder's coverage of its match is checked again; every consume of every match is rolled through
+     * {@link Fate#apply} on a scratch stack, the one roll and creative rule, and that amount extracted across its
+     * holder's slots, its crafting remainder (a bucket's empty bucket) noted, one per item; every damage extracts its
+     * one item; matches over one holder share it, so a consume or a damage whose items an earlier match took falls
+     * short; a shortfall anywhere (a sided handler refusing through its face) leaves without a commit, nothing
+     * changed, and answers false; only then each damage's copy is worn through {@link Fate#apply}, the game's own wear
+     * with its break sound and criterion, which no rollback undoes, hence the order, and put back at its slot when it
+     * survived, elsewhere in its holder when that slot refuses it, else as overflow; the remainders are given to their
+     * holders, so a creative payer, who consumed nothing, gets none; then the commit, and each holder's overflow drops
+     * at it. A keep does nothing.
+     */
+    public boolean pay(List<Match> matches) {
+        List<Paying> paying = new ArrayList<>();
+        for (Match match : matches) {
+            requireServerThread(match.holder());
+            ResourceHandler<ItemResource> handler = match.holder().taking().orElse(null);
+            if (handler == null) {
+                if (!match.found().isEmpty()) {
+                    return false;
+                }
+                continue;
+            }
+            if (!covers(handler, match)) {
+                return false;
+            }
+            paying.add(new Paying(match, handler));
         }
-        if (!covers(handler, match)) {
-            return false;
-        }
-        ServerLevel level = holder.level();
-        ServerPlayer payer = holder.payer();
-        List<Worn> worn = new ArrayList<>();
-        List<ItemStack> remainders = new ArrayList<>();
-        List<ItemStack> overflow = new ArrayList<>();
         try (Transaction transaction = Transaction.openRoot()) {
-            for (Match.Found found : match.found()) {
-                Fate fate = found.input().fate();
-                switch (fate.kind()) {
-                    case KEEP -> { }
-                    case CONSUME -> {
-                        int rolled = fate.apply(found.resource().toStack(claimed(fate)), level, payer);
-                        if (rolled > 0) {
-                            if (handler.extract(found.resource(), rolled, transaction) != rolled) {
-                                return false;
-                            }
-                            ItemStackTemplate remainder = found.resource().toStack().getCraftingRemainder();
-                            ItemStack one = remainder == null ? ItemStack.EMPTY : remainder.create();
-                            if (!one.isEmpty()) {
-                                remainders.add(one.copyWithCount(one.getCount() * rolled));
-                            }
-                        }
-                    }
-                    case DAMAGE -> {
-                        int index = ResourceHandlerUtil.indexOf(handler, found.resource());
-                        if (index < 0 || handler.extract(index, found.resource(), 1, transaction) != 1) {
-                            return false;
-                        }
-                        worn.add(new Worn(found, index));
-                    }
+            for (Paying each : paying) {
+                if (!each.extract(transaction)) {
+                    return false;
                 }
             }
-            for (Worn each : worn) {
-                ItemStack copy = each.found().resource().toStack();
-                each.found().input().fate().apply(copy, level, payer);
-                if (!copy.isEmpty()) {
-                    ItemResource changed = ItemResource.of(copy);
-                    if (handler.insert(each.index(), changed, 1, transaction) == 0 && holder.insert(changed, 1, transaction) == 0) {
-                        overflow.add(copy);
-                    }
-                }
+            for (Paying each : paying) {
+                each.wear(transaction);
             }
-            for (ItemStack remainder : remainders) {
-                ItemResource resource = ItemResource.of(remainder);
-                split(resource, remainder.getCount() - holder.insert(resource, remainder.getCount(), transaction), remainder.getMaxStackSize(), overflow);
+            for (Paying each : paying) {
+                each.returnRemainders(transaction);
             }
             transaction.commit();
         }
-        drop(holder, overflow);
-        log.debug("{} paid {} inputs, {} stacks dropped", holder, match.found().size(), overflow.size());
+        for (Paying each : paying) {
+            drop(each.match().holder(), each.overflow());
+            log.debug("{} paid {} inputs, {} stacks dropped", each.match().holder(), each.match().found().size(), each.overflow().size());
+        }
         return true;
     }
 
@@ -518,6 +500,69 @@ public final class Inventory implements Module {
 
             public ItemStack stack() {
                 return resource.toStack(available);
+            }
+        }
+    }
+
+    /** One match of a pay with its handler, resolved once, and what its extracts leave to do: the tools to wear, the remainders to return, the overflow to drop. */
+    private record Paying(Match match, ResourceHandler<ItemResource> handler, List<Worn> worn, List<ItemStack> remainders, List<ItemStack> overflow) {
+
+        Paying(Match match, ResourceHandler<ItemResource> handler) {
+            this(match, handler, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        }
+
+        /** Extracts every consume and damage of the match, noting the remainders and the tools to wear; false on a shortfall. */
+        boolean extract(TransactionContext transaction) {
+            Holder holder = match.holder();
+            for (Match.Found found : match.found()) {
+                Fate fate = found.input().fate();
+                switch (fate.kind()) {
+                    case KEEP -> { }
+                    case CONSUME -> {
+                        int rolled = fate.apply(found.resource().toStack(claimed(fate)), holder.level(), holder.payer());
+                        if (rolled > 0) {
+                            if (handler.extract(found.resource(), rolled, transaction) != rolled) {
+                                return false;
+                            }
+                            ItemStackTemplate remainder = found.resource().toStack().getCraftingRemainder();
+                            ItemStack one = remainder == null ? ItemStack.EMPTY : remainder.create();
+                            if (!one.isEmpty()) {
+                                remainders.add(one.copyWithCount(one.getCount() * rolled));
+                            }
+                        }
+                    }
+                    case DAMAGE -> {
+                        int index = ResourceHandlerUtil.indexOf(handler, found.resource());
+                        if (index < 0 || handler.extract(index, found.resource(), 1, transaction) != 1) {
+                            return false;
+                        }
+                        worn.add(new Worn(found, index));
+                    }
+                }
+            }
+            return true;
+        }
+
+        /** Wears each extracted tool and puts it back at its slot, elsewhere in the holder when that slot refuses it, else into the overflow. */
+        void wear(TransactionContext transaction) {
+            Holder holder = match.holder();
+            for (Worn each : worn) {
+                ItemStack copy = each.found().resource().toStack();
+                each.found().input().fate().apply(copy, holder.level(), holder.payer());
+                if (!copy.isEmpty()) {
+                    ItemResource changed = ItemResource.of(copy);
+                    if (handler.insert(each.index(), changed, 1, transaction) == 0 && holder.insert(changed, 1, transaction) == 0) {
+                        overflow.add(copy);
+                    }
+                }
+            }
+        }
+
+        /** Gives the remainders to the holder, what does not fit into the overflow. */
+        void returnRemainders(TransactionContext transaction) {
+            for (ItemStack remainder : remainders) {
+                ItemResource resource = ItemResource.of(remainder);
+                split(resource, remainder.getCount() - match.holder().insert(resource, remainder.getCount(), transaction), remainder.getMaxStackSize(), overflow);
             }
         }
     }

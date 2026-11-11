@@ -1,0 +1,36 @@
+{
+  "type": "jolcraft:hand",
+  "tool": {
+    "predicate": {
+      "items": "#c:foods/bread"
+    }
+  },
+  "target": {
+    "predicate": {
+      "items": "minecraft:paper"
+    }
+  },
+  "results": [
+    {
+      "type": "jolcraft:item",
+      "pool": {
+        "rolls": 1,
+        "entries": [
+          {
+            "type": "minecraft:item",
+            "name": "minecraft:map"
+          }
+        ]
+      },
+      "hooks": [
+        "jolcraft_gametest:refusing"
+      ]
+    }
+  ],
+  "success": {
+    "sound": "minecraft:entity.experience_orb.pickup"
+  },
+  "failure": {
+    "sound": "minecraft:item.book.page_turn"
+  }
+}

@@ -395,3 +395,12 @@ stations' client assets beside the data pack and the bin's blockstate. Later the
 bench screen, its client bootstrap, its sprites and the titles' English taken out again, and the `gametest` row's
 mention of them with them: no test assets until migrated features bring real ones, and the screen is first drawn by
 the first feature that has a station.
+
+## 2026-11-10: the control system removed
+
+The author: mixins on vanilla classes for a planned feature, such as the four mob-goal mixins behind a stun, are specific
+work, not the generic layer; support for changing how damage works stays, and so does the clear mixin, which replaces
+NeoForge's dropped cure API. `system/control`, its client half, the four goal mixins, the two access transformer lines,
+the root's wiring, its Dictionary words, `StopTest`, its twelve scenes and the six stop-tag fixtures are gone; the code is
+in history at `dd43d50d` and the design stays in `design/effect.md` for the feature that owns crowd control. Verified
+after: 205 unit tests, `runData`, 113 of 113 scenes and `build` green.

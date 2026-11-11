@@ -1,0 +1,45 @@
+{
+  "type": "jolcraft:hand",
+  "tool": {
+    "predicate": {
+      "items": "minecraft:blaze_rod"
+    },
+    "fate": {
+      "kind": "keep"
+    }
+  },
+  "target": {
+    "predicate": {
+      "items": "minecraft:gunpowder"
+    }
+  },
+  "results": [
+    {
+      "type": "jolcraft:item",
+      "pool": {
+        "rolls": 1,
+        "entries": [
+          {
+            "type": "minecraft:item",
+            "name": "minecraft:blaze_powder"
+          }
+        ]
+      }
+    },
+    {
+      "type": "jolcraft:entity",
+      "entity": "minecraft:armor_stand"
+    },
+    {
+      "type": "jolcraft:effect",
+      "effect": {
+        "id": "minecraft:haste",
+        "duration": 200
+      }
+    },
+    {
+      "type": "jolcraft:sound",
+      "sound": "minecraft:block.note_block.bell"
+    }
+  ]
+}

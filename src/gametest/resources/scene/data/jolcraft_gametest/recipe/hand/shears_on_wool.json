@@ -1,0 +1,47 @@
+{
+  "type": "jolcraft:hand",
+  "tool": {
+    "predicate": {
+      "items": "minecraft:shears"
+    },
+    "fate": {
+      "kind": "damage",
+      "amount": {
+        "type": "minecraft:uniform",
+        "min_inclusive": 1,
+        "max_inclusive": 3
+      }
+    }
+  },
+  "target": {
+    "predicate": {
+      "items": "minecraft:white_wool"
+    }
+  },
+  "results": [
+    {
+      "type": "jolcraft:item",
+      "pool": {
+        "rolls": 1,
+        "entries": [
+          {
+            "type": "minecraft:item",
+            "name": "minecraft:string",
+            "functions": [
+              {
+                "function": "minecraft:set_count",
+                "count": 2
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "success": {
+    "sound": "minecraft:entity.sheep.shear"
+  },
+  "failure": {
+    "sound": "minecraft:block.wool.break"
+  }
+}

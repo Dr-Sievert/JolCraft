@@ -25,6 +25,7 @@ import net.sievert.jolcraft.gametest.module.primitive.recipe.TestRecipes;
 import net.sievert.jolcraft.gametest.module.primitive.schedule.TestSchedule;
 import net.sievert.jolcraft.gametest.module.primitive.sound.TestSounds;
 import net.sievert.jolcraft.gametest.module.primitive.stat.TestStats;
+import net.sievert.jolcraft.gametest.module.system.hand.TestHandHooks;
 import net.sievert.jolcraft.gametest.scene.ScenePack;
 import net.sievert.jolcraft.gametest.scene.SceneRegistry;
 import net.sievert.jolcraft.module.composite.attachment.Cooldown;
@@ -54,6 +55,7 @@ import net.sievert.jolcraft.module.primitive.sound.ModSound;
 import net.sievert.jolcraft.module.primitive.stat.ModStat;
 import net.sievert.jolcraft.module.primitive.stat.Stat;
 import net.sievert.jolcraft.module.system.effect.Effect;
+import net.sievert.jolcraft.module.system.outcome.Outcome;
 import net.sievert.jolcraft.util.text.Dictionary;
 
 /**
@@ -78,6 +80,7 @@ public final class JolCraftGameTests {
     private static Inventory inventory;
     private static Station station;
     private static Effect effect;
+    private static Outcome outcome;
 
     public JolCraftGameTests(IEventBus modBus) {
         Log log = new ModLog(LogUtils.getLogger()).tagged(Dictionary.GAMETEST);
@@ -137,6 +140,9 @@ public final class JolCraftGameTests {
         NeoForge.EVENT_BUS.addListener(TestStations::onChanged);
         station = stations;
         inventory = inventories;
+        // It declares nothing, so a second instance beside the real mod's is harmless.
+        outcome = new Outcome(inventories, log);
+        TestHandHooks.register(modBus);
         capability.register(modBus);
         ModStat statistics = new ModStat();
         TestStats.declare(statistics);
@@ -198,5 +204,10 @@ public final class JolCraftGameTests {
     /** An effect system as the real mod's root builds it, for scenes to call {@code hold} and {@code cure}: the rules are the real mod's listeners. */
     public static Effect effect() {
         return effect;
+    }
+
+    /** An outcome system over the game-test mod's own inventory, for scenes to deliver through. */
+    public static Outcome outcome() {
+        return outcome;
     }
 }

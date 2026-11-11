@@ -40,7 +40,8 @@ import net.sievert.jolcraft.module.primitive.recipe.ItemInput;
  * Matching and paying against real holders: a match claims one resource per input in order and refuses what the
  * holder cannot cover, a pay consumes across slots and rolls a range, wears a tool in its slot and breaks a worn-out
  * one audibly, answers false with nothing changed on a shortfall, costs a creative payer nothing, gives a consumed
- * bucket's empty bucket back to the hand, and pays a chest.
+ * bucket's empty bucket back to the hand, pays a chest, and pays two hands in one call, all or nothing: a hand lost
+ * since the match, or two claims on one hand, answers false with the other hand's tool unworn.
  */
 public final class PayScenes {
 
@@ -240,6 +241,45 @@ public final class PayScenes {
                 && entity.getItem(0).getCount() == 6 && entity.getItem(5).is(Items.IRON_PICKAXE) && entity.getItem(5).getDamageValue() == 3, "slots " + entity.getItem(0) + ", " + entity.getItem(5)));
         scene.check("and what it cannot cover is refused whole", () -> scene.assertTrue(inventory.take(block, List.of(input(Fate.consume(4), Items.STICK), input(Fate.consume(1), Items.STONE))).isEmpty()
                 && entity.getItem(0).getCount() == 6, "refused, slot 0 " + entity.getItem(0)));
+        scene.succeed();
+    }
+
+    @Scene(maxTicks = 20, isolated = true)
+    public void twoHandsArePaidInOneCallTheToolWornInItsHandAndTheEmptyBucketInTheOther(TestScene scene) {
+        Inventory inventory = JolCraftGameTests.inventory();
+        ServerPlayer live = scene.addPlayer("Shearer").survival().player();
+        net.minecraft.world.entity.player.Inventory items = live.getInventory();
+        items.setSelectedSlot(0);
+        items.setItem(0, new ItemStack(Items.SHEARS));
+        live.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.WATER_BUCKET));
+        Optional<Inventory.Match> tool = inventory.match(new Inventory.Holder.Hand(live, InteractionHand.MAIN_HAND), List.of(input(Fate.damage(1), Items.SHEARS)));
+        Optional<Inventory.Match> target = inventory.match(new Inventory.Holder.Hand(live, InteractionHand.OFF_HAND), List.of(input(Fate.consume(1), Items.WATER_BUCKET)));
+        boolean paid = tool.isPresent() && target.isPresent() && inventory.pay(List.of(tool.get(), target.get()));
+        scene.check("the shears are worn in the main hand and the offhand holds the empty bucket, nothing else in the inventory", () -> scene.assertTrue(paid
+                && items.getItem(0).is(Items.SHEARS) && items.getItem(0).getDamageValue() == 1 && live.getOffhandItem().is(Items.BUCKET) && live.getOffhandItem().getCount() == 1
+                && inventory.count(new Inventory.Holder.Player(live), _ -> true) == 2, "paid " + paid + ", main " + items.getItem(0) + ", off " + live.getOffhandItem()));
+        scene.succeed();
+    }
+
+    @Scene(maxTicks = 20, isolated = true)
+    public void aHandLostSinceTheMatchOrTwoClaimsOnOneHandAnswerFalseWithTheOtherHandsToolUnworn(TestScene scene) {
+        Inventory inventory = JolCraftGameTests.inventory();
+        ServerPlayer live = scene.addPlayer("Fumbler").survival().player();
+        net.minecraft.world.entity.player.Inventory items = live.getInventory();
+        items.setSelectedSlot(0);
+        items.setItem(0, new ItemStack(Items.SHEARS));
+        live.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.WHITE_WOOL, 3));
+        Optional<Inventory.Match> tool = inventory.match(new Inventory.Holder.Hand(live, InteractionHand.MAIN_HAND), List.of(input(Fate.damage(1), Items.SHEARS)));
+        Optional<Inventory.Match> wool = inventory.match(new Inventory.Holder.Hand(live, InteractionHand.OFF_HAND), List.of(input(Fate.consume(2), Items.WHITE_WOOL)));
+        live.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+        boolean lost = tool.isPresent() && wool.isPresent() && inventory.pay(List.of(tool.get(), wool.get()));
+        scene.check("the emptied offhand answers false and the shears in the main hand are untouched", () -> scene.assertTrue(tool.isPresent() && wool.isPresent() && !lost
+                && items.getItem(0).is(Items.SHEARS) && items.getItem(0).getDamageValue() == 0, "paid " + lost + ", main " + items.getItem(0)));
+        live.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.WHITE_WOOL, 3));
+        boolean shared = tool.isPresent() && wool.isPresent() && inventory.pay(List.of(tool.get(), wool.get(), wool.get()));
+        scene.check("two claims of two on the hand's three wool each cover alone, fall short together, and roll back the shears' hand unworn", () -> scene.assertTrue(!shared
+                && items.getItem(0).is(Items.SHEARS) && items.getItem(0).getDamageValue() == 0 && live.getOffhandItem().is(Items.WHITE_WOOL) && live.getOffhandItem().getCount() == 3,
+                "paid " + shared + ", main " + items.getItem(0) + ", off " + live.getOffhandItem()));
         scene.succeed();
     }
 }

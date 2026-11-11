@@ -1,0 +1,30 @@
+{
+  "type": "jolcraft:hand",
+  "tool": {
+    "predicate": {
+      "items": "minecraft:apple"
+    },
+    "fate": {
+      "kind": "keep"
+    }
+  },
+  "target": {
+    "predicate": {
+      "items": "minecraft:stick"
+    }
+  },
+  "results": [
+    {
+      "type": "jolcraft:item",
+      "pool": {
+        "rolls": 1,
+        "entries": [
+          {
+            "type": "minecraft:item",
+            "name": "minecraft:oak_sapling"
+          }
+        ]
+      }
+    }
+  ]
+}

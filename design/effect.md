@@ -1,11 +1,13 @@
-# Effect: effect rules, crowd control and damage affinity
+# Effect: effect rules and damage affinity
 
-Draft of 2026-11-10. All four steps built on 2026-11-10: 1 (the rules), 2 (cure and hold), 3 (control) and 4 (damage). From a scout of the old tree's effect and damage code (the stacking, protection,
+Draft of 2026-11-10. Built on 2026-11-10 in steps 1 (the rules), 2 (cure and hold) and 4 (damage); step 3 (crowd
+control) was built and removed again the same day, see "Removed 2026-11-10", and what this design says of it is kept as
+the record for the features that own stun, root, suppress and disarm. From a scout of the old tree's effect and damage code (the stacking, protection,
 duration, crowd-control and cure helpers, the owned-effect helper, the six affinity rows and their eighteen entity
 tags, eight mixins) against vanilla 26.1.2 with NeoForge 26.1.2.122's patches; four scouts reported and the claims
 this design leans on were re-read in the sources (two were wrong, see the end of "What 26.1.2 gives"). The author chose the
-scope: the effect rules together with damage affinity, as generic mechanisms with no mod content. Three systems,
-four build steps. Challenged 2026-11-10: eight findings confirmed and folded in, see "Challenged".
+scope: the effect rules together with damage affinity, as generic mechanisms with no mod content. Three systems in
+four build steps were planned; two systems stand. Challenged 2026-11-10: eight findings confirmed and folded in, see "Challenged".
 
 ## What the old tree did
 
@@ -103,8 +105,9 @@ not read); and `Applicable`'s result is `APPLY`/`DEFAULT`/`DO_NOT_APPLY`, not al
 
 ## The systems
 
-Three systems, each a `@ModSystem` the root builds, with their data and rules written once. Nothing here is mod
-content: the effects, attributes, tags and rows these read are written by the feature systems that own them.
+Two systems, each a `@ModSystem` the root builds, with their data and rules written once. Nothing here is mod
+content: the effects, attributes, tags and rows these read are written by the feature systems that own them. The
+third, `control`, is in "Removed 2026-11-10".
 
 | Piece | What it is |
 |---|---|
@@ -115,18 +118,14 @@ content: the effects, attributes, tags and rows these read are written by the fe
 | **Scaling and immunity.** | On `Applicable`, a `SHORTEN` entry whose attribute value is 1 or more on an entity blocks every effect its filter matches (replaces the class check). On `Added`, before stacking, for each `SCALING` attribute the entity has: a finite incoming duration is multiplied by `1 + max(0, v)` for `LENGTHEN` and by `1 - clamp(v, 0, 1)` for `SHORTEN`, rounded, at least 1; the factors multiply; infinite and hidden instances are not scaled. |
 | **Cure and incurable.** | The old tree's NeoForge cure API rebuilt, since 26.1.2 dropped it. Milk and the totem were the default cures every effect carried, and an effect with an empty cure set (the curses, Moon Shield) was cured by nothing; now an effect in `INCURABLE` is one the clear leaves. A mixin on `ClearAllStatusEffectsConsumeEffect.apply` (milk's and the totem's clear, and any item's that uses it) posts `ClearEvent(entity, stack)`, an `@Event` in the system; `Effect` answers it by removing every active effect not in `INCURABLE` through `removeEffect`, and the mixin returns that answer in place of vanilla's `removeAllEffects`. `cure(LivingEntity, TagKey<MobEffect>)` is the old `removeEffectsCuredBy`: it removes every active effect the tag lists, as a feature's named cure (the horn's) did. A feature owns its cure tags; the system owns none. `Remove` is never cancelled, so `/effect clear` and every other mod's removal work as they always did. |
 | **Owned infinite effects.** | `hold(LivingEntity, Identifier source, Held held, boolean active)` with `Held(effect, amplifier, ambient, visible, icon)`, called by a source each tick or when its condition changes; one `source` per held effect. `Owned(Set<Identifier>)` is a saved attachment (not kept on death, as the effects are not). Active: no instance of the effect on the entity, add an infinite one and, if the game took it, record the source; an instance already there is never replaced, and an owned source whose infinite instance has vanished from the chain is forgotten. Inactive: if the source is recorded, unlink the infinite instance of that amplifier from the chain (the game's `update` gives a hidden chain only to a finite head, so an infinite instance never has anything under it: held as the head it is removed alone, held below a finite head it is spliced out in place, and nothing passes through the rules again), forget the source; if not, return before touching anything (`isSet` is false for nearly every entity). Reads and writes `hiddenEffect` through the access transformer. |
-| **`control`.** | `module/system/control`. `Control`, `@ModSystem(Dictionary.CONTROL)`, takes nothing: it reads tags and the game. `Stop` (`@Value` enum, each constant holding its mob effect `TagKey`): `ATTACK`, `RANGED`, `USE`, `MOVE`, `LOOK`, `TARGET`; `Stop.of(ItemStack)` is `RANGED` for an item in `RANGED_WEAPON_TOOLS` or a `ProjectileWeaponItem`, else `USE`. `Control.stops(LivingEntity, Stop)` is true when the entity has an effect in the tag and is not a creative player. |
-| **What each tag stops.** | `ATTACK`: a player's attack, left click and block break; a mob's melee goal while it holds a weapon (a melee or ranged tool). `RANGED`: use of a ranged item (right click on item, block or entity with it in hand; the use events `Start`, `Tick`, `Stop`); a mob's bow and crossbow goals. `USE`: the same events with any other item or an empty hand; a mob's spell goal. `MOVE`: each server tick the entity's navigation stops, strafing resets and horizontal motion is zeroed (vertical kept), which does not stop a running goal's same-tick steering (a bow goal strafing, a melee goal re-pathing; a full root is the effect's own movement speed modifier, as data); on the client the movement input is emptied. `LOOK`: client mouse sensitivity that cancels the game's 0.2 floor. `TARGET`: each server tick a mob's target and anger are cleared. `Tick` also stops an item in use that the tags now forbid. Creative players are exempt everywhere. Stunned is all six, Rooted `MOVE`, Suppressed `USE`, Disarmed `ATTACK` and `RANGED`, as data. |
-| **Seams.** | Server: the NeoForge events above and `EntityTickEvent.Post` (early out for an entity with no effects), handlers on `Control`, registered by the root. Client: `control/client/ControlClient`, a `@Helper` the root calls after the dist check with the game bus and the `Control`: `InteractionKeyMappingTriggered` (attack key from `ATTACK`, use and pick-block from the main-hand item's `Stop`, `setSwingHand(false)`), `MovementInputUpdateEvent` (`keyPresses = Input.EMPTY` and `moveVector = Vec2.ZERO`) and `CalculatePlayerTurnEvent`. Mobs: four mixins in `mixin/`, one each on `MeleeAttackGoal`, `RangedBowAttackGoal`, `RangedCrossbowAttackGoal` and `SpellcasterUseSpellGoal`, each an `@Inject` at `RETURN` of `canUse` and `canContinueToUse` (targets by `@Desc`) that, only when the original answered true, posts `GoalEvent(mob, stop)` and answers false if the event was blocked; `USE` covers the spell goals that defer to the base `canUse`; the evoker's wololo goal is outside it, as it was in the old tree (an inject on the public `EvokerWololoSpellGoal` would close it). `GoalEvent` is an `@Event` in the system; `Control` listens and blocks it by `stops` and the weapon rule. |
 | **`damage`.** | `module/system/damage`. `Damage`, `@ModSystem(Dictionary.DAMAGE)`, takes `registration` and declares the datapack registry `jolcraft:affinity` (not synced: only the server reads it). `Affinity`, a `@Value` record and the registry's entry: `damage` and `except` (`HolderSet<DamageType>`, `except` default empty), `resistance` and `vulnerability` (`Holder<Attribute>`), and `innate`, a list of `Innate(HolderSet<EntityType<?>> entities, double resistance, double vulnerability)`, both 0 or more and the resistance at most 1. One row replaces a damage tag, six entity tags and the constants 1.0 and 0.5: the old rows' immune, resistant and vulnerable tags are three `innate` entries. |
 | **Applying a row.** | At `LivingDamageEvent.Pre`, for every row whose `damage` holds the source's type and whose `except` does not: `resistance = clamp(value, 0, 1)`, `vulnerability = max(0, value)` (an entity without the attribute counts 0), `damage *= (1 + vulnerability) * (1 - resistance)`; rows multiply, so a type in two rows takes both; the result is `max(0, damage)`. On `EntityJoinLevelEvent` for a server-side living entity, for each row the greatest `resistance` and the greatest `vulnerability` among the `innate` entries that hold the entity's type become a transient `ADD_VALUE` modifier on the row's two attributes, removed when 0; the modifier ids are the row's id and a word. The write is idempotent: a non-zero value uses `addOrUpdateTransientModifier`, 0 uses `removeModifier(id)`, because a player changing dimension stays the same object and posts the join again, where `addTransientModifier` would throw. |
 | **`Stage`.** | A `@Value` set of `EventPriority` constants, the one place the order of damage handlers is written. `LivingIncomingDamageEvent`: `ATTACK` (highest: what the attacker adds), `SHAPE` (high), `TARGET` (normal: what the target's effects do before mitigation), `DEFENSE` (low: flat defences). `LivingDamageEvent.Pre`: `AFFINITY` (high), `FINAL` (normal: the last defences, after affinity). `Post` is read-only and has no stage. A system registers its listener at its stage; `Damage` registers affinity at `AFFINITY`. |
 
 ## Lifecycle and rules
 
-Built: the root builds the three systems, calls `EffectContent.register(modBus)`, adds each system's listeners
-(`effect::onApplicable`, `onAdded`, `onClear` on the game bus; `control`'s handlers; `damage`'s two), and calls
-`ControlClient` after the dist check; `Damage` has declared the registry to `Registration`, `Effect` the attachment to
+Built: the root builds the two systems, calls `EffectContent.register(modBus)` and adds each system's listeners
+(`effect::onApplicable`, `onAdded`, `onClear` on the game bus; `damage`'s two); `Damage` has declared the registry to `Registration`, `Effect` the attachment to
 `Attachment`, both before the root registers them. Used: the game posts the events; each handler returns at once
 unless the entity is on a server level, the data has an entry and the entity has a matching effect or attribute.
 Data maps and tags are read live from the registries, so `/reload` takes effect; affinity's innate modifiers are
@@ -143,20 +142,15 @@ written at join and follow a reload only when the entity next joins.
 - `Applicable` only ever answers `DO_NOT_APPLY`, never `APPLY`, so another mod's refusal stands.
 - Incurable only means the clear leaves it: milk, the totem and any item using that consume effect. A feature's cure,
   `/effect clear`, expiry and death remove it as before.
-- A mixin holds no reference to a module: it reads the vanilla object, posts `ClearEvent` or `GoalEvent` and reads its
-  answer. `ClearEvent` is in `effect`'s folder, `GoalEvent` and `Stop` in `control`'s; the architecture test's rule 8 (a mixin depends on no module) holds since
-  neither is a module.
-- Rule 4: `Effect` takes attachment and log, `Control` nothing, `Damage` registration; `ControlClient` is the only
-  class that imports client types, in `control/client`, and nothing common depends on it.
+- A mixin holds no reference to a module: it reads the vanilla object, posts `ClearEvent` and reads its answer.
+  `ClearEvent` is in `effect`'s folder; the architecture test's rule 8 (a mixin depends on no module) holds since it is
+  not a module.
+- Rule 4: `Effect` takes attachment and log, `Damage` registration; neither has a client half.
 - The AT is the smallest opening that works: `MobEffectInstance.duration`, `amplifier` and `hiddenEffect` public (in-place
   stacking and scaling, and reading the chain; the 7-argument constructor can rebuild a chain but cannot read one or edit
   the instance `Added` carries, and `forceAddEffect` with a merged copy would leave vanilla's `update` to refresh the
-  attributes from the stale old instance); `ClientInput.moveVector` public; the inner class
-  `SpellcasterIllager$SpellcasterUseSpellGoal` public so a class literal can name it. A mixin accessor for the first
-  three would need the config the goal mixins bring anyway but is more code for the same three fields.
-- Cost: `EntityTickEvent.Post` for all entities is one `instanceof` and an empty-map test for an entity with no effects;
-  the goal mixins post only when vanilla would run the goal; `Applicable` walks the protection and scaling maps, a
-  handful of entries; `Pre` walks the rows, six or so.
+  attributes from the stale old instance). A mixin accessor for them is more code for the same three fields.
+- Cost: `Applicable` walks the protection and scaling maps, a handful of entries; `Pre` walks the rows, six or so.
 
 ## Proof
 
@@ -167,7 +161,7 @@ infinite incoming stays infinite, a finite incoming on an infinite old stays fin
 directions, 1 or more blocks, minimum 1 tick), `Protection.roll` with a seeded `RandomSource`, `Affinity.multiplier`
 (two rows multiply, `except` excludes, an absent attribute counts 0, the innate maximum), `Owned` round trip.
 
-Scenes on the game-test server under `gametest/module/system/{effect,control,damage}`, on vanilla effects, attributes,
+Scenes on the game-test server under `gametest/module/system/{effect,damage}`, on vanilla effects, attributes,
 damage types and mobs, with the fixtures the scenes read, a built-in data pack in `src/gametest/resources/scene` (its own `pack.mcmeta` and `data/`
 tree, registered by `ScenePack` through `AddPackFindersEvent`). The pack is required on `runGameTestServer`, whose build.gradle
 run sets the system property `jolcraft.gametest.scene`, and listed but off in `runClient`, `runClient2` and `runServer`: its source does
@@ -198,14 +192,6 @@ whenever its effect is present, so the effects the fixtures name are ones the ga
   head, a `SHORTEN` attribute and a 0.5 attribute protector on the entity, stopping the source leaves the head
   present with its duration unchanged. If `TestPlayer` can reach `restoreFrom`, a scene re-adds a player's effects
   and asserts no protection roll and no rescale; else it is on the hand check.
-- **control.** Survival `TestPlayer` with an effect in each tag (and a creative one for the exemption): `player.attack`
-  is cancelled by `ATTACK` and not by `USE`; the interaction and use events by `Stop.of(held item)`; a ranged item and
-  an empty hand take different tags; a mob under `MOVE` has its horizontal motion zeroed with its vertical kept; under
-  `TARGET` its target is cleared. A skeleton with a bow targeting the player runs its bow goal until the effect is
-  applied, then does not (`getAvailableGoals` running state), and the control mob without the effect keeps running it;
-  the same for a zombie with a sword, a pillager with a crossbow (asserting what vanilla `stop()` leaves: target cleared, charge cleared mid-charge) and an evoker (the fangs or summon goal, named in the scene; wololo is outside);
-  a bare-handed zombie is not blocked. The client half has no headless proof: it is checked by hand in `runClient` after `/datapack enable "mod/jolcraft_gametest:scene"` (the stop tags are fixtures in the scene pack),
-  and its decisions are the same `Control.stops` the scenes cover.
 - **damage.** On a cow hurt through `hurtServer` with a fire and a magic source: a fire row with resistance 0.5 and
   vulnerability 0.25 gives `(1.25)(0.5)` of the damage; a type in two rows takes both; `except` excludes; an entity
   type in an `innate` entry takes the modifier on join and none on another type; a row with no attribute on the entity
@@ -224,7 +210,7 @@ Four steps, each ending with the gates in `CLAUDE.md`.
 2. **Cure and hold.** `Owned`, `ClearEvent` and its handler, `cure`, `hold`; `jolcraft.mixins.json`, the
    `[[mixins]]` entry in the mods.toml template and the clear mixin, the first mixin in main; the rest of the effect
    scenes.
-3. **Control.** `Control`, `Stop`, `GoalEvent`, the server handlers; the four goal mixins in the same config; the AT's
+3. **Control** (built and removed 2026-11-10, see "Removed 2026-11-10"). `Control`, `Stop`, `GoalEvent`, the server handlers; the four goal mixins in the same config; the AT's
    `moveVector` and inner-class lines;
    `ControlClient`; the control scenes and the hand check. The spell goal's mixin reaches its mob through the synthetic
    outer reference (`this$0`), which the old tree did; if the synthetic field cannot be shadowed in 26.1, the fallback is a mixin on
@@ -271,7 +257,8 @@ The four goal mixins are built: the finished codebase disarms mobs, and nothing 
 or an evoker casting. A blocked goal ends through vanilla's own `stop()` and other goals take over, so a disarmed
 archer wanders instead of strafing and a disarmed melee mob stops pursuing but keeps its target. Armour penetration, the
 projectile bonus and the fire and freeze overrides stay with the features that declare their attributes, since each is
-one attribute's behaviour (see "Not in this step").
+one attribute's behaviour (see "Not in this step"). The goal mixins were reversed by the author the same day, see
+"Removed 2026-11-10".
 
 ## Decided 2026-11-10
 
@@ -329,44 +316,8 @@ Departures:
 
 ## Built 2026-11-10 (step 3)
 
-Built: `Control`, `Stop` (with `of` and the package-private `ranged` and `weapon` rules), `GoalEvent` (cancellable); the four
-goal mixins (`MeleeAttackGoalMixin`, `RangedBowAttackGoalMixin`, `RangedCrossbowAttackGoalMixin`,
-`SpellcasterUseSpellGoalMixin`) in `jolcraft.mixins.json`; the AT's `ClientInput.moveVector` and
-`SpellcasterIllager$SpellcasterUseSpellGoal` lines, both needed (the field is protected, the inner class protected and
-named by a class literal); `control/client/ControlClient`; root wiring (`Control` built, `register` on the game bus,
-`ControlClient.register` after the dist check). `StopTest`, and 12 scenes in `ControlPlayerScenes` and `ControlMobScenes`.
-The spell mixin reaches its mob through the synthetic outer reference, `@Shadow(aliases = "this$0")`, as the doc planned;
-the evoker scene proves it (the fallback was not needed). Departures:
-
-- The use events and the in-use stop act on any `LivingEntity` on the server, not only players, so a mob's drawn bow or
-  eaten item follows the same tags; the attack events are the player's. Nothing acts on a client level.
-- The in-use stop (`EntityTickEvent.Post`) calls `stopUsingItem`, never `releaseUsingItem`, so the item is not told it was
-  released; `Tick` is not cancelled either (a cancelled tick answers -1 remaining, which the game reads as the use being
-  over and finishes the item, a food eaten): it calls `stopUsingItem` (and clears a `CrossbowAttackMob`'s charge flag, which the goal's own stop would find the use already gone
-  and leave set) and `setDuration(0)`. Under `TARGET` a mob also gets `setAggressive(false)`, and a `NeutralMob`
-  `stopBeingAngry`; under `MOVE` a player's server motion is zeroed too, which changes nothing a client-driven player does.
-- The melee weapon rule is the held main-hand stack being a melee tool, a ranged tool or a projectile weapon
-  (`Stop.weapon`); the tags are NeoForge's `MELEE_WEAPON_TOOLS` and `RANGED_WEAPON_TOOLS`.
-- `GoalEvent` is cancellable (the "with an answer" form); a mixin answers false when it was cancelled.
-- Fixtures under `scene/data/jolcraft/tags/mob_effect`: strength is `attack`, haste `ranged`, night vision `use`, jump boost
-  `move`, water breathing `look`, health boost `target`. None is used by steps 1 and 2 and none is a status a dev run
-  meets unasked; the scenes meet them only by command, and a dev client not at all unless the scene pack is enabled. `LOOK` has no server rule and no scene beyond the
-  creative one that lists it.
-- Item components and item tags are not bound in the unit-test JVM (an `ItemStack` cannot even be built), so `Stop.of`
-  and the weapon rule have no unit test; the scenes cover them (a bow, crossbow and trident are `RANGED`, a stick and an
-  empty hand `USE`, a bare-handed zombie is not disarmed). `StopTest` checks the six tag ids.
-- The mob scenes stand their mobs on a stone platform one chunk across, two blocks above the arena's roof (W8), the chunk the
-  scene starts in, since a neighbouring chunk's entities do not always tick (mobs spawned there never ticked in one run in
-  six); they aim them at a cow of
-  100000 health: the game refuses an invulnerable entity as a target. The skeleton, zombie and pillager scenes each
-  start a second mob of the same kind as the control, and the zombie scene a third, bare-handed one under `ATTACK`; the evoker scene
-  has one evoker, since two rarely cast together: it casts before the effect and afterwards stops on a counted veto of the event; the
-  pillager's effect lands mid-charge (the scene waits for the charge itself), the target is given back before the
-  ten-tick check so only the veto keeps the goal from restarting, and the scene asserts the game's `stop()` left no
-  target, no use and no charging flag. The evoker's running goal was the summon goal; the fangs goal shares the base `canUse`. Scenes with players post
-  the events as the game posts them to the bus.
-- The client half has no headless proof: it is checked by hand in `runClient` after `/datapack enable "mod/jolcraft_gametest:scene"` (the stop tags are fixtures in the scene pack), and its decisions are the same
-  `Control.stops` the scenes cover. Not yet checked by hand.
+Built as designed, with `StopTest` and twelve scenes, and removed the same day (see "Removed 2026-11-10"). Its build
+notes, the departures from this design that the code and the scenes found, are in this file at `dd43d50d`.
 
 ## Built 2026-11-10 (step 4)
 
@@ -392,3 +343,15 @@ empty in the main mod; the old six rows and their attributes are feature content
 - The unit test decodes rows under the vanilla datapack lookup but does not round trip them: the lookup's holders are not valid for
   encoding in a second lookup, and nothing encodes affinity rows until datagen writes them.
 - The damage scenes are the first to read a datapack registry in a running game; see W1 in `REVIEW_TODO.md`.
+
+## Removed 2026-11-10
+
+The author: mixins on vanilla classes made for one planned feature (a stun) are specific work, not the generic layer,
+while support for changing how damage works is fine; the clear mixin stays, generic enough and the replacement of the
+cure API NeoForge 26.1.2 dropped. Crowd control is the work of the features that own stun, root, suppress and disarm, so
+`control` went: `Control`, `Stop`, `GoalEvent` and `client/ControlClient`, the four goal mixins, the access
+transformer's `ClientInput.moveVector` and spell-goal lines, the root's wiring, the seven Dictionary words only it used,
+`StopTest`, the twelve scenes in `ControlPlayerScenes` and `ControlMobScenes`, and the six stop-tag fixtures in the scene
+pack. Its client half was never checked by hand. The code is in history at `dd43d50d`; the research above (what the old
+tree did, what 26.1.2 gives, the seams and the goal targets) is where that feature starts. Verified after the removal:
+205 unit tests, `runData`, 113 of 113 scenes and `build` green.

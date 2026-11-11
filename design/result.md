@@ -58,7 +58,8 @@ recipes reaching a player who joins.
 them. Context keys and shapes are `@Value` constants beside the module that owns them, as tags are; a host puts its
 matched input stacks into the context under keys of its own shape. A host's `RecipeKey`, and the mod's one
 `YieldKinds` its yield codecs embed, live in a system's `@Keys` set, the stereotype added 2026-10-27 for exactly
-that, since a `@Value` holds no handle; the root declares the `YieldKinds` to `Result` from there. The order is four
+that, since a `@Value` holds no handle; the root declares the `YieldKinds` to `Result` from there, the `outcome`
+system's `OutcomeKeys.YIELDS` since 2026-11-11 (`outcome.md`), which also delivers a result to a player. The order is four
 steps, one at a time: the
 `loot` addition (shapes, context builder, validator), the `registration` helper (dispatch), the `result` composite,
 then the `recipe` values and the round trip.

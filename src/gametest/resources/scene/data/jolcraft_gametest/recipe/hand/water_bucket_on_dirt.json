@@ -1,0 +1,27 @@
+{
+  "type": "jolcraft:hand",
+  "tool": {
+    "predicate": {
+      "items": "minecraft:water_bucket"
+    }
+  },
+  "target": {
+    "predicate": {
+      "items": "minecraft:dirt"
+    }
+  },
+  "results": [
+    {
+      "type": "jolcraft:item",
+      "pool": {
+        "rolls": 1,
+        "entries": [
+          {
+            "type": "minecraft:item",
+            "name": "minecraft:mud"
+          }
+        ]
+      }
+    }
+  ]
+}
