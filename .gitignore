@@ -1,5 +1,5 @@
 # eclipse
-bin
+/bin
 *.launch
 .settings
 .metadata
@@ -9,22 +9,22 @@ src/generated/
 old/src/generated/
 
 # idea
-out
+/out
 *.ipr
 *.iws
 *.iml
 .idea
 
 # gradle
-build
+/build
 .gradle
 
 # other
-eclipse
-run
-runs
-run-data
+/eclipse
+/run
+/runs
+/run-data
 
-repo
+/repo
 # claude code: local, per-machine permissions
 .claude/settings.local.json
