@@ -1,0 +1,10 @@
+{
+  "type": "jolcraft:replace_table",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "jolcraft_gametest:drop/kept"
+    }
+  ],
+  "table": "jolcraft_gametest:missing"
+}

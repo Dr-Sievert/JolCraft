@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_table",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "jolcraft_gametest:drop/target"
+    }
+  ],
+  "table": "jolcraft_gametest:drop/addition"
+}

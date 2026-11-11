@@ -20,7 +20,7 @@ static in the mod; the game-test mod's plumbing hands scenes what its root built
 |---|---|---|---|
 | `schedule` | server-thread tasks after N ticks or every N ticks, cancellable, dropped when the server stops; failures reported through a contract the root adapts from `Log` | the per-entity tick counters in events and goals, the brewing sleep handler's ticking | none |
 | `recipe` | a module's recipe types and serializers as keys, with `key.find(level, input)` and `key.all(level)` over the level's recipe access | `world/recipe/JolCraftRecipes`, the custom recipe types' registrations; not `world/recipe/base`, whose generic pieces were built from `result.md`: context shapes in `loot`, the dispatch helper in `registration`, the `result` composite, and `ItemInput` with its `Fate`, `key.check(registries, recipe)` and `sync(gameBus)` here (built 2026-10-27, step 4); the check's static form over any codec, which datagen runs on a recipe under one of the game's types (built 2026-11-11, `rework.md`) | `RecipeContributor` (exists) |
-| `loot` | loot modifier serializers, loot condition and function types as keys, `roll(level, table, params)`, and `Shape` with `context(level, shape, [random,] params)` to validate data against a loot context's keys and build the context (built 2026-10-26, step 1 of `result.md`) | `world/loot/JolCraftLootModifiers`, `AddItemModifier`, `AddLootTableModifier` | `LootContributor` (exists) plus a loot-modifier provider |
+| `loot` | loot modifier serializers, loot condition and function types as keys, `roll(level, table, params)`, and `Shape` with `context(level, shape, [random,] params)` to validate data against a loot context's keys and build the context (built 2026-10-26, step 1 of `result.md`) | `world/loot/JolCraftLootModifiers`, `AddItemModifier`, `AddLootTableModifier`: the plain adds are NeoForge's `add_table` now, the item form through a one-entry table, and the replacing form is the `drop` system's kind (2026-11-11, `drop.md`) | `LootContributor` (exists) plus a loot-modifier provider |
 | `advancement` | custom criterion triggers as keys with `key.fire(player, matcher)`, and the advancement datagen provider with its completeness (title and description text) | `world/entity/player/advancement/*`, `datagen/advancement/*` | new `AdvancementContributor` and `Advancements` provider |
 | `menu` | menu types as keys, `open(player, title, menu, extra data)`, and the client half that gives a menu its screen | `world/gui/JolCraftMenuTypes`, `JolCraftMenu`, the screen registrations | none |
 | `command` | a module's Brigadier command trees declared while it is built, registered once at `RegisterCommandsEvent` (`module-map.md` says so since this plan) | nothing; roadmap item 9 is new, and the old dev key's dwarf level-up is a candidate for a dev command | none |
@@ -52,7 +52,7 @@ Built from primitives only, in the folder of the primitive they extend.
 ## Shared systems
 
 Systems that several features stand on and that are not features themselves. Built after the composites, in
-this order; `worldgen` (its kinds), `effect`, `damage`, `outcome`, `hand` and `rework` are built so far, so nothing is forgotten.
+this order; `worldgen` (its kinds), `effect`, `damage`, `outcome`, `hand`, `rework` and `drop` are built so far, so nothing is forgotten.
 
 | System | Takes | Job | Replaces in `old/` |
 |---|---|---|---|
@@ -63,6 +63,7 @@ this order; `worldgen` (its kinds), `effect`, `damage`, `outcome`, `hand` and `r
 | `outcome` (built 2026-11-11, `outcome.md`, step 2 of `hand.md`) | inventory, log | the mod's one `YieldKinds`, `OutcomeKeys.YIELDS`, which the root declares to `Result` and every host's records embed, and the delivery of what results roll to a player: the stacks given together, the entities spawned at the player, the effects added as copies, the sounds played for everyone in range; a host's own kinds stay the host's | each old host's own dispatch on the output's class, as in `JolCraftHandInteractionEvents` |
 | `hand` (built 2026-11-11, `hand.md`) | recipe, result, inventory, outcome, log | two-hand interaction recipes: the kind `jolcraft:hand` that features fill with data, a tool and a target matched in either hand, results of the four kinds rolled against the hand context and delivered by `outcome`, both hands paid in one transaction, the item's use consumed on every path after a match; a client half keeps the client from predicting the use | `world/recipe/custom/hand/*`, `JolCraftHandInteractionEvents` |
 | `rework` (built 2026-11-11, `rework.md`) | nothing | the crafting-table kind `jolcraft:rework` that features fill with data: one base item reworked into the result, its stack's components carried over whole, by a list kept or a list removed, under the result template's own; a craft that changes nothing is no match, the base's remainder can be held back, and the kind is in the recipe book; its serializer registered by the system's content, under the game's crafting type | `world/recipe/custom/vanilla/ComponentPreservingShapelessRecipe`, its builder and `DyeColorRecipeBuilder` |
+| `drop` (built 2026-11-11, `drop.md`) | loot | the loot modifier kind `jolcraft:replace_table` that features fill with data: NeoForge's `add_table` with a clear first, the table rolled raw into a list of its own before the drop is cleared, a table the data pack lacks leaving the drop as rolled, NeoForge's default priority unless the data states one; declared through the loot primitive, so no content class | the `replace` flag of `world/loot/custom/AddItemModifier` and `AddLootTableModifier`, with its two uses, fishing and archaeology |
 | `economy` | log | the coin items, their values and the pay and give helpers trade and bounties share | the coin items in `world/item/JolCraftItems`, `world/item/custom/container/CoinPouchItem`, `JolCraftCoinPickupEventsHelper` |
 
 ## Feature systems, for later
@@ -77,6 +78,11 @@ planting and bonemeal rules, their vegetation features and biome modifiers, and 
 `muffhorn`, `brew`, `trade` and `bounty` reach its items), `crate`.
 
 ## Status, 2026-11-11
+
+The `drop` system of `drop.md` is built after `rework`: one loot modifier kind, `jolcraft:replace_table`, declared through
+the loot primitive's `LootKey.modifier` with no content class, with unit tests of its codec and scenes that roll fixture
+tables of the scene pack through NeoForge's modifiers. With it the generic candidates are used up; the client-only
+tooltip helper waits for the first feature with items.
 
 The `rework` system of `rework.md` is built after `hand`: the crafting-table kind `jolcraft:rework`, registered by a
 content class of its own as the worldgen kinds are, with unit tests of its codec and scenes on fixture recipes in the

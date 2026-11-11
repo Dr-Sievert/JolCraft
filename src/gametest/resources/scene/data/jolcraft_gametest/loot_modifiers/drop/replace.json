@@ -1,0 +1,11 @@
+{
+  "type": "jolcraft:replace_table",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "jolcraft_gametest:drop/target"
+    }
+  ],
+  "priority": 1100,
+  "table": "jolcraft_gametest:drop/replacement"
+}

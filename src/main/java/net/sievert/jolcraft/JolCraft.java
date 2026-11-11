@@ -34,6 +34,7 @@ import net.sievert.jolcraft.module.primitive.schedule.ModSchedule;
 import net.sievert.jolcraft.module.primitive.sound.ModSound;
 import net.sievert.jolcraft.module.primitive.stat.ModStat;
 import net.sievert.jolcraft.module.system.damage.Damage;
+import net.sievert.jolcraft.module.system.drop.Drop;
 import net.sievert.jolcraft.module.system.effect.Effect;
 import net.sievert.jolcraft.module.system.effect.EffectContent;
 import net.sievert.jolcraft.module.system.hand.Hand;
@@ -91,6 +92,7 @@ public final class JolCraft {
         Damage damage = new Damage(registration);
         @SuppressWarnings("unused") Worldgen worldgen = new Worldgen();
         @SuppressWarnings("unused") Rework rework = new Rework();
+        @SuppressWarnings("unused") Drop drop = new Drop(loot);
 
         registration.register(modBus);
         attachment.register(modBus);

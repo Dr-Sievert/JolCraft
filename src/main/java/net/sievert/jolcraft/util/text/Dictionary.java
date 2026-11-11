@@ -41,6 +41,7 @@ public final class Dictionary {
     public static final String DEFAULT = "default";
     public static final String DESCRIPTION = "description";
     public static final String DIRECTION = "direction";
+    public static final String DROP = "drop";
     public static final String EFFECT = "effect";
     public static final String EFFECTS = "effects";
     public static final String EMPTY = "empty";
@@ -89,6 +90,7 @@ public final class Dictionary {
     public static final String REGISTRATION = "registration";
     public static final String REMAINDER = "remainder";
     public static final String REMOVE = "remove";
+    public static final String REPLACE = "replace";
     public static final String RESISTANCE = "resistance";
     public static final String RESULT = "result";
     public static final String RESULTS = "results";
