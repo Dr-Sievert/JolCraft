@@ -40,6 +40,8 @@ import net.sievert.jolcraft.module.system.hand.Hand;
 import net.sievert.jolcraft.module.system.hand.client.HandClient;
 import net.sievert.jolcraft.module.system.outcome.Outcome;
 import net.sievert.jolcraft.module.system.outcome.OutcomeKeys;
+import net.sievert.jolcraft.module.system.rework.Rework;
+import net.sievert.jolcraft.module.system.rework.ReworkContent;
 import net.sievert.jolcraft.module.system.worldgen.Worldgen;
 import net.sievert.jolcraft.module.system.worldgen.WorldgenContent;
 import net.sievert.jolcraft.util.text.Dictionary;
@@ -88,6 +90,7 @@ public final class JolCraft {
         Effect effect = new Effect(attachment, log);
         Damage damage = new Damage(registration);
         @SuppressWarnings("unused") Worldgen worldgen = new Worldgen();
+        @SuppressWarnings("unused") Rework rework = new Rework();
 
         registration.register(modBus);
         attachment.register(modBus);
@@ -108,6 +111,7 @@ public final class JolCraft {
         hand.register(NeoForge.EVENT_BUS);
         EffectContent.register(modBus);
         WorldgenContent.register(modBus);
+        ReworkContent.register(modBus);
         config.register(container);
         network.register(modBus, container.getModInfo().getVersion().toString());
         if (FMLEnvironment.getDist().isClient()) {

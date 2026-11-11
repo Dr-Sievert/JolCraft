@@ -1,0 +1,17 @@
+{
+  "type": "jolcraft:rework",
+  "base": "minecraft:honey_bottle",
+  "ingredients": [
+    "minecraft:sugar"
+  ],
+  "result": {
+    "id": "minecraft:potion",
+    "components": {
+      "minecraft:potion_contents": {
+        "potion": "minecraft:swiftness"
+      }
+    }
+  },
+  "keep": [],
+  "base_remainder": false
+}

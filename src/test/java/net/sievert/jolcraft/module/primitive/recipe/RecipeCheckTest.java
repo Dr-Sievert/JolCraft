@@ -49,6 +49,12 @@ class RecipeCheckTest {
     }
 
     @Test
+    void theStaticFormRoundTripsThroughACodecWithNoKey() {
+        Assertions.assertEquals(new Counted(5), RecipeKey.check(registries, Counted.CODEC, new Counted(5)).getOrThrow());
+        Assertions.assertTrue(RecipeKey.check(registries, Counted.CODEC, new Counted(11)).isError(), "refused on the way back");
+    }
+
+    @Test
     void aRecipeItsCodecRefusesOnTheWayBackIsAnErrorNamingWhy() {
         DataResult<Counted> refused = COUNTED.check(registries, new Counted(11));
         Assertions.assertTrue(refused.isError());

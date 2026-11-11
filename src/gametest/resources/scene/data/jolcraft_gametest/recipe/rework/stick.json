@@ -1,0 +1,11 @@
+{
+  "type": "jolcraft:rework",
+  "base": "minecraft:stick",
+  "ingredients": [
+    "minecraft:flint"
+  ],
+  "result": "minecraft:paper",
+  "remove": [
+    "minecraft:max_stack_size"
+  ]
+}

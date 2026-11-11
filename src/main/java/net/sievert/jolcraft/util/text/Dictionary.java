@@ -17,6 +17,7 @@ public final class Dictionary {
     public static final String ATTACHMENT = "attachment";
     public static final String ATTRIBUTE = "attribute";
     public static final String AWARDS = "awards";
+    public static final String BASE = "base";
     public static final String BLOCK = "block";
     public static final String BLOCKS = "blocks";
     public static final String BOOK = "book";
@@ -59,6 +60,7 @@ public final class Dictionary {
     public static final String IN = "in";
     public static final String INCLUSIVE = "inclusive";
     public static final String INCURABLE = "incurable";
+    public static final String INGREDIENTS = "ingredients";
     public static final String INNATE = "innate";
     public static final String INVENTORY = "inventory";
     public static final String ITEM = "item";
@@ -85,9 +87,12 @@ public final class Dictionary {
     public static final String RANDOM = "random";
     public static final String RECIPE = "recipe";
     public static final String REGISTRATION = "registration";
+    public static final String REMAINDER = "remainder";
+    public static final String REMOVE = "remove";
     public static final String RESISTANCE = "resistance";
     public static final String RESULT = "result";
     public static final String RESULTS = "results";
+    public static final String REWORK = "rework";
     public static final String SCALING = "scaling";
     public static final String SCHEDULE = "schedule";
     public static final String SHORTEN = "shorten";

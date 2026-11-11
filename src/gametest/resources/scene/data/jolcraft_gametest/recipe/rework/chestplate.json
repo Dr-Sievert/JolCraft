@@ -1,0 +1,11 @@
+{
+  "type": "jolcraft:rework",
+  "base": "minecraft:leather_chestplate",
+  "ingredients": [
+    "minecraft:iron_ingot"
+  ],
+  "result": "minecraft:iron_chestplate",
+  "keep": [
+    "minecraft:custom_name"
+  ]
+}

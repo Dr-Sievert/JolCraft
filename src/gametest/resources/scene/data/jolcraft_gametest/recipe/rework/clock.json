@@ -1,0 +1,5 @@
+{
+  "type": "jolcraft:rework",
+  "base": "minecraft:clock",
+  "result": "minecraft:compass"
+}

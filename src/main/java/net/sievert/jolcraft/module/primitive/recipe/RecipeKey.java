@@ -67,17 +67,23 @@ public sealed interface RecipeKey<I extends RecipeInput, R extends Recipe.Custom
         return level.recipeAccess().getRecipeFor(type(), input, level);
     }
 
-    /**
-     * Writes and reads the recipe back through this kind's codec under the registries, as the data pack would at load,
-     * and answers what the codec made of it: datagen fails on an error here, naming it, instead of the first login.
-     * The write uses the registries' own serialization context, as the provider does; the read goes through their
-     * lookups, where a tag of the mod's is an empty set at datagen rather than a missing one, so a tag input survives
-     * the check and no codec check may read a tag's members.
-     */
+    /** The round trip of {@link #check(HolderLookup.Provider, MapCodec, Object)} through this kind's codec. */
     default DataResult<R> check(HolderLookup.Provider registries, R recipe) {
+        return check(registries, codec(), recipe);
+    }
+
+    /**
+     * Writes and reads the recipe back through the codec under the registries, as the data pack would at load, and
+     * answers what the codec made of it: datagen fails on an error here, naming it, instead of the first login. The
+     * codec is a kind's own, or the serializer's of a recipe under one of the game's types. The write uses the
+     * registries' own serialization context, as the provider does; the read goes through their lookups, where a tag of
+     * the mod's is an empty set at datagen rather than a missing one, so a tag input survives the check and no codec
+     * check may read a tag's members.
+     */
+    static <T> DataResult<T> check(HolderLookup.Provider registries, MapCodec<T> codec, T recipe) {
         RegistryOps<JsonElement> write = registries.createSerializationContext(JsonOps.INSTANCE);
         RegistryOps<JsonElement> read = RegistryOps.create(JsonOps.INSTANCE, registries);
-        return codec().codec().encodeStart(write, recipe).flatMap(json -> codec().codec().parse(read, json));
+        return codec.codec().encodeStart(write, recipe).flatMap(json -> codec.codec().parse(read, json));
     }
 
     /** Every recipe of this kind on the level's data pack. */

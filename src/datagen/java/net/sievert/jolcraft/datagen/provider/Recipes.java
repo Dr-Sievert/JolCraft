@@ -2,8 +2,10 @@ package net.sievert.jolcraft.datagen.provider;
 
 import java.util.List;
 import com.mojang.serialization.DataResult;
-import net.minecraft.world.item.crafting.RecipeInput;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.data.recipes.RecipeUnlockAdvancementBuilder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import java.util.concurrent.CompletableFuture;
@@ -21,13 +23,14 @@ import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.ItemLike;
 
 import net.sievert.jolcraft.module.primitive.recipe.RecipeKey;
-import net.sievert.jolcraft.module.primitive.recipe.Recipe;
 import net.sievert.jolcraft.JolCraft;
 import net.sievert.jolcraft.datagen.contribute.RecipeContributor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Every module's recipes through one vanilla runner; contributors write against {@link Provider}. */
 public final class Recipes extends RecipeProvider.Runner {
@@ -64,23 +67,39 @@ public final class Recipes extends RecipeProvider.Runner {
             contributors.forEach(contributor -> contributor.recipes(this));
         }
 
-        /** A recipe of one of the mod's own kinds, under its id; the kind's codec writes it. */
-        public void add(Identifier id, net.minecraft.world.item.crafting.Recipe<?> recipe) {
-            if (recipe instanceof Recipe.Custom<?> custom) {
-                check(custom).getOrThrow(message -> new IllegalStateException(id + " does not survive its own codec: " + message));
+        /**
+         * A recipe of one of the mod's own kinds that the recipe book does not show, under its id; its serializer's codec
+         * writes it. A recipe the book shows needs a way to be unlocked and goes through the overload that takes one.
+         */
+        public void add(Identifier id, Recipe<?> recipe) {
+            if (!recipe.isSpecial()) {
+                throw new IllegalStateException(id + " is shown in the recipe book and needs a way to be unlocked: add it with its category and unlock criteria");
             }
-            output().accept(ResourceKey.create(Registries.RECIPE, id), recipe, null);
+            write(id, recipe, null);
+        }
+
+        /**
+         * A recipe the recipe book shows, under its id, with the advancement that unlocks it, written as vanilla's builders
+         * write theirs: under {@code recipes/<category>/}, granted by any one of the criteria, and refused with none.
+         */
+        public void add(Identifier id, Recipe<?> recipe, RecipeCategory category, RecipeUnlockAdvancementBuilder unlock) {
+            write(id, recipe, unlock.build(output, ResourceKey.create(Registries.RECIPE, id), category));
+        }
+
+        private void write(Identifier id, Recipe<?> recipe, @Nullable AdvancementHolder advancement) {
+            check(recipe).getOrThrow(message -> new IllegalStateException(id + " does not survive its own codec: " + message));
+            output().accept(ResourceKey.create(Registries.RECIPE, id), recipe, advancement);
         }
 
         public RecipeOutput output() {
             return output;
         }
 
-        /** The recipe through its kind's codec under the registries, as at load; typed over the input the kind takes. */
-        private <I extends RecipeInput> DataResult<?> check(Recipe.Custom<I> custom) {
+        /** The recipe through its serializer's codec under the registries, as at load: a kind's own, or a game type's. */
+        private <T extends Recipe<?>> DataResult<T> check(T recipe) {
             @SuppressWarnings("unchecked")
-            RecipeKey<I, Recipe.Custom<I>> key = (RecipeKey<I, Recipe.Custom<I>>) custom.key();
-            return key.check(registries(), custom);
+            MapCodec<T> codec = (MapCodec<T>) recipe.getSerializer().codec();
+            return RecipeKey.check(registries(), codec, recipe);
         }
 
         public HolderLookup.Provider registries() {

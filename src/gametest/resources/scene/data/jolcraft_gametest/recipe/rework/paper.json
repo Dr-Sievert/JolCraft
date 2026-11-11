@@ -1,0 +1,13 @@
+{
+  "type": "jolcraft:rework",
+  "base": "minecraft:paper",
+  "ingredients": [
+    "minecraft:ink_sac"
+  ],
+  "result": {
+    "id": "minecraft:paper",
+    "components": {
+      "minecraft:custom_name": "Written"
+    }
+  }
+}

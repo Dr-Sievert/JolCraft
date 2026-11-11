@@ -1,0 +1,11 @@
+{
+  "type": "jolcraft:rework",
+  "base": "minecraft:leather_boots",
+  "ingredients": [
+    "minecraft:water_bucket"
+  ],
+  "result": "minecraft:leather_boots",
+  "remove": [
+    "minecraft:dyed_color"
+  ]
+}

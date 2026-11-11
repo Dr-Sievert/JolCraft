@@ -1,0 +1,8 @@
+{
+  "type": "jolcraft:rework",
+  "base": "minecraft:leather_helmet",
+  "ingredients": [
+    "minecraft:iron_ingot"
+  ],
+  "result": "minecraft:iron_helmet"
+}

@@ -1,0 +1,9 @@
+{
+  "type": "jolcraft:rework",
+  "base": "minecraft:honey_bottle",
+  "ingredients": [
+    "minecraft:glowstone_dust"
+  ],
+  "result": "minecraft:yellow_dye",
+  "keep": []
+}
