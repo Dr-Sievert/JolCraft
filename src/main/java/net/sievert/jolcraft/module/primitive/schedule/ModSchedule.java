@@ -9,6 +9,7 @@ import java.util.WeakHashMap;
 import net.minecraft.server.MinecraftServer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import net.sievert.jolcraft.stereotype.Implementation;
@@ -39,6 +40,11 @@ public final class ModSchedule implements Schedule {
         return queue(server).every(server.getTickCount(), interval, task);
     }
 
+    @Override
+    public Task onStop(MinecraftServer server, Runnable task) {
+        return queue(server).onStop(task);
+    }
+
     private Queue queue(MinecraftServer server) {
         if (!server.isSameThread()) {
             throw new IllegalStateException("tasks are scheduled from the server's thread; another thread hands the server its work first");
@@ -59,6 +65,7 @@ public final class ModSchedule implements Schedule {
         }
         registered = true;
         gameBus.addListener(ServerTickEvent.Post.class, event -> tick(event.getServer()));
+        gameBus.addListener(ServerStoppingEvent.class, event -> stopping(event.getServer()));
         gameBus.addListener(ServerStoppedEvent.class, event -> stopped(event.getServer()));
     }
 
@@ -67,6 +74,14 @@ public final class ModSchedule implements Schedule {
         Queue queue = queues.get(server);
         if (queue != null) {
             queue.tick(server.getTickCount());
+        }
+    }
+
+    /** A server is stopping, after its last tick and before it saves: its stop tasks run. */
+    void stopping(MinecraftServer server) {
+        Queue queue = queues.get(server);
+        if (queue != null) {
+            queue.stopping();
         }
     }
 
@@ -79,7 +94,7 @@ public final class ModSchedule implements Schedule {
         stopped.add(server);
     }
 
-    /** How many tasks are queued across the running servers, cancelled ones included until the next tick sweeps them; for tests. */
+    /** How many tasks are queued across the running servers, stop tasks too, cancelled ones included until the next tick sweeps them; for tests. */
     public int pending() {
         return queues.values().stream().mapToInt(Queue::pending).sum();
     }

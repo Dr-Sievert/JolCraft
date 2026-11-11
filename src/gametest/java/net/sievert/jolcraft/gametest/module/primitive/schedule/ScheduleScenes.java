@@ -8,6 +8,7 @@ import net.minecraft.server.MinecraftServer;
 import net.neoforged.bus.api.BusBuilder;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 
 import net.sievert.jolcraft.gametest.scene.Scene;
 import net.sievert.jolcraft.gametest.scene.TestScene;
@@ -17,7 +18,8 @@ import net.sievert.jolcraft.module.primitive.schedule.Schedule;
 /**
  * The schedule primitive on the real server: a task scheduled in a tick runs at the end of the tick that comes the
  * asked ticks later and once only, a repeating task runs every interval until cancelled, a failing task is
- * reported while the next still runs, a stopped server drops its tasks and takes no more, and another thread is refused.
+ * reported while the next still runs, a stopping server runs its stop tasks, a stopped server drops its tasks and takes
+ * no more, and another thread is refused.
  */
 public final class ScheduleScenes {
 
@@ -77,9 +79,12 @@ public final class ScheduleScenes {
         List<String> runs = new ArrayList<>();
         Schedule.Task later = own.after(server, 5, () -> runs.add("later"));
         Schedule.Task often = own.every(server, 2, () -> runs.add("often"));
-        scene.check("two tasks wait", () -> scene.assertEquals(2, own.pending(), "pending"));
+        Schedule.Task last = own.onStop(server, () -> runs.add("stop"));
+        scene.check("three tasks wait", () -> scene.assertEquals(3, own.pending(), "pending"));
+        bus.post(new ServerStoppingEvent(server));
+        scene.check("the stopping ran the stop task alone", () -> scene.assertTrue(List.of("stop").equals(runs) && last.isDone() && !later.isDone() && !often.isDone(), "runs " + runs));
         bus.post(new ServerStoppedEvent(server));
-        scene.check("both are done without running", () -> scene.assertTrue(later.isDone() && often.isDone() && runs.isEmpty() && own.pending() == 0, "after the stop"));
+        scene.check("both are done without running", () -> scene.assertTrue(later.isDone() && often.isDone() && List.of("stop").equals(runs) && own.pending() == 0, "after the stop"));
         scene.check("nothing more is taken for the stopped server", () -> scene.assertTrue(refuses(() -> own.after(server, 1, () -> { })), "a refusal"));
 
         ModSchedule loose = new ModSchedule((_, _) -> { });

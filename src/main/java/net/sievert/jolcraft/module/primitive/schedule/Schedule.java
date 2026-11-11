@@ -10,8 +10,10 @@ import net.sievert.jolcraft.util.text.Dictionary;
 /**
  * Work for later ticks on a server: once after a number of ticks, or every so many ticks until cancelled. Tasks
  * run on the server's thread at the end of a tick, in the order they were scheduled, and are dropped when the
- * server stops, so nothing outlives a world. Scheduling is done from the server's thread; a task that throws is
- * reported through the {@link Failure} the root gives the implementation and the other tasks still run.
+ * server stops, so nothing outlives a world. A stop task runs once as the server stops, after its last tick and
+ * before it saves the players and the world, so whatever must be settled is settled in the saved world. Scheduling
+ * is done from the server's thread; a task that throws is reported through the {@link Failure} the root gives the
+ * implementation and the other tasks still run.
  */
 @Primitive(Dictionary.SCHEDULE)
 public interface Schedule extends Module {
@@ -22,7 +24,10 @@ public interface Schedule extends Module {
     /** Runs the task every {@code interval} ticks, the first time one interval after the current tick, until cancelled or the server stops; a server that fell behind runs it once and counts from there. */
     Task every(MinecraftServer server, int interval, Runnable task);
 
-    /** Attaches to the game bus: the tick that runs the tasks and the server stop that drops them. The root calls it once. */
+    /** Runs the task once when the server stops, after its last tick and before it saves, unless it is cancelled first; stop tasks run in the order they were scheduled, and one scheduled while they run does not run. */
+    Task onStop(MinecraftServer server, Runnable task);
+
+    /** Attaches to the game bus: the tick that runs the tasks, the stopping that runs the stop tasks and the stop that drops the rest. The root calls it once. */
     void register(IEventBus gameBus);
 
     /** A scheduled task: cancel it before it runs, or between runs when it repeats. */
@@ -30,7 +35,7 @@ public interface Schedule extends Module {
 
         void cancel();
 
-        /** Whether the task will not run again: it ran, was cancelled, or its server stopped. */
+        /** Whether the task will not run again: it ran, was cancelled, or its server stopped (a stop task runs then first). */
         boolean isDone();
     }
 

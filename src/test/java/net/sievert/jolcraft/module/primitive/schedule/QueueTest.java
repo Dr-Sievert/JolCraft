@@ -103,9 +103,38 @@ class QueueTest {
     @Test
     void droppingMarksEveryWaitingTaskDoneWithoutRunningIt() {
         Schedule.Task task = queue.after(0, 5, () -> ran.add("never"));
+        Schedule.Task stop = queue.onStop(() -> ran.add("never at the stop"));
         queue.drop();
-        Assertions.assertTrue(task.isDone());
+        Assertions.assertTrue(task.isDone() && stop.isDone());
         queue.tick(10);
+        queue.stopping();
         Assertions.assertEquals(List.of(), ran);
+    }
+
+    @Test
+    void stopTasksRunOnceAtTheStopInSchedulingOrderUnlessCancelled() {
+        queue.onStop(() -> ran.add("first"));
+        Schedule.Task cancelled = queue.onStop(() -> ran.add("cancelled"));
+        queue.onStop(() -> {
+            throw new IllegalStateException("boom");
+        });
+        Schedule.Task last = queue.onStop(() -> {
+            ran.add("last");
+            queue.onStop(() -> ran.add("added meanwhile"));
+        });
+        Schedule.Task timed = queue.after(0, 5, () -> ran.add("timed"));
+        cancelled.cancel();
+        queue.tick(1);
+        Assertions.assertEquals(List.of(), ran, "a tick runs no stop task");
+        Assertions.assertEquals(4, queue.pending(), "the tick swept the cancelled stop task");
+        queue.stopping();
+        Assertions.assertEquals(List.of("first", "last"), ran);
+        Assertions.assertEquals(List.of("boom"), failures, "a failing stop task is reported and the next still runs");
+        Assertions.assertTrue(last.isDone());
+        Assertions.assertFalse(timed.isDone(), "the stop leaves the timed tasks to the drop");
+        Assertions.assertEquals(1, queue.pending(), "the timed task alone; the one added meanwhile is done");
+        queue.stopping();
+        Assertions.assertEquals(List.of("first", "last"), ran, "once");
+        Assertions.assertThrows(NullPointerException.class, () -> queue.onStop(null));
     }
 }

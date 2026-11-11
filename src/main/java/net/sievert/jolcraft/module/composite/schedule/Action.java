@@ -16,9 +16,10 @@ import net.sievert.jolcraft.util.text.Dictionary;
 /**
  * A transaction an actor performs over several ticks: a dwarf that walks to a player, inspects the offer, then
  * hands over the goods. The steps run in order, each after its wait, on the actor's server; the action ends early
- * when the actor leaves the world, dies, is cancelled or a step throws, and then the recovery runs once, so whatever
- * the steps took or promised is put back; a server stop drops the steps without recovery, the world being saved as it
- * stands. Built from {@code schedule}, which runs the steps, and {@code log}.
+ * when the actor leaves the world, dies, is cancelled, a step throws or the server stops, and then the recovery runs
+ * once, so whatever the steps took or promised is put back; on a server stop it runs before the players and the world
+ * are saved, so a save-and-quit loses nothing a step held. Built from {@code schedule}, which runs the steps and the
+ * stop, and {@code log}.
  */
 @Composite(Dictionary.ACTION)
 public final class Action implements Module {
@@ -42,6 +43,7 @@ public final class Action implements Module {
             throw new IllegalStateException("an action runs on a server, not on a client level");
         }
         Running running = new Running(actor, List.copyOf(steps), recovery, server);
+        running.stop = schedule.onStop(server, running::stopping);
         running.next();
         return running;
     }
@@ -64,6 +66,7 @@ public final class Action implements Module {
         private final MinecraftServer server;
         private int at;
         private Schedule.Task waiting;
+        private Schedule.Task stop;
         private boolean done;
         private boolean recovered;
 
@@ -109,20 +112,29 @@ public final class Action implements Module {
             }
         }
 
+        /** The server stops with the action open: it ends as a cancel does, before the save. */
+        private void stopping() {
+            if (!done) {
+                log.debug("the server stops while {} waits for step {} of {}; recovering", actor.getName().getString(), at + 1, steps.size());
+                cancel();
+            }
+        }
+
         private void end(boolean early) {
             done = true;
+            stop.cancel();
             if (early && !recovered) {
                 recovered = true;
                 recovery.run();
             }
         }
 
-        /** Whether the action is over, by its last step, by cancel or by losing the actor. */
+        /** Whether the action is over, by its last step, by cancel, by losing the actor or by the server's stop. */
         public boolean isDone() {
             return done;
         }
 
-        /** Whether the action ended early, by cancel, a lost actor or a failed step, and its recovery ran. */
+        /** Whether the action ended early, by cancel, a lost actor, a failed step or the server's stop, and its recovery ran. */
         public boolean wasRecovered() {
             return recovered;
         }
