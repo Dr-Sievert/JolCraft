@@ -40,6 +40,7 @@ import net.sievert.jolcraft.module.primitive.log.Log;
 import net.sievert.jolcraft.module.primitive.sound.SoundKey;
 import net.sievert.jolcraft.module.primitive.stat.Stat;
 import net.sievert.jolcraft.module.primitive.stat.StatKey;
+import net.sievert.jolcraft.module.primitive.tab.TabKey;
 import net.sievert.jolcraft.stereotype.Value;
 import org.jetbrains.annotations.NotNull;
 
@@ -189,6 +190,11 @@ public final class Translations extends LanguageProvider {
     /** The name of a statistic. */
     public void add(StatKey key, String name) {
         add(key.name(), name);
+    }
+
+    /** The title of a creative tab. */
+    public void add(TabKey key, String title) {
+        add(key.title(), title);
     }
 
     /** The subtitle of a sound. */

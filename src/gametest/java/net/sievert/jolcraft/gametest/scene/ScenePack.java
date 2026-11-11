@@ -9,7 +9,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
 
 /**
- * The scene fixtures as a built-in data pack, {@code src/gametest/resources/scene}: data maps, tags, affinity rows, a
+ * The scene fixtures as a built-in data pack, {@code src/gametest/resources/scene}: data maps, tags, placed features, affinity rows, a
  * cure tag and loot modifiers that act on vanilla content or on the real mod's rules, which a dev run must not feel.
  * The pack is always listed. It is required (forced on in every world, however the world's pack list reads) only
  * when the system property {@value #PROPERTY} is {@code true}, which build.gradle sets on the game-test server run

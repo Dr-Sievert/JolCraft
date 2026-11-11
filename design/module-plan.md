@@ -20,15 +20,17 @@ static in the mod; the game-test mod's plumbing hands scenes what its root built
 |---|---|---|---|
 | `schedule` | server-thread tasks after N ticks or every N ticks, cancellable, dropped when the server stops, and stop tasks run once as it stops, before the save; failures reported through a contract the root adapts from `Log` | the per-entity tick counters in events and goals, the brewing sleep handler's ticking | none |
 | `recipe` | a module's recipe types and serializers as keys, with `key.find(level, input)` and `key.all(level)` over the level's recipe access | `world/recipe/JolCraftRecipes`, the custom recipe types' registrations; not `world/recipe/base`, whose generic pieces were built from `result.md`: context shapes in `loot`, the dispatch helper in `registration`, the `result` composite, and `ItemInput` with its `Fate`, `key.check(registries, recipe)` and `sync(gameBus)` here (built 2026-10-27, step 4); the check's static form over any codec, which datagen runs on a recipe under one of the game's types (built 2026-11-11, `rework.md`) | `RecipeContributor` (exists) |
-| `loot` | loot modifier serializers, loot condition and function types as keys, `roll(level, table, params)`, and `Shape` with `context(level, shape, [random,] params)` to validate data against a loot context's keys and build the context (built 2026-10-26, step 1 of `result.md`) | `world/loot/JolCraftLootModifiers`, `AddItemModifier`, `AddLootTableModifier`: the plain adds are NeoForge's `add_table` now, the item form through a one-entry table, and the replacing form is the `drop` system's kind (2026-11-11, `drop.md`) | `LootContributor` (exists) plus a loot-modifier provider |
+| `loot` | loot modifier serializers, loot condition and function types as keys, `roll(level, table, params)`, and `Shape` with `context(level, shape, [random,] params)` to validate data against a loot context's keys and build the context (built 2026-10-26, step 1 of `result.md`) | `world/loot/JolCraftLootModifiers`, `AddItemModifier`, `AddLootTableModifier`: the plain adds are NeoForge's `add_table` now, the item form through a one-entry table, and the replacing form is the `drop` system's kind (2026-11-11, `drop.md`) | `LootContributor` (exists) plus a loot-modifier provider; tables under any context through `LootContributor.tables` (2026-11-11) |
 | `advancement` | custom criterion triggers as keys with `key.fire(player, matcher)`, and the advancement datagen provider with its completeness (title and description text) | `world/entity/player/advancement/*`, `datagen/advancement/*` | new `AdvancementContributor` and `Advancements` provider |
 | `menu` | menu types as keys, `open(player, title, menu, extra data)`, and the client half that gives a menu its screen | `world/gui/JolCraftMenuTypes`, `JolCraftMenu`, the screen registrations | none |
 | `command` | a module's Brigadier command trees declared while it is built, registered once at `RegisterCommandsEvent` (`module-map.md` says so since this plan) | nothing; roadmap item 9 is new, and the old dev key's dwarf level-up is a candidate for a dev command | none |
 | `capability` | capability providers for block entities, entities and items declared while a module is built, registered once at `RegisterCapabilitiesEvent` | `world/capability/JolCraftCapabilities`, `event/mod/JolCraftModEvents` | none |
 | `stat` | custom stats as keys with `award(player, key, amount)` and `value(player, key)`; the offline queue the old `PendingStatData` kept is the `ledger` composite below | `data/id/stat` | language text for stat names |
+| `tab` (built 2026-11-11, groundwork of `flora.md`) | creative tabs as keys: `declare(key)` and `add(key, items...)` in call order while modules are built, registered once into the creative-tab registry; the icon is the first entry, and a tab that holds nothing is hidden | `world/item/creative/JolCraftCreativeModeTabs` | English for the title |
 
-Not primitives, on purpose: items, blocks, entities, effects, particles and creative tabs are `@Content`
-declarations in the system that owns them; tag keys and data-map types are constants in a `@Value` closed set of
+Not primitives, on purpose: items, blocks, entities, effects and particles are `@Content` declarations in the system
+that owns them (a creative tab was among them until 2026-11-11: the mod's one tab is filled by every feature and owned
+by none, so it is declared through the `tab` primitive and held by the `catalog` system); tag keys and data-map types are constants in a `@Value` closed set of
 that system (a `@Content` holds registers and holders only); the handles a record must name before the system
 exists (a `RecipeKey`, a `YieldKinds`) are constants in the system's `@Keys` set, settled 2026-10-27; the system's
 `@Content.register(bus)` adds the `RegisterDataMapTypesEvent` listener for its data-map types; datapack registries
@@ -52,7 +54,7 @@ Built from primitives only, in the folder of the primitive they extend.
 ## Shared systems
 
 Systems that several features stand on and that are not features themselves. Built after the composites, in
-this order; `worldgen` (its kinds), `effect`, `damage`, `outcome`, `hand`, `rework` and `drop` are built so far, so nothing is forgotten.
+this order; `worldgen` (its kinds), `effect`, `damage`, `outcome`, `hand`, `rework`, `drop` and `catalog` are built so far, so nothing is forgotten.
 
 | System | Takes | Job | Replaces in `old/` |
 |---|---|---|---|
@@ -64,6 +66,7 @@ this order; `worldgen` (its kinds), `effect`, `damage`, `outcome`, `hand`, `rewo
 | `hand` (built 2026-11-11, `hand.md`) | recipe, result, inventory, outcome, log | two-hand interaction recipes: the kind `jolcraft:hand` that features fill with data, a tool and a target matched in either hand, results of the four kinds rolled against the hand context and delivered by `outcome`, both hands paid in one transaction, the item's use consumed on every path after a match; a client half keeps the client from predicting the use | `world/recipe/custom/hand/*`, `JolCraftHandInteractionEvents` |
 | `rework` (built 2026-11-11, `rework.md`) | nothing | the crafting-table kind `jolcraft:rework` that features fill with data: one base item reworked into the result, its stack's components carried over whole, by a list kept or a list removed, under the result template's own; a craft that changes nothing is no match, the base's remainder can be held back, and the kind is in the recipe book; its serializer registered by the system's content, under the game's crafting type | `world/recipe/custom/vanilla/ComponentPreservingShapelessRecipe`, its builder and `DyeColorRecipeBuilder` |
 | `drop` (built 2026-11-11, `drop.md`) | loot | the loot modifier kind `jolcraft:replace_table` that features fill with data: NeoForge's `add_table` with a clear first, the table rolled raw into a list of its own before the drop is cleared, a table the data pack lacks leaving the drop as rolled, NeoForge's default priority unless the data states one; declared through the loot primitive, so no content class | the `replace` flag of `world/loot/custom/AddItemModifier` and `AddLootTableModifier`, with its two uses, fishing and archaeology |
+| `catalog` (built 2026-11-11, groundwork of `flora.md`) | tab | the mod's one creative tab, `CatalogKeys.TAB`, declared to `tab`; every system with items adds its own to it while it is built, so the tab's order is the root's; hidden until a feature fills it | `world/item/creative/JolCraftCreativeModeTabs` |
 | `economy` | log | the coin items, their values and the pay and give helpers trade and bounties share | the coin items in `world/item/JolCraftItems`, `world/item/custom/container/CoinPouchItem`, `JolCraftCoinPickupEventsHelper` |
 
 ## Feature systems, for later
@@ -78,6 +81,25 @@ planting and bonemeal rules, their vegetation features and biome modifiers, and 
 `muffhorn`, `brew`, `trade` and `bounty` reach its items), `crate`.
 
 ## Status, 2026-11-11
+
+The first feature is designed, `flora.md`, and its groundwork (step 0) is built: the `tab` primitive and the `catalog`
+system for the mod's one creative tab, and three datagen pieces whose first consumer is flora. `LootContributor.tables`
+writes a table under any of the game's contexts, one seam where the dry-run notes below foresaw one per context, and a
+table-adding or table-replacing loot modifier must name a table written in the run or the game's. `TagContributor`
+writes biome tags by key. `References`, the data run's last provider, fails on a block state, model or item definition
+that names a model, parent or texture which does not exist, and on a sound file of the mod without its `.ogg`. Each was
+proven once by hand, the sound-file part excepted, which waits for the mod's first sound. Step 1 of flora, the ground,
+is built the same day: verdant soil and farmland, the tree's first blocks, items and hand-made textures, the
+`GrowthEvent` kinds two mixins post from the game's crops and mushrooms, and the verdant rule `Flora` answers them
+with, with unit tests and ten scenes. Step 2, the crops, is built too: barley and its block, the four hops as one
+two-block plant each, the deepslate bulbs, their seeds with the growing hints, loot, compost, recipes and the barley
+seeds of grass, with unit tests and sixteen scenes. Step 3, the wild plants, is built as well: bloodroot, skybell and
+cyanella, the duskcap and the festerling with their pots, huge blocks and huge features, the festerling crop, and the
+planting of an item's block through a data map, with unit tests and 28 scenes. Step 4, the world, closes the feature:
+eight configured and nine placed features, seven biome modifiers and two biome tags, and what else bonemeal grows on
+a block as a data map of placed features, with unit tests and thirteen scenes. Flora is built, and the author looked
+at it in the dev client on 2026-11-12 and found it good. The plan above names no feature for the mod's ores, which own the verdanite dust
+flora's soil is crafted from.
 
 The `drop` system of `drop.md` is built after `rework`: one loot modifier kind, `jolcraft:replace_table`, declared through
 the loot primitive's `LootKey.modifier` with no content class, with unit tests of its codec and scenes that roll fixture
@@ -152,11 +174,12 @@ modules at call level. What it settled, for whoever builds the first feature:
   for `Recipe.Custom.key()`, a `YieldKinds` for a yield codec) is a constant of the system's `@Keys` set, the
   stereotype settled 2026-10-27; the constructor declares a `RecipeKey` to `Recipe`, and the root declares the
   mod's one `YieldKinds` to `Result`, reading it from the set.
-- Datagen seams are added with their first consumer, as the advancement and loot-modifier providers were: chest
-  loot tables (the strongbox's fortress tables: a `Loot.Chests` sub-provider on `LootContextParamSets.CHEST` and a
-  `chestLoot` method on `LootContributor`), tags of other registries (the compass's structure tags: a method on
-  `TagContributor`), and the block loot sub-provider's remaining protected helpers (`hasSilkTouch`; fortune tables
-  go through the `registries()` the sub-providers now expose).
+- Datagen seams are added with their first consumer, as the advancement and loot-modifier providers were: tags of
+  other registries (the compass's structure tags: a method on `TagContributor`, as the biome tags got theirs with
+  flora's groundwork), and the block loot sub-provider's remaining protected helpers (`hasSilkTouch`; fortune tables
+  go through the `registries()` the sub-providers now expose). Chest loot tables, which this note first gave a
+  sub-provider and a contributor method of their own, go through `LootContributor.tables` with the chest context
+  since 2026-11-11: one seam for every context.
 - `Feedback` carries a `LanguageKey` line and the mod's own `SoundKey`; a styled component or a vanilla sound is
   the caller's own call, or an overload to add with its first consumer.
 - An item's use cooldown (the war horn) is the game's `ItemCooldowns` on the player; `Cooldown` is for entity state

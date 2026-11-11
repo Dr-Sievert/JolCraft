@@ -17,6 +17,7 @@ import net.sievert.jolcraft.datagen.contribute.RecipeContributor;
 import net.sievert.jolcraft.datagen.contribute.RegistryContributor;
 import net.sievert.jolcraft.datagen.contribute.SoundContributor;
 import net.sievert.jolcraft.datagen.contribute.TagContributor;
+import net.sievert.jolcraft.datagen.provider.BiomeTags;
 import net.sievert.jolcraft.datagen.provider.BlockTags;
 import net.sievert.jolcraft.datagen.provider.DataMaps;
 import net.sievert.jolcraft.datagen.provider.DatapackEntries;
@@ -27,6 +28,7 @@ import net.sievert.jolcraft.datagen.provider.Loot;
 import net.sievert.jolcraft.datagen.provider.LootModifiers;
 import net.sievert.jolcraft.datagen.provider.Models;
 import net.sievert.jolcraft.datagen.provider.Recipes;
+import net.sievert.jolcraft.datagen.provider.References;
 import net.sievert.jolcraft.datagen.provider.Sounds;
 import net.sievert.jolcraft.datagen.provider.Translations;
 import net.sievert.jolcraft.module.primitive.log.Log;
@@ -69,10 +71,12 @@ public final class JolCraftDatagen {
         event.createBlockAndItemTags(
                 (output, lookup) -> new BlockTags(output, lookup, contributors.of(TagContributor.class)),
                 (output, lookup, blockTags) -> new ItemTags(output, lookup, blockTags, contributors.of(TagContributor.class)));
-        event.createProvider((output, lookup) -> new Loot(output, lookup, contributors.of(LootContributor.class)));
-        event.createProvider((output, lookup) -> new LootModifiers(output, lookup, contributors.of(LootContributor.class)));
+        event.createProvider((output, lookup) -> new BiomeTags(output, lookup, contributors.of(TagContributor.class)));
+        Loot loot = event.createProvider((output, lookup) -> new Loot(output, lookup, contributors.of(LootContributor.class)));
+        event.createProvider((output, lookup) -> new LootModifiers(output, lookup, contributors.of(LootContributor.class), loot, event.getResourceManager(PackType.SERVER_DATA)));
         event.createProvider((output, lookup) -> new Advancements(output, lookup, contributors.of(AdvancementContributor.class), translations));
         event.createProvider(output -> new Sounds(output, contributors.of(SoundContributor.class), log));
         event.createProvider((output, lookup) -> new DataMaps(output, lookup, contributors.of(DataMapContributor.class)));
+        event.createProvider(output -> new References(output, event.getResourceManager(PackType.CLIENT_RESOURCES), log));
     }
 }

@@ -1,0 +1,10 @@
+{
+  "values": {
+    "minecraft:rooted_dirt": [
+      {"feature": "jolcraft_gametest:sprout_missing"},
+      {"feature": "jolcraft_gametest:sprout_open"},
+      {"feature": "jolcraft_gametest:sprout_in", "biome": "#jolcraft_gametest:fixture_in"},
+      {"feature": "jolcraft_gametest:sprout_out", "biome": "#jolcraft_gametest:fixture_out"}
+    ]
+  }
+}

@@ -3,7 +3,9 @@
   "package": "net.sievert.jolcraft.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "ClearAllStatusEffectsConsumeEffectMixin"
+    "ClearAllStatusEffectsConsumeEffectMixin",
+    "CropBlockMixin",
+    "MushroomBlockMixin"
   ],
   "client": [],
   "injectors": {

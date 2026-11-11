@@ -33,10 +33,14 @@ import net.sievert.jolcraft.module.primitive.registration.ModRegistration;
 import net.sievert.jolcraft.module.primitive.schedule.ModSchedule;
 import net.sievert.jolcraft.module.primitive.sound.ModSound;
 import net.sievert.jolcraft.module.primitive.stat.ModStat;
+import net.sievert.jolcraft.module.primitive.tab.ModTab;
+import net.sievert.jolcraft.module.system.catalog.Catalog;
 import net.sievert.jolcraft.module.system.damage.Damage;
 import net.sievert.jolcraft.module.system.drop.Drop;
 import net.sievert.jolcraft.module.system.effect.Effect;
 import net.sievert.jolcraft.module.system.effect.EffectContent;
+import net.sievert.jolcraft.module.system.flora.Flora;
+import net.sievert.jolcraft.module.system.flora.FloraContent;
 import net.sievert.jolcraft.module.system.hand.Hand;
 import net.sievert.jolcraft.module.system.hand.client.HandClient;
 import net.sievert.jolcraft.module.system.outcome.Outcome;
@@ -70,6 +74,7 @@ public final class JolCraft {
         ModCommand command = new ModCommand();
         ModCapability capability = new ModCapability();
         ModStat stat = new ModStat();
+        ModTab tab = new ModTab();
         ModSchedule schedule = new ModSchedule((_, thrown) -> log.error("a scheduled task failed", thrown));
         Language language = new ModLanguage();
         ModConfig config = new ModConfig();
@@ -86,6 +91,8 @@ public final class JolCraft {
         Station station = new Station(menu, log);
 
         // Systems are built here, taking the primitives and the composites above through their constructors; each folder's content is registered below.
+        @SuppressWarnings("unused") Catalog catalog = new Catalog(tab);
+        Flora flora = new Flora(tab, log);
         Outcome outcome = new Outcome(inventory, log);
         Hand hand = new Hand(recipe, result, inventory, outcome, log);
         Effect effect = new Effect(attachment, log);
@@ -104,6 +111,7 @@ public final class JolCraft {
         menu.register(modBus);
         capability.register(modBus);
         stat.register(modBus);
+        tab.register(modBus);
         schedule.register(NeoForge.EVENT_BUS);
         command.register(NeoForge.EVENT_BUS);
         ledger.register(NeoForge.EVENT_BUS);
@@ -111,7 +119,9 @@ public final class JolCraft {
         effect.register(NeoForge.EVENT_BUS);
         damage.register(NeoForge.EVENT_BUS);
         hand.register(NeoForge.EVENT_BUS);
+        flora.register(NeoForge.EVENT_BUS);
         EffectContent.register(modBus);
+        FloraContent.register(modBus);
         WorldgenContent.register(modBus);
         ReworkContent.register(modBus);
         config.register(container);
@@ -123,9 +133,9 @@ public final class JolCraft {
             ConfigScreen.register(container);
         }
         log.info("JolCraft {} loading with {} registries of its own, {} attachments, {} saved data, {} sounds, {} recipe kinds, {} loot kinds, {} criteria, {} menus,"
-                + " {} command trees, {} capability providers, {} statistics, {} settings, {} payloads, {} ledger books, {} yield kinds and hooks, {} exposed inventories and {} stations",
+                + " {} command trees, {} capability providers, {} statistics, {} creative tabs, {} settings, {} payloads, {} ledger books, {} yield kinds and hooks, {} exposed inventories and {} stations",
                 container.getModInfo().getVersion(), registration.declared(), attachment.declared(), data.declared(), sound.declared(), recipe.declared(), loot.declared(),
-                advancement.declared(), menu.declared(), command.declared(), capability.declared(), stat.declared(), config.declared(), network.declared(), ledger.declared(), result.declared(),
+                advancement.declared(), menu.declared(), command.declared(), capability.declared(), stat.declared(), tab.declared(), config.declared(), network.declared(), ledger.declared(), result.declared(),
                 inventory.declared(), station.declared());
     }
 }
